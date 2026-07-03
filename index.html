@@ -1395,7 +1395,7 @@
         <h2>Đặt lịch tư vấn<br /><span class="gold">miễn phí 30 phút</span></h2>
         <p>Điền thông tin bên dưới hoặc đặt lịch trực tiếp qua Google Calendar. Coach sẽ liên hệ xác nhận trong 24 giờ.</p>
 
-        <form class="booking-form" action="https://calendar.app.google/FachrnGSrjeT1ote9" method="get" target="_blank" onsubmit="handleFormSubmit(event)">
+        <form class="booking-form" id="bookingForm" onsubmit="handleFormSubmit(event)">
           <div class="form-group">
             <label for="name">Họ và tên *</label>
             <input type="text" id="name" name="name" placeholder="Nguyễn Văn A" required />
@@ -1425,8 +1425,9 @@
             <label for="note">Chia sẻ thêm (tuỳ chọn)</label>
             <textarea id="note" name="note" placeholder="Mô tả ngắn về tình huống hiện tại của bạn..."></textarea>
           </div>
-          <button type="submit" class="btn form-submit">Đặt lịch tư vấn miễn phí ngay</button>
-          <p class="form-note">Hoặc đặt lịch trực tiếp tại calendar.app.google · Hoàn toàn miễn phí · Không ràng buộc</p>
+          <button type="submit" class="btn form-submit" id="submitBtn">Đặt lịch tư vấn miễn phí ngay</button>
+          <div id="formMsg" style="display:none; margin-top:16px; padding:14px 18px; border-radius:8px; font-size:15px; text-align:center;"></div>
+          <p class="form-note">Hoàn toàn miễn phí · Không ràng buộc · Coach xác nhận trong 24 giờ</p>
         </form>
       </div>
     </div>
@@ -1512,10 +1513,45 @@
       });
     });
 
-    // Form submit — open Google Calendar link
-    function handleFormSubmit(e) {
+    // Form submit — gửi dữ liệu về Google Sheets
+    async function handleFormSubmit(e) {
       e.preventDefault();
-      window.open('https://calendar.app.google/FachrnGSrjeT1ote9', '_blank');
+      const btn = document.getElementById('submitBtn');
+      const msg = document.getElementById('formMsg');
+      btn.disabled = true;
+      btn.textContent = 'Đang gửi...';
+
+      const data = {
+        name:    document.getElementById('name').value,
+        phone:   document.getElementById('phone').value,
+        email:   document.getElementById('email').value,
+        goal:    document.getElementById('goal').value,
+        message: document.getElementById('note').value
+      };
+
+      try {
+        await fetch('https://script.google.com/macros/s/AKfycbzVBOVXOleymawybWzHo1jr0sGYcDh_Lpsod9QBy3A1aaY_rIS6H0ZsIi_1YHfJKwoXEw/exec', {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        msg.style.display = 'block';
+        msg.style.background = '#F0FBF0';
+        msg.style.color = '#2D6A2D';
+        msg.style.border = '1px solid #A8D5A8';
+        msg.innerHTML = '✓ Đăng ký thành công! Coach Bạch Đằng sẽ liên hệ bạn trong 24 giờ.';
+        e.target.reset();
+        btn.textContent = 'Đã gửi thành công';
+      } catch (err) {
+        msg.style.display = 'block';
+        msg.style.background = '#FFF3F0';
+        msg.style.color = '#8B2020';
+        msg.style.border = '1px solid #F5A8A8';
+        msg.innerHTML = '⚠ Có lỗi xảy ra. Vui lòng nhắn Zalo: <a href="https://zalo.me/84784313668">0784 313 668</a>';
+        btn.disabled = false;
+        btn.textContent = 'Đặt lịch tư vấn miễn phí ngay';
+      }
     }
 
     // Nav shadow on scroll
