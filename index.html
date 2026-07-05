@@ -1549,9 +1549,12 @@
         msg.style.background = '#F0FBF0';
         msg.style.color = '#2D6A2D';
         msg.style.border = '1px solid #A8D5A8';
-        msg.innerHTML = '✓ Đăng ký thành công! Coach Bạch Đằng sẽ liên hệ bạn trong 24 giờ.';
+        msg.innerHTML = '✓ Thông tin đã ghi nhận! Đang mở lịch để bạn chọn khung giờ phù hợp...';
         e.target.reset();
         btn.textContent = 'Đã gửi thành công';
+        setTimeout(() => {
+          window.open('https://calendar.app.google/FachrnGSrjeT1ote9', '_blank');
+        }, 1500);
       } catch (err) {
         msg.style.display = 'block';
         msg.style.background = '#FFF3F0';
