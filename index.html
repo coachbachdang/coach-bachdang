@@ -1533,19 +1533,15 @@
         message:  document.getElementById('note').value
       };
 
-      try {
-        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000));
-        await Promise.race([
-          fetch('https://script.google.com/macros/s/AKfycbyl1lQGQSbTRvhO79VTjBT21CvktiycyX64kgHUE9aKvxtrSO4ApHrfGI41fNmim5MUaw/exec', {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          }),
-          timeout
-        ]);
-      } catch(err) {}
-      // Luôn hiện thành công sau khi gửi (no-cors không đọc được response)
+      // Gửi ngầm - không chờ response
+      fetch('https://script.google.com/macros/s/AKfycbyl1lQGQSbTRvhO79VTjBT21CvktiycyX64kgHUE9aKvxtrSO4ApHrfGI41fNmim5MUaw/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).catch(function(){});
+
+      // Hiện thành công ngay lập tức
       msg.style.display = 'block';
       msg.style.background = '#F0FBF0';
       msg.style.color = '#2D6A2D';
@@ -1553,7 +1549,7 @@
       msg.innerHTML = '&#10003; Thông tin đã ghi nhận! Đang mở lịch để bạn chọn khung giờ phù hợp...';
       e.target.reset();
       btn.textContent = 'Đã gửi thành công';
-      setTimeout(() => {
+      setTimeout(function() {
         window.open('https://calendar.app.google/FachrnGSrjeT1ote9', '_blank');
       }, 1500);
     }
