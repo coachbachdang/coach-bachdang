@@ -1530,14 +1530,17 @@
         message: document.getElementById('note').value
       };
 
-      // Hiện thành công NGAY - không chờ gì cả
+      // Mở Calendar NGAY (phải gọi trực tiếp trong event handler để mobile không chặn)
+      window.open('https://calendar.app.google/FachrnGSrjeT1ote9', '_blank');
+
+      // Hiện thành công
       btn.disabled = true;
       btn.textContent = 'Đã gửi thành công';
       msg.style.display = 'block';
       msg.style.background = '#F0FBF0';
       msg.style.color = '#2D6A2D';
       msg.style.border = '1px solid #A8D5A8';
-      msg.innerHTML = '&#10003; Thông tin đã ghi nhận! Đang mở lịch để bạn chọn khung giờ phù hợp...';
+      msg.innerHTML = '&#10003; Thông tin đã ghi nhận! Lịch đã mở để bạn chọn khung giờ phù hợp.';
       form.reset();
 
       // Gửi dữ liệu ngầm bằng XHR
@@ -1545,11 +1548,6 @@
       xhr.open('POST', 'https://script.google.com/macros/s/AKfycbyl1lQGQSbTRvhO79VTjBT21CvktiycyX64kgHUE9aKvxtrSO4ApHrfGI41fNmim5MUaw/exec', true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.send(JSON.stringify(data));
-
-      // Mở Calendar sau 1.5s
-      setTimeout(function() {
-        window.open('https://calendar.app.google/FachrnGSrjeT1ote9', '_blank');
-      }, 1500);
     }
 
     // Nav shadow on scroll
