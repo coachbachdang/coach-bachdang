@@ -1538,10 +1538,11 @@
       msg.style.color = '#2D6A2D';
       msg.style.border = '1px solid #A8D5A8';
       msg.innerHTML = '&#10003; Thông tin đã ghi nhận!<br><br>'
-        + '<a href="https://calendar.app.google/FachrnGSrjeT1ote9" target="_blank" '
+        + '<a href="https://calendar.app.google/FachrnGSrjeT1ote9" '
         + 'style="display:inline-block;margin-top:8px;padding:12px 24px;background:#C9A84C;color:#fff;'
         + 'border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;">'
-        + 'Chọn lịch tư vấn ngay &#8594;</a>';
+        + 'Chọn lịch tư vấn ngay &#8594;</a>'
+        + '<p style="margin-top:10px;font-size:12px;color:#9E7B6A;">Sau khi chọn lịch xong, bấm <strong>&#8592; Quay lại</strong> để trở về trang.</p>';
       form.reset();
 
       // Gửi dữ liệu ngầm (text/plain tránh CORS preflight)
