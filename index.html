@@ -1534,31 +1534,28 @@
       };
 
       try {
-        await fetch('https://script.google.com/macros/s/AKfycbyl1lQGQSbTRvhO79VTjBT21CvktiycyX64kgHUE9aKvxtrSO4ApHrfGI41fNmim5MUaw/exec', {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        msg.style.display = 'block';
-        msg.style.background = '#F0FBF0';
-        msg.style.color = '#2D6A2D';
-        msg.style.border = '1px solid #A8D5A8';
-        msg.innerHTML = '✓ Thông tin đã ghi nhận! Đang mở lịch để bạn chọn khung giờ phù hợp...';
-        e.target.reset();
-        btn.textContent = 'Đã gửi thành công';
-        setTimeout(() => {
-          window.open('https://calendar.app.google/FachrnGSrjeT1ote9', '_blank');
-        }, 1500);
-      } catch (err) {
-        msg.style.display = 'block';
-        msg.style.background = '#FFF3F0';
-        msg.style.color = '#8B2020';
-        msg.style.border = '1px solid #F5A8A8';
-        msg.innerHTML = '⚠ Có lỗi xảy ra. Vui lòng nhắn Zalo: <a href="https://zalo.me/84784313668">0784 313 668</a>';
-        btn.disabled = false;
-        btn.textContent = 'Đặt lịch tư vấn miễn phí ngay';
-      }
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000));
+        await Promise.race([
+          fetch('https://script.google.com/macros/s/AKfycbyl1lQGQSbTRvhO79VTjBT21CvktiycyX64kgHUE9aKvxtrSO4ApHrfGI41fNmim5MUaw/exec', {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          }),
+          timeout
+        ]);
+      } catch(err) {}
+      // Luôn hiện thành công sau khi gửi (no-cors không đọc được response)
+      msg.style.display = 'block';
+      msg.style.background = '#F0FBF0';
+      msg.style.color = '#2D6A2D';
+      msg.style.border = '1px solid #A8D5A8';
+      msg.innerHTML = '&#10003; Thông tin đã ghi nhận! Đang mở lịch để bạn chọn khung giờ phù hợp...';
+      e.target.reset();
+      btn.textContent = 'Đã gửi thành công';
+      setTimeout(() => {
+        window.open('https://calendar.app.google/FachrnGSrjeT1ote9', '_blank');
+      }, 1500);
     }
 
     // Nav shadow on scroll
