@@ -1516,39 +1516,37 @@
     });
 
     // Form submit — gửi dữ liệu về Google Sheets
-    async function handleFormSubmit(e) {
+    function handleFormSubmit(e) {
       e.preventDefault();
-      const btn = document.getElementById('submitBtn');
-      const msg = document.getElementById('formMsg');
-      btn.disabled = true;
-      btn.textContent = 'Đang gửi...';
+      var btn = document.getElementById('submitBtn');
+      var msg = document.getElementById('formMsg');
+      var form = e.target;
 
-      const dt = document.getElementById('datetime').value;
-      const data = {
-        name:     document.getElementById('name').value,
-        phone:    document.getElementById('phone').value,
-        email:    document.getElementById('email').value,
-        goal:     document.getElementById('goal').value,
-        datetime: dt ? new Date(dt).toLocaleString('vi-VN') : '',
-        message:  document.getElementById('note').value
+      var data = {
+        name:    document.getElementById('name').value,
+        phone:   document.getElementById('phone').value,
+        email:   document.getElementById('email').value,
+        goal:    document.getElementById('goal').value,
+        message: document.getElementById('note').value
       };
 
-      // Gửi ngầm - không chờ response
-      fetch('https://script.google.com/macros/s/AKfycbyl1lQGQSbTRvhO79VTjBT21CvktiycyX64kgHUE9aKvxtrSO4ApHrfGI41fNmim5MUaw/exec', {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      }).catch(function(){});
-
-      // Hiện thành công ngay lập tức
+      // Hiện thành công NGAY - không chờ gì cả
+      btn.disabled = true;
+      btn.textContent = 'Đã gửi thành công';
       msg.style.display = 'block';
       msg.style.background = '#F0FBF0';
       msg.style.color = '#2D6A2D';
       msg.style.border = '1px solid #A8D5A8';
       msg.innerHTML = '&#10003; Thông tin đã ghi nhận! Đang mở lịch để bạn chọn khung giờ phù hợp...';
-      e.target.reset();
-      btn.textContent = 'Đã gửi thành công';
+      form.reset();
+
+      // Gửi dữ liệu ngầm bằng XHR
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', 'https://script.google.com/macros/s/AKfycbyl1lQGQSbTRvhO79VTjBT21CvktiycyX64kgHUE9aKvxtrSO4ApHrfGI41fNmim5MUaw/exec', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.send(JSON.stringify(data));
+
+      // Mở Calendar sau 1.5s
       setTimeout(function() {
         window.open('https://calendar.app.google/FachrnGSrjeT1ote9', '_blank');
       }, 1500);
