@@ -1580,7 +1580,6 @@
     function handleFormSubmit(e) {
       e.preventDefault();
       var btn = document.getElementById('submitBtn');
-      var msg = document.getElementById('formMsg');
       var form = e.target;
 
       var data = {
@@ -1591,17 +1590,15 @@
         message: document.getElementById('note').value
       };
 
-      // Redirect sang trang cảm ơn
       btn.disabled = true;
       btn.textContent = 'Đang chuyển trang...';
+
+      // sendBeacon đảm bảo gửi được dù trang đang navigate đi
+      var url = 'https://script.google.com/macros/s/AKfycbyOjKL9G2ATYBH9Xva45tWDB7JM-MPpowmWQrQE621JyoRoIyVQbCqPYAPSE0c1jXU_mQ/exec';
+      navigator.sendBeacon(url, JSON.stringify(data));
+
       form.reset();
       window.location.href = '/thank-you.html';
-
-      // Gửi dữ liệu ngầm (text/plain tránh CORS preflight)
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', 'https://script.google.com/macros/s/AKfycbyOjKL9G2ATYBH9Xva45tWDB7JM-MPpowmWQrQE621JyoRoIyVQbCqPYAPSE0c1jXU_mQ/exec', true);
-      xhr.setRequestHeader('Content-Type', 'text/plain');
-      xhr.send(JSON.stringify(data));
     }
 
     // Nav shadow on scroll
