@@ -3,67 +3,68 @@ var COACH_EMAIL = 'hoangbachdang@gmail.com';
 var CALENDAR_URL = 'https://calendar.app.google/FachrnGSrjeT1ote9';
 var PREP_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScOfWNRsgYB74s5Krq4mfH2hYrKqhqi9JozFMAjRaFI9P_uhA/viewform';
 
+function doGet(e) {
+  try {
+    var name        = e.parameter.name    || '';
+    var phone       = e.parameter.phone   || '';
+    var clientEmail = e.parameter.email   || '';
+    var goal        = e.parameter.goal    || '';
+    var message     = e.parameter.message || '';
+    _saveAndNotify(name, phone, clientEmail, goal, message);
+  } catch (err) {}
+  return ContentService.createTextOutput('ok');
+}
+
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
-    var name        = data.name    || '';
-    var phone       = data.phone   || '';
-    var clientEmail = data.email   || '';
-    var goal        = data.goal    || '';
-    var message     = data.message || '';
+    _saveAndNotify(data.name||'', data.phone||'', data.email||'', data.goal||'', data.message||'');
+    return ContentService.createTextOutput(JSON.stringify({ status: 'ok' })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.message })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
 
-    // Ghi vào Google Sheets
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_NAME);
-    if (!sheet) {
-      sheet = ss.insertSheet(SHEET_NAME);
-      sheet.appendRow(['Thời gian gửi','Họ và tên','Số điện thoại/Zalo','Email','Chủ đề','Lịch xác nhận','Chia sẻ thêm']);
-    }
-    sheet.appendRow([new Date(), name, phone, clientEmail, goal, '', message]);
+function _saveAndNotify(name, phone, clientEmail, goal, message) {
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    sheet.appendRow(['Thời gian gửi','Họ và tên','Số điện thoại/Zalo','Email','Chủ đề','Lịch xác nhận','Chia sẻ thêm']);
+  }
+  sheet.appendRow([new Date(), name, phone, clientEmail, goal, '', message]);
 
-    // Email xác nhận gửi cho khách
-    if (clientEmail) {
-      var clientSubject = 'Xác nhận đăng ký tư vấn — Coach Bạch Đằng | Ageas Life';
-      var clientBody = 'Xin chào ' + name + ',\n\n'
-        + 'Coach Bạch Đằng đã nhận được yêu cầu tư vấn của bạn.\n\n'
-        + 'THÔNG TIN ĐĂNG KÝ\n'
-        + '- Họ tên: ' + name + '\n'
-        + '- Số điện thoại/Zalo: ' + phone + '\n'
-        + '- Chủ đề: ' + goal + '\n\n'
-        + 'BƯỚC TIẾP THEO\n'
-        + '1. Chọn khung giờ phù hợp tại: ' + CALENDAR_URL + '\n'
-        + '2. Coach sẽ xác nhận lịch trong vòng 24 giờ\n'
-        + '3. Trước buổi hẹn 24h, bạn sẽ nhận email nhắc kèm form chuẩn bị\n\n'
-        + 'Nếu cần hỗ trợ, nhắn Zalo: 0784 313 668\n\n'
-        + 'Trân trọng,\n'
-        + 'Coach Hoàng Bạch Đằng\n'
-        + 'Founder Ageas Life™';
-      GmailApp.sendEmail(clientEmail, clientSubject, clientBody);
-    }
-
-    // Email thông báo cho Coach
-    var coachSubject = '[Ageas Life] Khách hàng mới đặt lịch tư vấn';
-    var coachBody = 'Coach Bạch Đằng ơi,\n\n'
-      + 'Vừa có khách hàng mới đăng ký:\n\n'
+  if (clientEmail) {
+    var clientSubject = 'Xác nhận đăng ký tư vấn — Coach Bạch Đằng | Ageas Life';
+    var clientBody = 'Xin chào ' + name + ',\n\n'
+      + 'Coach Bạch Đằng đã nhận được yêu cầu tư vấn của bạn.\n\n'
+      + 'THÔNG TIN ĐĂNG KÝ\n'
       + '- Họ tên: ' + name + '\n'
       + '- Số điện thoại/Zalo: ' + phone + '\n'
-      + '- Email: ' + clientEmail + '\n'
-      + '- Chủ đề: ' + goal + '\n'
-      + '- Chia sẻ thêm: ' + message + '\n\n'
-      + 'Thời gian đăng ký: ' + new Date().toLocaleString('vi-VN') + '\n\n'
-      + 'Vui lòng xác nhận lịch trong vòng 24 giờ.\n\n'
-      + 'Ageas Life™ — Hệ thống tự động';
-    GmailApp.sendEmail(COACH_EMAIL, coachSubject, coachBody);
-
-    return ContentService
-      .createTextOutput(JSON.stringify({ status: 'ok' }))
-      .setMimeType(ContentService.MimeType.JSON);
-
-  } catch (err) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ status: 'error', message: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
+      + '- Chủ đề: ' + goal + '\n\n'
+      + 'BƯỚC TIẾP THEO\n'
+      + '1. Chọn khung giờ phù hợp tại: ' + CALENDAR_URL + '\n'
+      + '2. Coach sẽ xác nhận lịch trong vòng 24 giờ\n'
+      + '3. Trước buổi hẹn 24h, bạn sẽ nhận email nhắc kèm form chuẩn bị\n\n'
+      + 'Nếu cần hỗ trợ, nhắn Zalo: 0784 313 668\n\n'
+      + 'Trân trọng,\n'
+      + 'Coach Hoàng Bạch Đằng\n'
+      + 'Founder Ageas Life™';
+    GmailApp.sendEmail(clientEmail, clientSubject, clientBody);
   }
+
+  var coachSubject = '[Ageas Life] Khách hàng mới đặt lịch tư vấn';
+  var coachBody = 'Coach Bạch Đằng ơi,\n\n'
+    + 'Vừa có khách hàng mới đăng ký:\n\n'
+    + '- Họ tên: ' + name + '\n'
+    + '- Số điện thoại/Zalo: ' + phone + '\n'
+    + '- Email: ' + clientEmail + '\n'
+    + '- Chủ đề: ' + goal + '\n'
+    + '- Chia sẻ thêm: ' + message + '\n\n'
+    + 'Thời gian đăng ký: ' + new Date().toLocaleString('vi-VN') + '\n\n'
+    + 'Vui lòng xác nhận lịch trong vòng 24 giờ.\n\n'
+    + 'Ageas Life™ — Hệ thống tự động';
+  GmailApp.sendEmail(COACH_EMAIL, coachSubject, coachBody);
 }
 
 function syncCalendarToSheet() {

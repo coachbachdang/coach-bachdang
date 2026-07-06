@@ -1595,14 +1595,15 @@
 
       var url = 'https://script.google.com/macros/s/AKfycbyEdHfPQOt8ZbbqdWWKZ9hXcXFgoP8lIQChPQIypuzsvz8-kJ0kyS0KxCVyMHNoKsLgmw/exec';
 
-      // Gửi XHR trước, redirect sau 800ms — đủ thời gian request bay đi
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', url, true);
-      xhr.setRequestHeader('Content-Type', 'text/plain');
-      xhr.send(JSON.stringify(data));
+      // Image GET — không bao giờ bị CORS block, hoạt động mọi browser/mobile
+      var params = new URLSearchParams({
+        name: data.name, phone: data.phone, email: data.email,
+        goal: data.goal, message: data.message
+      });
+      new Image().src = url + '?' + params.toString();
 
       form.reset();
-      setTimeout(function() { window.location.href = '/thank-you.html'; }, 800);
+      setTimeout(function() { window.location.href = '/thank-you.html'; }, 500);
     }
 
     // Nav shadow on scroll
