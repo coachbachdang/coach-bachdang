@@ -147,9 +147,9 @@ function createTriggers() {
   for (var i = 0; i < triggers.length; i++) {
     ScriptApp.deleteTrigger(triggers[i]);
   }
-  // Đồng bộ Calendar mỗi giờ
+  // Đồng bộ Calendar mỗi phút
   ScriptApp.newTrigger('syncCalendarToSheet')
-    .timeBased().everyHours(1).create();
+    .timeBased().everyMinutes(1).create();
   // Gửi email nhắc lịch mỗi ngày lúc 8h sáng
   ScriptApp.newTrigger('sendReminderEmails')
     .timeBased().everyDays(1).atHour(8).create();
