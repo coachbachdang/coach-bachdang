@@ -1,4 +1,4 @@
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzyduhDAHBF9m0chHVRrdHkCauWSna4PxOH8c_N-Gdnb5gm28PHcizIfACHNseX07MF1Q/exec';
+﻿const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyu2m5n8g-nIoq2lVtYqsDbaMQIO8_PvD3sCzczxtf1zDSUGY5NrOvXPSP1raRFpPX70Q/exec';
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).end();
