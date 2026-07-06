@@ -1593,9 +1593,9 @@
       btn.disabled = true;
       btn.textContent = 'Đang chuyển trang...';
 
-      // sendBeacon đảm bảo gửi được dù trang đang navigate đi
+      // fetch keepalive: gửi được kể cả khi trang navigate đi, hỗ trợ redirect
       var url = 'https://script.google.com/macros/s/AKfycbyEdHfPQOt8ZbbqdWWKZ9hXcXFgoP8lIQChPQIypuzsvz8-kJ0kyS0KxCVyMHNoKsLgmw/exec';
-      navigator.sendBeacon(url, JSON.stringify(data));
+      fetch(url, { method: 'POST', body: JSON.stringify(data), keepalive: true });
 
       form.reset();
       window.location.href = '/thank-you.html';
