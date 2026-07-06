@@ -1591,17 +1591,18 @@
         message: document.getElementById('note').value
       };
 
-      // Redirect sang trang cảm ơn
       btn.disabled = true;
-      btn.textContent = 'Đang chuyển trang...';
-      form.reset();
-      window.location.href = '/thank-you.html';
+      btn.textContent = 'Đang gửi...';
 
-      // Gửi dữ liệu ngầm (text/plain tránh CORS preflight)
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', 'https://script.google.com/macros/s/AKfycbyl1lQGQSbTRvhO79VTjBT21CvktiycyX64kgHUE9aKvxtrSO4ApHrfGI41fNmim5MUaw/exec', true);
-      xhr.setRequestHeader('Content-Type', 'text/plain');
-      xhr.send(JSON.stringify(data));
+      // Gửi dữ liệu qua Vercel proxy, redirect sau khi gửi xong
+      fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).finally(function() {
+        form.reset();
+        window.location.href = '/thank-you.html';
+      });
     }
 
     // Nav shadow on scroll
