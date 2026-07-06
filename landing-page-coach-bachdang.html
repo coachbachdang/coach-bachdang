@@ -1597,13 +1597,16 @@
 
       btn.disabled = true;
       btn.textContent = 'Đang chuyển trang...';
-
-      var url = 'https://script.google.com/macros/s/AKfycbzyduhDAHBF9m0chHVRrdHkCauWSna4PxOH8c_N-Gdnb5gm28PHcizIfACHNseX07MF1Q/exec';
-      var params = new URLSearchParams({ name: name, phone: phone, email: email, goal: goal, message: message });
-      new Image().src = url + '?' + params.toString();
-
       form.reset();
-      setTimeout(function() { window.location.href = '/thank-you.html'; }, 500);
+
+      // Gửi qua Vercel proxy — cùng domain, không bị CORS block trên mobile
+      fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, phone: phone, email: email, goal: goal, message: message })
+      }).finally(function() {
+        window.location.href = '/thank-you.html';
+      });
     }
 
     // Nav shadow on scroll
