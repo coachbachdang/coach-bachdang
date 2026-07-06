@@ -81,7 +81,7 @@ function syncCalendarToSheet() {
 
   var cal   = CalendarApp.getDefaultCalendar();
   var now   = new Date();
-  var start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  var start = now; // chỉ lấy sự kiện từ hôm nay trở đi
   var end   = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
   var events = cal.getEvents(start, end);
 
