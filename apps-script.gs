@@ -1,5 +1,6 @@
 ﻿var SHEET_NAME = 'Đăng ký tư vấn';
 var COACH_EMAIL = 'hoangbachdang@gmail.com';
+// Deployed URL: https://script.google.com/macros/s/AKfycbzJmnuO3p5qWT51i10rkpXVM-xbhSsua36JR9lbdnSFjlDPQJWjRKQAdhRMDReZuYKJaw/exec
 var CALENDAR_URL = 'https://calendar.app.google/FachrnGSrjeT1ote9';
 var PREP_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScOfWNRsgYB74s5Krq4mfH2hYrKqhqi9JozFMAjRaFI9P_uhA/viewform';
 
