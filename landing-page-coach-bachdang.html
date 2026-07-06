@@ -1593,12 +1593,17 @@
       btn.disabled = true;
       btn.textContent = 'Đang chuyển trang...';
 
-      // fetch keepalive: gửi được kể cả khi trang navigate đi, hỗ trợ redirect
       var url = 'https://script.google.com/macros/s/AKfycbyEdHfPQOt8ZbbqdWWKZ9hXcXFgoP8lIQChPQIypuzsvz8-kJ0kyS0KxCVyMHNoKsLgmw/exec';
-      fetch(url, { method: 'POST', body: JSON.stringify(data), keepalive: true });
-
       form.reset();
-      window.location.href = '/thank-you.html';
+
+      // Redirect sau khi fetch xong, fallback 3 giây nếu mạng chậm
+      var done = false;
+      function redirect() {
+        if (!done) { done = true; window.location.href = '/thank-you.html'; }
+      }
+      setTimeout(redirect, 3000);
+      fetch(url, { method: 'POST', body: JSON.stringify(data) })
+        .then(redirect).catch(redirect);
     }
 
     // Nav shadow on scroll
