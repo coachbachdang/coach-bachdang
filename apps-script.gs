@@ -26,6 +26,13 @@ function doPost(e) {
 }
 
 function _saveAndNotify(name, phone, clientEmail, goal, message) {
+  name        = name        || '';
+  phone       = phone       || '';
+  clientEmail = clientEmail || '';
+  goal        = goal        || '';
+  message     = message     || '';
+  if (!name && !phone && !clientEmail) return;
+
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
