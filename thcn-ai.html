@@ -708,42 +708,17 @@
     </div>
 
     <div class="p-6">
-      <!-- Amount toggle -->
-      <div class="flex rounded-xl overflow-hidden border border-gray-200 mb-3">
-        <button id="btnFull" onclick="setAmount('full')" class="flex-1 py-3 text-sm font-semibold bg-brand text-white transition-colors cursor-pointer">
-          Thanh toán đủ<br><span class="text-xs font-normal">6.800.000đ</span>
-        </button>
-        <button id="btnInstall" onclick="setAmount('install')" class="flex-1 py-3 text-sm font-semibold bg-gray-50 text-gray-600 transition-colors cursor-pointer">
-          Trả lần 1/2<br><span class="text-xs font-normal">3.400.000đ</span>
-        </button>
-        <button id="btnDeposit" onclick="setAmount('deposit')" class="flex-1 py-3 text-sm font-semibold bg-gray-50 text-gray-600 transition-colors cursor-pointer">
-          Đặt cọc<br><span class="text-xs font-normal">Tùy khách</span>
-        </button>
-      </div>
-      <!-- Editable amount (all modes) -->
-      <div class="mb-4">
-        <label class="block text-sm text-gray-500 mb-1">Số tiền chuyển khoản <span class="text-gray-400">(có thể chỉnh)</span></label>
-        <div class="flex items-center gap-2 border border-brand/40 rounded-xl px-3 py-2 bg-white focus-within:border-brand">
-          <input id="customAmt" type="number" min="10000" step="1000"
-            class="flex-1 text-sm font-semibold text-brand focus:outline-none bg-transparent"
-            oninput="updateCustomAmt()">
-          <span class="text-sm text-gray-400">đ</span>
-        </div>
-        <p class="text-xs text-gray-400 mt-1">Tối thiểu 10.000đ — nhập số tiền bạn muốn chuyển</p>
-      </div>
-
       <!-- QR Code -->
       <div class="flex justify-center mb-4">
         <div class="border-2 border-brand/20 rounded-2xl p-3 bg-white shadow-inner">
           <img id="qrImg"
-            src="https://img.vietqr.io/image/BIDV-962478813313668-compact2.jpg?amount=6800000&addInfo=KOL%20AI%20Blueprint&accountName=Hoang%20Bach%20Dang"
+            src="https://img.vietqr.io/image/BIDV-962478813313668-compact2.jpg?addInfo=KOL%20AI%20Blueprint&accountName=Hoang%20Bach%20Dang"
             alt="QR chuyển khoản BIDV"
             class="w-52 h-52 object-contain rounded-xl"
-            onerror="this.src='https://qr.sepay.vn/img?bank=BIDV&acc=962478813313668&template=compact2&amount=6800000&des=KOL+AI+Blueprint'"
           >
         </div>
       </div>
-      <p class="text-center text-xs text-gray-400 mb-5">Mở app ngân hàng bất kỳ → Quét mã → Thanh toán</p>
+      <p class="text-center text-xs text-gray-400 mb-5">Mở app ngân hàng bất kỳ → Quét mã → Nhập số tiền → Thanh toán</p>
 
       <!-- Bank info -->
       <div class="bg-gray-50 rounded-2xl p-4 space-y-3 mb-5">
@@ -764,19 +739,15 @@
           <span class="text-gray-500 text-sm">Chủ tài khoản</span>
           <span class="font-semibold text-sm uppercase">HOÀNG BẠCH ĐẰNG</span>
         </div>
-        <div class="flex justify-between items-center">
-          <span class="text-gray-500 text-sm">Số tiền</span>
-          <span id="amountDisplay" class="font-bold text-brand text-lg">6.800.000đ</span>
-        </div>
         <div class="border-t border-gray-200 pt-3">
           <span class="text-gray-500 text-sm block mb-1">Nội dung chuyển khoản</span>
           <div class="flex items-center justify-between bg-white border border-brand/30 rounded-xl px-3 py-2">
-            <span id="payNote" class="font-semibold text-sm text-brand">KOL AI Blueprint [Tên bạn]</span>
+            <span id="payNote" class="font-semibold text-sm text-brand">KOL AI Blueprint</span>
             <button onclick="copyText(document.getElementById('payNote').textContent)" class="text-brand cursor-pointer ml-2">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
             </button>
           </div>
-          <p class="text-xs text-gray-400 mt-1">Thay [Tên bạn] bằng tên thật của bạn</p>
+          <p class="text-xs text-gray-400 mt-1">Thêm tên bạn vào cuối nội dung để Coach nhận ra</p>
         </div>
       </div>
 
@@ -852,15 +823,7 @@
   const BANK = 'BIDV';
   const ACC  = '962478813313668';
   const NAME = 'Hoang Bach Dang';
-  const AMOUNTS = { full: 6800000, install: 3400000, deposit: 0 };
   let customerName = '';
-  const NOTES = {
-    full:    () => `KOL AI Blueprint ${customerName || '[Ten ban]'}`,
-    install: () => `KOL AI Blueprint tra1 ${customerName || '[Ten ban]'}`,
-    deposit: () => `KOL AI dat coc ${customerName || '[Ten ban]'}`,
-  };
-
-  let currentMode = 'full';
 
   // Nếu có ?name= trong URL → bỏ qua form, mở QR luôn
   const urlName = new URLSearchParams(location.search).get('name');
@@ -912,7 +875,11 @@
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
-    setAmount(currentMode); // refresh QR + note với tên khách
+    // Cập nhật nội dung CK với tên khách
+    const note = `KOL AI Blueprint${customerName ? ' ' + customerName : ''}`;
+    document.getElementById('payNote').textContent = note;
+    document.getElementById('qrImg').src =
+      `https://img.vietqr.io/image/BIDV-962478813313668-compact2.jpg?addInfo=${encodeURIComponent(note)}&accountName=Hoang%20Bach%20Dang`;
   }
 
   function closePay() {
@@ -922,49 +889,6 @@
     document.body.style.overflow = '';
   }
 
-  function setAmount(mode) {
-    currentMode = mode;
-
-    // Điền số tiền mặc định vào ô (deposit thì để trống)
-    const input = document.getElementById('customAmt');
-    if (mode === 'deposit') {
-      input.value = '';
-      input.placeholder = 'VD: 500000';
-    } else {
-      input.value = AMOUNTS[mode];
-      input.placeholder = '';
-    }
-
-    refreshQR();
-
-    // Update button styles
-    ['btnFull','btnInstall','btnDeposit'].forEach(id => {
-      const modeMap = { btnFull:'full', btnInstall:'install', btnDeposit:'deposit' };
-      document.getElementById(id).className =
-        'flex-1 py-3 text-sm font-semibold transition-colors cursor-pointer ' +
-        (modeMap[id] === mode ? 'bg-brand text-white' : 'bg-gray-50 text-gray-600');
-    });
-  }
-
-  function updateCustomAmt() {
-    refreshQR();
-  }
-
-  function refreshQR() {
-    const amt = parseInt(document.getElementById('customAmt').value) || 0;
-    const note = NOTES[currentMode]();
-
-    const qr = document.getElementById('qrImg');
-    if (amt >= 10000) {
-      qr.src = `https://img.vietqr.io/image/${BANK}-${ACC}-compact2.jpg?amount=${amt}&addInfo=${encodeURIComponent(note)}&accountName=${encodeURIComponent(NAME)}`;
-    } else {
-      qr.src = `https://img.vietqr.io/image/${BANK}-${ACC}-compact2.jpg?addInfo=${encodeURIComponent(note)}&accountName=${encodeURIComponent(NAME)}`;
-    }
-
-    document.getElementById('amountDisplay').textContent =
-      amt >= 10000 ? amt.toLocaleString('vi-VN') + 'đ' : 'Nhập số tiền';
-    document.getElementById('payNote').textContent = note;
-  }
 
   function copyPayLink() {
     const name = encodeURIComponent(customerName || '');
