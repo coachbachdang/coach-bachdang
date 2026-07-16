@@ -34,7 +34,7 @@ export default async function handler(req, res) {
               <div style="background:#fdf2f8;border-left:4px solid #EC4899;padding:16px;border-radius:8px;margin:20px 0">
                 <p style="margin:0;font-weight:600">Bước tiếp theo:</p>
                 <ol style="margin:8px 0 0;padding-left:20px;line-height:1.8">
-                  <li>Chuyển khoản theo thông tin bên dưới hoặc <a href="https://hoangbachdang.com/thcn-ai" style="color:#EC4899">quét mã QR tại đây</a></li>
+                  <li>Chuyển khoản theo thông tin bên dưới hoặc <a href="https://hoangbachdang.com/thcn-ai?pay=1" style="color:#EC4899">quét mã QR tại đây</a></li>
                   <li><strong>Chụp màn hình biên lai</strong> giao dịch</li>
                   <li>Gửi biên lai qua Zalo <strong>0784313668</strong> — Coach xác nhận ngay và hẹn lịch buổi 1</li>
                 </ol>

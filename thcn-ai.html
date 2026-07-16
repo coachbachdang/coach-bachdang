@@ -821,6 +821,11 @@
   const NAME = 'Hoang Bach Dang';
   let customerName = '';
 
+  // Nếu có ?pay=1 → bỏ qua form, mở QR luôn
+  if (new URLSearchParams(location.search).get('pay') === '1') {
+    window.addEventListener('DOMContentLoaded', () => openPay());
+  }
+
   // Nếu có ?name= trong URL → bỏ qua form, mở QR luôn
 
   function openLead() {
