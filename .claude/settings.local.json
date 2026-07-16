@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(ffprobe -v quiet -print_format json -show_format -show_streams \"C:\\\\Users\\\\Admin\\\\Desktop\\\\X�y D?ng THCN AI GEIN\\\\nguoithanhcong.mp4\" 2>&1)",
+      "PowerShell(cd \"C:\\\\Users\\\\Admin\\\\Desktop\\\\Xây Dựng THCN AI GEIN\"; powershell -ExecutionPolicy Bypass -File \"make_video.ps1\" 2>&1)",
+      "mcp__visualize__read_me",
+      "mcp__visualize__show_widget",
+      "Bash(extract-text \"C:\\\\Users\\\\Admin\\\\Downloads\\\\Bang_ThongTin_LandingPage_CoachBachDang_HOANTHANH.docx\")",
+      "Read(//c/Users/Admin/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/ca8cf828-f701-4a22-89e1-eb0403c1589e/ebb28428-d22d-4190-8864-ed230623be6b/skills/docx/**)",
+      "Bash(python scripts/office/unpack.py \"C:\\\\Users\\\\Admin\\\\Downloads\\\\Bang_ThongTin_LandingPage_CoachBachDang_HOANTHANH.docx\" /tmp/docx_unpacked/)"
+    ]
+  }
+}
