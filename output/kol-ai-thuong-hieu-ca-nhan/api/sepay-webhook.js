@@ -57,10 +57,14 @@ export default async function handler(req, res) {
       let customerName = null;
       if (phone) {
         const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxJ6JVJ0N1YvjhmBlubwCQ3Z_f459wkjSwE1-_sWukxnu0nthA5XVKtjshiJPhzYdz6/exec';
+        // Thử cả hai dạng: có số 0 đầu và không có
+        const phoneVariants = [phone, phone.replace(/^0/, '')];
         try {
-          const r = await fetch(`${SHEET_URL}?phone=${phone}`);
-          const d = await r.json();
-          if (d.email) { customerEmail = d.email; customerName = d.name; }
+          for (const p of phoneVariants) {
+            const r = await fetch(`${SHEET_URL}?phone=${p}`);
+            const d = await r.json();
+            if (d.email) { customerEmail = d.email; customerName = d.name; break; }
+          }
         } catch (_) {}
       }
 
