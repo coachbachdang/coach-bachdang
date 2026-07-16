@@ -866,8 +866,9 @@
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
-    // Cập nhật nội dung gợi ý với tên khách
-    const note = `KOL AI Blueprint${customerName ? ' ' + customerName : ' [Ten ban]'}`;
+    // Cập nhật nội dung gợi ý với tên + SĐT khách
+    const phone = document.getElementById('leadPhone')?.value || '[SDT]';
+    const note = `KOL AI ${customerName || '[Ten]'} ${phone}`;
     document.getElementById('payNote').value = note;
     // QR chỉ có số TK, không có nội dung → khách tự gõ trong app ngân hàng
     document.getElementById('qrImg').src =
