@@ -41,7 +41,7 @@ export default async function handler(req, res) {
 
     // Ghi vào Google Sheet
     const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwmpFdEGbKSCJ6eID7FoHU79cZhbrj1imbfbRStm3aJHY9oabEx-oLSfzVqPoBvFbZW/exec';
-    fetch(SHEET_URL, {
+    await fetch(SHEET_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'payment', amount: transferAmount, content: content || '' }),
@@ -82,7 +82,7 @@ async function sendEmail({ to, subject, html }) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'KOL AI Blueprint <onboarding@resend.dev>',
+      from: 'Coach Bạch Đằng <noreply@hoangbachdang.com>',
       to,
       subject,
       html,

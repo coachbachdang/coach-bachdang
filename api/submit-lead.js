@@ -91,7 +91,7 @@ async function sendEmail({ to, subject, html }) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'Coach Bạch Đằng <onboarding@resend.dev>',
+      from: 'Coach Bạch Đằng <noreply@hoangbachdang.com>',
       to,
       subject,
       html,
