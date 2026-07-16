@@ -709,13 +709,27 @@
 
     <div class="p-6">
       <!-- Amount toggle -->
-      <div class="flex rounded-xl overflow-hidden border border-gray-200 mb-5">
+      <div class="flex rounded-xl overflow-hidden border border-gray-200 mb-3">
         <button id="btnFull" onclick="setAmount('full')" class="flex-1 py-3 text-sm font-semibold bg-brand text-white transition-colors cursor-pointer">
           Thanh toán đủ<br><span class="text-xs font-normal">6.800.000đ</span>
         </button>
         <button id="btnInstall" onclick="setAmount('install')" class="flex-1 py-3 text-sm font-semibold bg-gray-50 text-gray-600 transition-colors cursor-pointer">
           Trả lần 1/2<br><span class="text-xs font-normal">3.400.000đ</span>
         </button>
+        <button id="btnDeposit" onclick="setAmount('deposit')" class="flex-1 py-3 text-sm font-semibold bg-gray-50 text-gray-600 transition-colors cursor-pointer">
+          Đặt cọc<br><span class="text-xs font-normal">Tùy khách</span>
+        </button>
+      </div>
+      <!-- Custom deposit amount input -->
+      <div id="depositInput" class="hidden mb-4">
+        <label class="block text-sm text-gray-500 mb-1">Nhập số tiền đặt cọc</label>
+        <div class="flex gap-2">
+          <input id="depositAmt" type="number" min="10000" step="1000" placeholder="VD: 500000"
+            class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-brand"
+            oninput="updateDeposit()">
+          <span class="flex items-center text-sm text-gray-500">đ</span>
+        </div>
+        <p class="text-xs text-gray-400 mt-1">Tối thiểu 10.000đ</p>
       </div>
 
       <!-- QR Code -->
@@ -829,11 +843,12 @@
   const BANK = 'BIDV';
   const ACC  = '962478813313668';
   const NAME = 'Hoang Bach Dang';
-  const AMOUNTS = { full: 6800000, install: 3400000 };
+  const AMOUNTS = { full: 6800000, install: 3400000, deposit: 0 };
   let customerName = '';
   const NOTES = {
     full:    () => `KOL AI Blueprint ${customerName || '[Ten ban]'}`,
     install: () => `KOL AI Blueprint tra1 ${customerName || '[Ten ban]'}`,
+    deposit: () => `KOL AI dat coc ${customerName || '[Ten ban]'}`,
   };
 
   let currentMode = 'full';
@@ -893,25 +908,39 @@
 
   function setAmount(mode) {
     currentMode = mode;
-    const amt = AMOUNTS[mode];
+
+    // Show/hide deposit input
+    document.getElementById('depositInput').classList.toggle('hidden', mode !== 'deposit');
+
+    const amt = mode === 'deposit'
+      ? (parseInt(document.getElementById('depositAmt')?.value) || 0)
+      : AMOUNTS[mode];
     const note = NOTES[mode]();
 
     // Update QR
     const qr = document.getElementById('qrImg');
-    qr.src = `https://img.vietqr.io/image/${BANK}-${ACC}-compact2.jpg?amount=${amt}&addInfo=${encodeURIComponent(note)}&accountName=${encodeURIComponent(NAME)}`;
+    if (mode === 'deposit' && amt < 10000) {
+      qr.src = `https://img.vietqr.io/image/${BANK}-${ACC}-compact2.jpg?addInfo=${encodeURIComponent(note)}&accountName=${encodeURIComponent(NAME)}`;
+    } else {
+      qr.src = `https://img.vietqr.io/image/${BANK}-${ACC}-compact2.jpg?amount=${amt}&addInfo=${encodeURIComponent(note)}&accountName=${encodeURIComponent(NAME)}`;
+    }
 
     // Update display
     document.getElementById('amountDisplay').textContent =
-      amt.toLocaleString('vi-VN') + 'đ';
+      amt >= 10000 ? amt.toLocaleString('vi-VN') + 'đ' : 'Nhập số tiền';
     document.getElementById('payNote').textContent = note;
 
     // Update button styles
-    document.getElementById('btnFull').className =
-      'flex-1 py-3 text-sm font-semibold transition-colors cursor-pointer ' +
-      (mode === 'full' ? 'bg-brand text-white' : 'bg-gray-50 text-gray-600');
-    document.getElementById('btnInstall').className =
-      'flex-1 py-3 text-sm font-semibold transition-colors cursor-pointer ' +
-      (mode === 'install' ? 'bg-brand text-white' : 'bg-gray-50 text-gray-600');
+    ['btnFull','btnInstall','btnDeposit'].forEach(id => {
+      const modeMap = { btnFull:'full', btnInstall:'install', btnDeposit:'deposit' };
+      document.getElementById(id).className =
+        'flex-1 py-3 text-sm font-semibold transition-colors cursor-pointer ' +
+        (modeMap[id] === mode ? 'bg-brand text-white' : 'bg-gray-50 text-gray-600');
+    });
+  }
+
+  function updateDeposit() {
+    if (currentMode === 'deposit') setAmount('deposit');
   }
 
   function copyText(text) {
