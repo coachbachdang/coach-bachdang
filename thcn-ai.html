@@ -741,13 +741,14 @@
         </div>
         <div class="border-t border-gray-200 pt-3">
           <span class="text-gray-500 text-sm block mb-1">Nội dung chuyển khoản</span>
-          <div class="flex items-center justify-between bg-white border border-brand/30 rounded-xl px-3 py-2">
-            <span id="payNote" class="font-semibold text-sm text-brand">KOL AI Blueprint</span>
-            <button onclick="copyText(document.getElementById('payNote').textContent)" class="text-brand cursor-pointer ml-2">
+          <div class="flex items-center gap-2 bg-white border border-brand/30 rounded-xl px-3 py-2">
+            <input id="payNote" type="text" value="KOL AI Blueprint [Ten ban]"
+              class="flex-1 font-semibold text-sm text-brand focus:outline-none bg-transparent min-w-0">
+            <button onclick="copyText(document.getElementById('payNote').value)" class="text-brand cursor-pointer shrink-0">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
             </button>
           </div>
-          <p class="text-xs text-gray-400 mt-1">Thêm tên bạn vào cuối nội dung để Coach nhận ra</p>
+          <p class="text-xs text-gray-400 mt-1">Sửa tên bạn vào đây → copy → dán vào app ngân hàng</p>
         </div>
       </div>
 
@@ -875,11 +876,12 @@
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
-    // Cập nhật nội dung CK với tên khách
-    const note = `KOL AI Blueprint${customerName ? ' ' + customerName : ''}`;
-    document.getElementById('payNote').textContent = note;
+    // Cập nhật nội dung gợi ý với tên khách
+    const note = `KOL AI Blueprint${customerName ? ' ' + customerName : ' [Ten ban]'}`;
+    document.getElementById('payNote').value = note;
+    // QR chỉ có số TK, không có nội dung → khách tự gõ trong app ngân hàng
     document.getElementById('qrImg').src =
-      `https://img.vietqr.io/image/BIDV-962478813313668-compact2.jpg?addInfo=${encodeURIComponent(note)}&accountName=Hoang%20Bach%20Dang`;
+      `https://img.vietqr.io/image/BIDV-962478813313668-compact2.jpg?accountName=Hoang%20Bach%20Dang`;
   }
 
   function closePay() {
