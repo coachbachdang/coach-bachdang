@@ -7,7 +7,16 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Thiếu thông tin bắt buộc' });
   }
 
+  const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzFCfeN4dMmb8ZPFwfqHgvmhFAat5vxIqFdScDcpztptMLgvFiULhQy8qHf_Vr70rVS/exec';
+
   try {
+    // Ghi vào Google Sheet
+    fetch(SHEET_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'lead', name, email, phone, job: job || '' }),
+    }).catch(() => {});
+
     await Promise.all([
       // Email xác nhận gửi cho KHÁCH
       sendEmail({
