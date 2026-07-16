@@ -830,7 +830,11 @@
   const ACC  = '962478813313668';
   const NAME = 'Hoang Bach Dang';
   const AMOUNTS = { full: 6800000, install: 3400000 };
-  const NOTES   = { full: 'KOL AI Blueprint [Ten ban]', install: 'KOL AI Blueprint tra1 [Ten ban]' };
+  let customerName = '';
+  const NOTES = {
+    full:    () => `KOL AI Blueprint ${customerName || '[Ten ban]'}`,
+    install: () => `KOL AI Blueprint tra1 ${customerName || '[Ten ban]'}`,
+  };
 
   let currentMode = 'full';
 
@@ -858,6 +862,7 @@
       phone: document.getElementById('leadPhone').value,
       job:   document.getElementById('leadJob').value,
     };
+    customerName = payload.name.split(' ').pop(); // lấy tên (từ cuối)
 
     try {
       await fetch('/api/submit-lead', {
@@ -888,7 +893,7 @@
   function setAmount(mode) {
     currentMode = mode;
     const amt = AMOUNTS[mode];
-    const note = NOTES[mode];
+    const note = NOTES[mode]();
 
     // Update QR
     const qr = document.getElementById('qrImg');
