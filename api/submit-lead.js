@@ -33,9 +33,13 @@ export default async function handler(req, res) {
               <p>Coach Bạch Đằng đã nhận được thông tin đăng ký của bạn cho chương trình <strong>KOL AI Blueprint</strong>.</p>
               <div style="background:#fdf2f8;border-left:4px solid #EC4899;padding:16px;border-radius:8px;margin:20px 0">
                 <p style="margin:0;font-weight:600">Bước tiếp theo:</p>
-                <p style="margin:8px 0 0">Hoàn tất thanh toán để giữ chỗ. Coach sẽ liên hệ qua Zalo <strong>0784313668</strong> trong vòng 24h để xác nhận lịch buổi 1.</p>
+                <ol style="margin:8px 0 0;padding-left:20px;line-height:1.8">
+                  <li>Quét mã QR hoặc chuyển khoản theo thông tin trên trang</li>
+                  <li><strong>Chụp màn hình biên lai</strong> giao dịch</li>
+                  <li>Gửi biên lai qua Zalo <strong>0784313668</strong> — Coach xác nhận ngay và hẹn lịch buổi 1</li>
+                </ol>
               </div>
-              <p style="color:#6b7280;font-size:14px">Nếu bạn có bất kỳ câu hỏi nào, nhắn tin Zalo cho Coach Bạch Đằng: <strong>0784313668</strong></p>
+              <p style="color:#6b7280;font-size:14px">Có câu hỏi? Nhắn Zalo cho Coach Bạch Đằng: <strong>0784313668</strong></p>
               <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0">
               <p style="color:#9ca3af;font-size:12px;text-align:center">© 2026 Coach Bạch Đằng · hoangbachdang.com</p>
             </div>
