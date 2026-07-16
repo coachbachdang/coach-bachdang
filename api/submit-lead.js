@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Thiếu thông tin bắt buộc' });
   }
 
-  const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzFCfeN4dMmb8ZPFwfqHgvmhFAat5vxIqFdScDcpztptMLgvFiULhQy8qHf_Vr70rVS/exec';
+  const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwmpFdEGbKSCJ6eID7FoHU79cZhbrj1imbfbRStm3aJHY9oabEx-oLSfzVqPoBvFbZW/exec';
 
   try {
     // Ghi vào Google Sheet
