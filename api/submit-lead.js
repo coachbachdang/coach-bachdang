@@ -34,11 +34,23 @@ export default async function handler(req, res) {
               <div style="background:#fdf2f8;border-left:4px solid #EC4899;padding:16px;border-radius:8px;margin:20px 0">
                 <p style="margin:0;font-weight:600">Bước tiếp theo:</p>
                 <ol style="margin:8px 0 0;padding-left:20px;line-height:1.8">
-                  <li>Quét mã QR hoặc chuyển khoản theo thông tin trên trang</li>
+                  <li>Chuyển khoản theo thông tin bên dưới hoặc <a href="https://hoangbachdang.com/thcn-ai" style="color:#EC4899">quét mã QR tại đây</a></li>
                   <li><strong>Chụp màn hình biên lai</strong> giao dịch</li>
                   <li>Gửi biên lai qua Zalo <strong>0784313668</strong> — Coach xác nhận ngay và hẹn lịch buổi 1</li>
                 </ol>
               </div>
+
+              <!-- Thông tin chuyển khoản -->
+              <div style="background:#f9fafb;border-radius:12px;padding:20px;margin:20px 0">
+                <p style="margin:0 0 12px;font-weight:700;font-size:15px">Thông tin chuyển khoản</p>
+                <table style="width:100%;border-collapse:collapse;font-size:14px">
+                  <tr><td style="padding:6px 0;color:#6b7280;width:140px">Ngân hàng</td><td style="padding:6px 0;font-weight:600">BIDV</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280">Số tài khoản</td><td style="padding:6px 0;font-weight:700;letter-spacing:1px">962478813313668</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280">Chủ tài khoản</td><td style="padding:6px 0;font-weight:600">HOÀNG BẠCH ĐẰNG</td></tr>
+                  <tr><td style="padding:6px 0;color:#6b7280">Nội dung CK</td><td style="padding:6px 0;font-weight:600;color:#EC4899">KOL AI ${name.split(' ').pop()} ${phone}</td></tr>
+                </table>
+              </div>
+
               <p style="color:#6b7280;font-size:14px">Có câu hỏi? Nhắn Zalo cho Coach Bạch Đằng: <strong>0784313668</strong></p>
               <hr style="border:none;border-top:1px solid #f3f4f6;margin:24px 0">
               <p style="color:#9ca3af;font-size:12px;text-align:center">© 2026 Coach Bạch Đằng · hoangbachdang.com</p>
