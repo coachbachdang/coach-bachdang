@@ -1,17 +1,18 @@
-﻿var SHEET_NAME = 'Đăng ký tư vấn';
-var COACH_EMAIL = 'hoangbachdang@gmail.com';
-// Deployed URL: https://script.google.com/macros/s/AKfycbzJmnuO3p5qWT51i10rkpXVM-xbhSsua36JR9lbdnSFjlDPQJWjRKQAdhRMDReZuYKJaw/exec
+var SHEET_NAME   = 'Đăng ký tư vấn';
+var COACH_EMAIL  = 'hoangbachdang@gmail.com';
 var CALENDAR_URL = 'https://calendar.app.google/FachrnGSrjeT1ote9';
 var PREP_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScOfWNRsgYB74s5Krq4mfH2hYrKqhqi9JozFMAjRaFI9P_uhA/viewform';
+var TZ = 'Asia/Ho_Chi_Minh';
 
 function doGet(e) {
   try {
-    var name        = e.parameter.name    || '';
-    var phone       = e.parameter.phone   || '';
-    var clientEmail = e.parameter.email   || '';
-    var goal        = e.parameter.goal    || '';
-    var message     = e.parameter.message || '';
-    _saveAndNotify(name, phone, clientEmail, goal, message);
+    _saveToSheet(
+      e.parameter.name    || '',
+      e.parameter.phone   || '',
+      e.parameter.email   || '',
+      e.parameter.goal    || '',
+      e.parameter.message || ''
+    );
   } catch (err) {}
   return ContentService.createTextOutput('ok');
 }
@@ -19,48 +20,88 @@ function doGet(e) {
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
-    _saveAndNotify(data.name||'', data.phone||'', data.email||'', data.goal||'', data.message||'');
-    return ContentService.createTextOutput(JSON.stringify({ status: 'ok' })).setMimeType(ContentService.MimeType.JSON);
+    _saveToSheet(
+      data.name    || '',
+      data.phone   || '',
+      data.email   || '',
+      data.goal    || '',
+      data.message || ''
+    );
+    return ContentService.createTextOutput(JSON.stringify({ status: 'ok' }))
+      .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.message })).setMimeType(ContentService.MimeType.JSON);
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-function _saveAndNotify(name, phone, clientEmail, goal, message) {
-  name        = name        || '';
-  phone       = phone       || '';
-  clientEmail = clientEmail || '';
-  goal        = goal        || '';
-  message     = message     || '';
+function _saveToSheet(name, phone, clientEmail, goal, message) {
   if (!name && !phone && !clientEmail) return;
-
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME);
-    sheet.appendRow(['Thời gian gửi','Họ và tên','Số điện thoại/Zalo','Email','Chủ đề','Lịch xác nhận','Chia sẻ thêm']);
+    sheet.appendRow(['Thời gian gửi', 'Họ và tên', 'Số điện thoại/Zalo', 'Email', 'Chủ đề', 'Lịch xác nhận', 'Chia sẻ thêm']);
   }
   sheet.appendRow([new Date(), name, phone, clientEmail, goal, '', message]);
+}
 
+// Trigger chạy mỗi 1 phút — gửi email cho row mới
+function checkNewRegistrations() {
+  var ss      = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet   = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) return;
+
+  var lastRow = sheet.getLastRow();
+  var props   = PropertiesService.getScriptProperties();
+  var lastSent = parseInt(props.getProperty('lastSentRow') || '1');
+
+  if (lastRow <= lastSent) return;
+
+  var data = sheet.getDataRange().getValues();
+  for (var r = lastSent + 1; r <= lastRow; r++) {
+    var row = data[r - 1];
+    var name        = row[1] || '';
+    var phone       = row[2] || '';
+    var clientEmail = row[3] || '';
+    var goal        = row[4] || '';
+    var message     = row[6] || '';
+    if (name || phone || clientEmail) {
+      _sendEmails(name, phone, clientEmail, goal, message);
+    }
+  }
+  props.setProperty('lastSentRow', lastRow.toString());
+}
+
+function _sendEmails(name, phone, clientEmail, goal, message) {
+  // Email gửi cho khách hàng
   if (clientEmail) {
     var clientSubject = 'Xác nhận đăng ký tư vấn — Coach Bạch Đằng | Ageas Life';
-    var clientBody = 'Xin chào ' + name + ',\n\n'
-      + 'Coach Bạch Đằng đã nhận được yêu cầu tư vấn của bạn.\n\n'
-      + 'THÔNG TIN ĐĂNG KÝ\n'
-      + '- Họ tên: ' + name + '\n'
-      + '- Số điện thoại/Zalo: ' + phone + '\n'
-      + '- Chủ đề: ' + goal + '\n\n'
-      + 'BƯỚC TIẾP THEO\n'
-      + '1. Chọn khung giờ phù hợp tại: ' + CALENDAR_URL + '\n'
-      + '2. Coach sẽ xác nhận lịch trong vòng 24 giờ\n'
-      + '3. Trước buổi hẹn 24h, bạn sẽ nhận email nhắc kèm form chuẩn bị\n\n'
-      + 'Nếu cần hỗ trợ, nhắn Zalo: 0784 313 668\n\n'
-      + 'Trân trọng,\n'
-      + 'Coach Hoàng Bạch Đằng\n'
-      + 'Founder Ageas Life™';
-    GmailApp.sendEmail(clientEmail, clientSubject, clientBody);
+    var clientHtml = '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">'
+      + '<h2 style="color:#8B6914">Coach Bạch Đằng | Ageas Life™</h2>'
+      + '<p>Xin chào <strong>' + name + '</strong>,</p>'
+      + '<p>Coach Bạch Đằng đã nhận được yêu cầu tư vấn của bạn.</p>'
+      + '<hr style="border:1px solid #e8d5a3">'
+      + '<h3 style="color:#8B6914">THÔNG TIN ĐĂNG KÝ</h3>'
+      + '<ul>'
+      + '<li><strong>Họ tên:</strong> ' + name + '</li>'
+      + '<li><strong>Số điện thoại/Zalo:</strong> ' + phone + '</li>'
+      + '<li><strong>Chủ đề:</strong> ' + goal + '</li>'
+      + '</ul>'
+      + '<hr style="border:1px solid #e8d5a3">'
+      + '<h3 style="color:#8B6914">BƯỚC TIẾP THEO</h3>'
+      + '<ol>'
+      + '<li>Chọn khung giờ phù hợp tại: <a href="' + CALENDAR_URL + '">' + CALENDAR_URL + '</a></li>'
+      + '<li>Coach sẽ xác nhận lịch trong vòng 24 giờ</li>'
+      + '<li>Trước buổi hẹn 24h, bạn sẽ nhận email nhắc kèm form chuẩn bị</li>'
+      + '</ol>'
+      + '<p>Nếu cần hỗ trợ, nhắn Zalo: <strong>0784 313 668</strong></p>'
+      + '<p>Trân trọng,<br><strong>Coach Hoàng Bạch Đằng</strong><br>Founder Ageas Life™</p>'
+      + '</div>';
+    MailApp.sendEmail(clientEmail, clientSubject, '', { htmlBody: clientHtml });
   }
 
+  // Email gửi cho Coach
   var coachSubject = '[Ageas Life] Khách hàng mới đặt lịch tư vấn';
   var coachBody = 'Coach Bạch Đằng ơi,\n\n'
     + 'Vừa có khách hàng mới đăng ký:\n\n'
@@ -69,43 +110,66 @@ function _saveAndNotify(name, phone, clientEmail, goal, message) {
     + '- Email: ' + clientEmail + '\n'
     + '- Chủ đề: ' + goal + '\n'
     + '- Chia sẻ thêm: ' + message + '\n\n'
-    + 'Thời gian đăng ký: ' + new Date().toLocaleString('vi-VN') + '\n\n'
+    + 'Thời gian đăng ký: ' + Utilities.formatDate(new Date(), TZ, 'dd/MM/yyyy HH:mm') + '\n\n'
     + 'Vui lòng xác nhận lịch trong vòng 24 giờ.\n\n'
     + 'Ageas Life™ — Hệ thống tự động';
-  GmailApp.sendEmail(COACH_EMAIL, coachSubject, coachBody);
+  MailApp.sendEmail(COACH_EMAIL, coachSubject, coachBody);
 }
 
+// Trigger chạy mỗi 1 phút — đồng bộ lịch từ Google Calendar
 function syncCalendarToSheet() {
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) return;
 
-  var cal   = CalendarApp.getDefaultCalendar();
-  var now   = new Date();
-  var start = now; // chỉ lấy sự kiện từ hôm nay trở đi
-  var end   = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
-  var events = cal.getEvents(start, end);
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
 
-  var data      = sheet.getDataRange().getValues();
-  var emailCol  = 3; // cột Email (index 0)
-  var calCol    = 5; // cột Lịch xác nhận
+  // Xóa toàn bộ cột F trước khi ghi lại
+  sheet.getRange(2, 6, lastRow - 1, 1).clearContent();
 
-  for (var i = 1; i < data.length; i++) {
-    var rowEmail = data[i][emailCol].toString().toLowerCase().trim();
-    if (!rowEmail) continue;
-    for (var j = 0; j < events.length; j++) {
-      var ev = events[j];
-      var guests = ev.getGuestList();
-      for (var k = 0; k < guests.length; k++) {
-        if (guests[k].getEmail().toLowerCase() === rowEmail) {
-          var timeStr = Utilities.formatDate(ev.getStartTime(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
-          sheet.getRange(i + 1, calCol + 1).setValue(timeStr);
-        }
+  var cal    = CalendarApp.getDefaultCalendar();
+  var now    = new Date();
+  var end    = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
+  var events = cal.getEvents(now, end);
+
+  var data = sheet.getDataRange().getValues();
+
+  // Tìm email → sự kiện sớm nhất trong tương lai
+  var emailToEvent = {};
+  for (var j = 0; j < events.length; j++) {
+    var ev = events[j];
+    var guests = ev.getGuestList();
+    for (var k = 0; k < guests.length; k++) {
+      var gEmail = guests[k].getEmail().toLowerCase().trim();
+      if (!gEmail) continue;
+      if (!emailToEvent[gEmail] || ev.getStartTime() < emailToEvent[gEmail].getStartTime()) {
+        emailToEvent[gEmail] = ev;
       }
+    }
+  }
+
+  // Tìm row CUỐI CÙNG cho mỗi email
+  var emailToLastRow = {};
+  for (var i = 1; i < data.length; i++) {
+    var rowEmail = (data[i][3] || '').toString().toLowerCase().trim();
+    if (rowEmail) emailToLastRow[rowEmail] = i + 1; // 1-based sheet row
+  }
+
+  // Ghi lịch vào row cuối cùng của từng email
+  for (var email in emailToEvent) {
+    if (emailToLastRow[email]) {
+      var timeStr = Utilities.formatDate(
+        emailToEvent[email].getStartTime(),
+        TZ,
+        'dd/MM/yyyy HH:mm'
+      );
+      sheet.getRange(emailToLastRow[email], 6).setValue(timeStr);
     }
   }
 }
 
+// Trigger chạy mỗi ngày lúc 8h — nhắc lịch trước 24h
 function sendReminderEmails() {
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
@@ -145,21 +209,27 @@ function sendReminderEmails() {
         + 'Trân trọng,\n'
         + 'Coach Hoàng Bạch Đằng\n'
         + 'Founder Ageas Life™';
-      GmailApp.sendEmail(clientEmail, subject, body);
+      MailApp.sendEmail(clientEmail, subject, body);
     }
   }
 }
 
+// Chạy 1 lần sau khi paste code mới: xóa trigger cũ, tạo lại đúng
 function createTriggers() {
-  // Xóa trigger cũ tránh trùng
   var triggers = ScriptApp.getProjectTriggers();
   for (var i = 0; i < triggers.length; i++) {
     ScriptApp.deleteTrigger(triggers[i]);
   }
-  // Đồng bộ Calendar mỗi phút
-  ScriptApp.newTrigger('syncCalendarToSheet')
-    .timeBased().everyMinutes(1).create();
-  // Gửi email nhắc lịch mỗi ngày lúc 8h sáng
-  ScriptApp.newTrigger('sendReminderEmails')
-    .timeBased().everyDays(1).atHour(8).create();
+  ScriptApp.newTrigger('checkNewRegistrations').timeBased().everyMinutes(1).create();
+  ScriptApp.newTrigger('syncCalendarToSheet').timeBased().everyMinutes(1).create();
+  ScriptApp.newTrigger('sendReminderEmails').timeBased().everyDays(1).atHour(8).create();
+}
+
+// Chạy 1 lần sau khi paste code mới: reset tracking về row hiện tại
+function resetTracking() {
+  var ss      = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet   = ss.getSheetByName(SHEET_NAME);
+  var lastRow = sheet ? sheet.getLastRow() : 1;
+  PropertiesService.getScriptProperties().setProperty('lastSentRow', lastRow.toString());
+  Logger.log('lastSentRow reset to: ' + lastRow);
 }
