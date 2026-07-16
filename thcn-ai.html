@@ -782,6 +782,9 @@
       </a>
       <p class="text-center text-xs text-gray-400 mt-3">Coach Bạch Đằng sẽ xác nhận trong vòng 2 giờ</p>
 
+      <button onclick="closePay();openLead();" class="w-full mt-4 text-sm text-gray-400 hover:text-gray-600 transition-colors cursor-pointer py-2">
+        ← Sửa thông tin đăng ký
+      </button>
     </div>
   </div>
 </div>
@@ -819,11 +822,6 @@
   let customerName = '';
 
   // Nếu có ?name= trong URL → bỏ qua form, mở QR luôn
-  const urlName = new URLSearchParams(location.search).get('name');
-  if (urlName) {
-    customerName = urlName;
-    window.addEventListener('DOMContentLoaded', () => openPay());
-  }
 
   function openLead() {
     document.getElementById('leadModal').classList.remove('hidden');
