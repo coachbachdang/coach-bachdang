@@ -794,6 +794,12 @@
   const NAME = 'Bui Thi Thanh Huong';
   let customerName = '';
 
+  function removeDiacritics(str) {
+    return str
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/đ/g, 'd').replace(/Đ/g, 'D');
+  }
+
   if (new URLSearchParams(location.search).get('pay') === '1') {
     window.addEventListener('DOMContentLoaded', () => openPay());
   }
@@ -842,7 +848,8 @@
     modal.classList.add('flex');
     document.body.style.overflow = 'hidden';
     const phone = document.getElementById('leadPhone')?.value || '[SDT]';
-    const note = `Giong noi ${customerName || '[Ten]'} ${phone}`;
+    const nameNoAccent = removeDiacritics(customerName || '[Ten]');
+    const note = `Giong noi ${nameNoAccent} ${phone}`;
     document.getElementById('payNote').value = note;
     document.getElementById('qrImg').src =
       `https://img.vietqr.io/image/${BANK}-${ACC}-compact2.jpg?accountName=${encodeURIComponent(NAME.toUpperCase())}`;
