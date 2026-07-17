@@ -675,7 +675,7 @@
       <div class="flex justify-center mb-4">
         <div class="border-2 border-brand/20 rounded-2xl p-3 bg-white shadow-inner">
           <img id="qrImg"
-            src="https://img.vietqr.io/image/ICB-0345945168-compact2.jpg?accountName=BUI%20THI%20THANH%20HUONG"
+            src="https://img.vietqr.io/image/ICB-0345945168-compact2.jpg?amount=1768686&accountName=BUI%20THI%20THANH%20HUONG"
             alt="QR chuyển khoản Vietinbank"
             class="w-52 h-52 object-contain rounded-xl"
           >
@@ -852,7 +852,7 @@
     const note = `Giong noi ${nameNoAccent} ${phone}`;
     document.getElementById('payNote').value = note;
     document.getElementById('qrImg').src =
-      `https://img.vietqr.io/image/${BANK}-${ACC}-compact2.jpg?accountName=${encodeURIComponent(NAME.toUpperCase())}`;
+      `https://img.vietqr.io/image/${BANK}-${ACC}-compact2.jpg?amount=1768686&accountName=${encodeURIComponent(NAME.toUpperCase())}`;
   }
 
   function closePay() {

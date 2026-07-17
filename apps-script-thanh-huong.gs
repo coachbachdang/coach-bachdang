@@ -1,4 +1,5 @@
 const SHEET_ID = 'PASTE_SHEET_ID_HERE';
+const COURSE_PRICE = 1768686; // Học phí cố định — Khóa Học Giọng Nói Truyền Cảm Hứng
 
 function doPost(e) {
   const data = JSON.parse(e.postData.contents);
@@ -6,7 +7,7 @@ function doPost(e) {
   const now = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
 
   if (data.type === 'lead') {
-    sheet.appendRow([now, 'Lead', data.name, data.email, data.phone, data.job || '', '', '']);
+    sheet.appendRow([now, 'Lead', data.name, data.email, data.phone, data.job || '', COURSE_PRICE, '']);
   } else if (data.type === 'payment') {
     sheet.appendRow([now, 'Thanh toán', '', '', '', '', data.amount, data.content || '']);
   }
