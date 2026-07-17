@@ -53,7 +53,7 @@ Phát triển tâm thức và kỹ năng xã hội cùng Coach Thanh Hương
 
 > Vấn đề không nằm ở việc bạn "chưa biết kỹ thuật nói". Vấn đề là giọng nói của bạn đang bị chặn bởi những tổn thương và nỗi sợ chưa được chữa lành bên trong.
 >
-> Coach Thanh Hương kết hợp 3 phương pháp — **Coaching khai mở**, **Chữa lành cảm xúc**, và **Giọng nói chữa lành** (từ nền tảng nhiều năm làm phát thanh viên chuyên nghiệp) — để giọng nói của bạn tự nhiên trở nên tự tin và truyền cảm hứng, thay vì chỉ luyện tập kỹ thuật bề mặt rồi lại quay về như cũ.
+> Coach Thanh Hương kết hợp 3 phương pháp — **Coaching khai mở**, **Chữa lành cảm xúc**, và **Giọng nói truyền cảm hứng** (từ nền tảng nhiều năm làm phát thanh viên chuyên nghiệp) — để giọng nói của bạn tự nhiên trở nên tự tin và truyền cảm hứng, thay vì chỉ luyện tập kỹ thuật bề mặt rồi lại quay về như cũ.
 
 ---
 
