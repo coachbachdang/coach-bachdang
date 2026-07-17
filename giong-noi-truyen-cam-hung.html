@@ -827,6 +827,9 @@
     document.getElementById('leadModal').classList.remove('hidden');
     document.getElementById('leadModal').classList.add('flex');
     document.body.style.overflow = 'hidden';
+    const btn = document.getElementById('leadBtn');
+    btn.textContent = 'Tiếp tục đến thanh toán →';
+    btn.disabled = false;
   }
 
   function closeLead() {
