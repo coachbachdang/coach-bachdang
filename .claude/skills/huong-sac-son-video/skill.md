@@ -58,10 +58,12 @@ User gửi 2 đường dẫn file MP4 (Cảnh 1 + Cảnh 2) từ Google Flow.
 ```powershell
 ffmpeg -y -i $v1 -i $v2 "-/filter_complex" "filter_video.txt" `
   -map "[vout]" -map "[aout]" `
-  -c:v libx264 -crf 18 -preset fast `
+  -c:v libx264 -crf 18 -preset fast -pix_fmt yuv420p `
   -c:a aac -ar 48000 `
   $temp_output
 ```
+
+⚠️ **Luôn có `-pix_fmt yuv420p`** — thiếu cờ này libx264 có thể tự chọn `yuv444p` (profile High 4:4:4 Predictive) do filter `ass`/`drawbox` có alpha, khiến video KHÔNG mở được trên Windows/điện thoại/TikTok dù ffprobe vẫn đọc file bình thường. Xem bảng lỗi thường gặp bên dưới.
 
 ### Bước 3 — Transcribe giọng nói bằng Whisper
 
@@ -96,7 +98,7 @@ Style: Sub,Georgia,30,&H00FFFFFF,&H000000FF,&H00AA6688,&H00000000,0,1,0,0,100,10
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:00:00.00,0:00:05.00,Hook,,0,0,0,,{\an5\pos(360,560)\fad(200,300)}[HOOK TITLE LINE 1]\N[HOOK TITLE LINE 2]
+Dialogue: 0,0:00:00.00,0:00:05.00,Hook,,0,0,0,,{\an5\pos(360,880)\fad(200,300)}[HOOK TITLE LINE 1]\N[HOOK TITLE LINE 2]
 Dialogue: 0,0:00:00.10,0:00:15.90,Brand,,0,0,0,,{\an8\pos(360,66)}Hường Sắc Son
 Dialogue: 0,0:00:START,0:00:END,Sub,,0,0,0,,{\an8\pos(360,1067)}[Dòng 1 từ transcript]
 Dialogue: 0,0:00:START,0:00:END,Sub,,0,0,0,,{\an8\pos(360,1112)}[Dòng 2 từ transcript]
@@ -118,13 +120,19 @@ $bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
 # Chụp thumbnail từ video đã render (giây 1.5)
 ffmpeg -y -i $temp -ss 00:00:01.5 -frames:v 1 thumb.jpg
 
-# Ghép thumbnail vào đầu (1.5s tĩnh)
-ffmpeg -y -loop 1 -t 1.5 -i thumb.jpg -i $temp `
-  -filter_complex "[0:v]scale=720:1280[cover];[cover][1:v]concat=n=2:v=1:a=0[vout];[1:a]adelay=1500|1500[aout]" `
+# Ghép thumbnail vào đầu (1.5s tĩnh) — -framerate 24 khớp video gốc, format=yuv420p ở 2 điểm để tránh lẫn yuv444p
+ffmpeg -y -loop 1 -framerate 24 -t 1.5 -i thumb.jpg -i $temp `
+  -filter_complex "[0:v]scale=720:1280,format=yuv420p[cover];[cover][1:v]concat=n=2:v=1:a=0,format=yuv420p[vout];[1:a]adelay=1500|1500[aout]" `
   -map "[vout]" -map "[aout]" `
-  -c:v libx264 -crf 18 -preset fast -c:a aac -ar 48000 -movflags +faststart `
+  -c:v libx264 -crf 18 -preset fast -pix_fmt yuv420p -profile:v high -level 4.1 -c:a aac -ar 48000 -movflags +faststart `
   $final_output
 ```
+
+Sau khi render xong, LUÔN kiểm tra lại bằng:
+```powershell
+ffprobe -v error -select_streams v:0 -show_entries stream=pix_fmt,profile,level -of default=noprint_wrappers=0 $final_output
+```
+Kết quả đúng phải là `pix_fmt=yuv420p`, `profile=High`, `level=41` (hoặc thấp hơn). Nếu thấy `yuv444p` / `High 4:4:4 Predictive` → video sẽ không mở được, phải render lại với `-pix_fmt yuv420p`.
 
 ---
 
@@ -149,6 +157,8 @@ ffmpeg -y -loop 1 -t 1.5 -i thumb.jpg -i $temp `
 | Font lỗi dấu tiếng Việt | Font không hỗ trợ Unicode Vietnamese | Chỉ dùng Georgia / Comic Sans MS / Arial |
 | Thumbnail màu cũ | Chụp thumb trước khi render xong | Luôn render video TRƯỚC, chụp thumb SAU |
 | BOM error trong filter file | PowerShell ghi UTF-16 | Dùng `[System.IO.File]::WriteAllBytes()` |
+| Video render xong nhưng KHÔNG MỞ ĐƯỢC (Windows/điện thoại/TikTok) dù ffprobe đọc bình thường | Thiếu `-pix_fmt yuv420p` → libx264 tự chọn `yuv444p` (High 4:4:4 Predictive), hầu hết decoder không hỗ trợ | Luôn thêm `-pix_fmt yuv420p` ở MỌI lệnh render (pass 1, pass 2, và bước concat thumbnail); dùng `format=yuv420p` trong filter_complex ở bước ghép thumbnail; verify lại bằng `ffprobe ... pix_fmt,profile,level` |
+| Hook title che mặt nhân vật | `\pos(360,560)` nằm giữa khung hình, đúng vùng mặt | Dùng `\pos(360,880)` (vùng ngực/dưới cằm), cách xa thanh subtitle dưới (y=1045) |
 
 ---
 
