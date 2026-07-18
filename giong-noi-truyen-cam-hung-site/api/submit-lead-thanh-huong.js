@@ -34,7 +34,7 @@ export default async function handler(req, res) {
               <div style="background:#FBF3E4;border-left:4px solid #9C6B2E;padding:16px;border-radius:8px;margin:20px 0">
                 <p style="margin:0;font-weight:600">Bước tiếp theo:</p>
                 <ol style="margin:8px 0 0;padding-left:20px;line-height:1.8">
-                  <li>Chuyển khoản theo thông tin bên dưới hoặc <a href="https://hoangbachdang.com/giong-noi-truyen-cam-hung?pay=1" style="color:#9C6B2E">quét mã QR tại đây</a></li>
+                  <li>Chuyển khoản theo thông tin bên dưới hoặc <a href="https://giong-noi-truyen-cam-hung.vercel.app?pay=1" style="color:#9C6B2E">quét mã QR tại đây</a></li>
                   <li><strong>Chụp màn hình biên lai</strong> giao dịch</li>
                   <li>Gửi biên lai qua Zalo <strong>0933 44 35 11</strong> — Coach xác nhận ngay và hẹn lịch buổi 1</li>
                 </ol>
