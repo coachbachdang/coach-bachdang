@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     fetch(SHEET_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'lead', name, email, phone, job: job || '' }),
+      body: JSON.stringify({ key: process.env.SHEET_API_KEY, type: 'lead', name, email, phone, job: job || '' }),
     }).catch(() => {});
 
     await Promise.all([
@@ -72,7 +72,7 @@ export default async function handler(req, res) {
             <tr><td style="padding:8px;border:1px solid #eee"><b>SĐT</b></td><td style="padding:8px;border:1px solid #eee">${phone}</td></tr>
             <tr><td style="padding:8px;border:1px solid #eee"><b>Ngành</b></td><td style="padding:8px;border:1px solid #eee">${job || '—'}</td></tr>
           </table>
-          <p>Đang ở bước thanh toán — theo dõi email Sepay webhook để xác nhận chuyển khoản.</p>
+          <p>Đang ở bước thanh toán — kiểm tra tài khoản Vietinbank để xác nhận chuyển khoản thủ công.</p>
         `,
       }),
     ]);
