@@ -52,6 +52,25 @@
     .card-hover:hover { transform: none; }
     .pulse-ring { animation: none; }
   }
+
+  /* ─── ZALO FLOAT ─── */
+  #zalo-float { position: fixed; bottom: 28px; right: 28px; z-index: 200; }
+  .zalo-btn {
+    display: flex; align-items: center; gap: 10px;
+    background: #0068FF; color: #FFFFFF;
+    padding: 12px 20px; border-radius: 50px;
+    font-size: 13px; font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,104,255,0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer; border: none; text-decoration: none;
+  }
+  .zalo-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,104,255,0.5); }
+  .zalo-icon {
+    width: 22px; height: 22px; background: #fff; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 900; color: #0068FF; flex-shrink: 0;
+  }
+  @media (max-width: 768px) { #zalo-float { bottom: 20px; right: 16px; } .zalo-btn { padding: 10px 16px; font-size: 12px; } }
 </style>
 </head>
 <body>
@@ -926,5 +945,14 @@
     }
   }
 </script>
+
+  <!-- ZALO FLOAT -->
+  <div id="zalo-float">
+    <a href="https://zalo.me/84784313668" target="_blank" class="zalo-btn" aria-label="Chat Zalo">
+      <div class="zalo-icon">Z</div>
+      Chat Zalo
+    </a>
+  </div>
+
 </body>
 </html>
