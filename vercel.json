@@ -1,3 +1,7 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/bpth", "destination": "/BPTH/index.html" },
+    { "source": "/bpth/", "destination": "/BPTH/index.html" }
+  ]
 }
