@@ -7,7 +7,8 @@
 <meta name="description" content="Bcons Central Park, 236 Phan Trung, P. Tam Hiệp, TP. Đồng Nai. Thông tin dự án, bảng giá theo loại căn, 5 phương thức thanh toán, pháp lý và lịch xem nhà mẫu. Tư vấn: Bạch Đằng 0784 313 668.">
 <meta property="og:title" content="Bcons Central Park | Tư vấn Bạch Đằng 0784 313 668">
 <meta property="og:description" content="Dữ liệu dự án cập nhật 10/11/2026: giá theo loại căn, thanh toán nhanh chiết khấu 12,5%, máy tính dòng tiền, pháp lý minh bạch, đăng ký xem nhà mẫu.">
-<meta property="og:image" content="https://hoangbachdang.com/BPTH/img/st01.jpg">
+<meta property="og:image" content="https://hoangbachdang.com/BPTH/img/og-bcons-central-park.jpg">
+<meta property="og:type" content="website">
 <link rel="canonical" href="https://hoangbachdang.com/BPTH">
 <meta name="theme-color" content="#12312c">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -81,21 +82,41 @@ p{margin:0}
 }
 
 /* Hero */
-.hero{padding:48px 0 56px;background:linear-gradient(180deg,var(--surface) 0%,var(--paper) 100%);position:relative;overflow:hidden}
-.hero.has-photo{background:linear-gradient(90deg,rgba(255,255,255,.96) 0%,rgba(255,255,255,.9) 46%,rgba(255,255,255,.2) 100%),var(--hero-photo) center/cover no-repeat}
-.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
-.hero h1{font-family:var(--display);font-weight:700;font-size:clamp(2.3rem,5.6vw,3.9rem);letter-spacing:-.015em;margin-top:10px}
-.slogan{font-family:var(--display);font-style:italic;font-size:1.2rem;color:var(--river);margin-top:8px}
-.hero .lead{margin-top:18px;font-size:1.04rem}
+.hero{position:relative;overflow:hidden;color:#fff;background:#0d2420;display:flex;align-items:flex-end;min-height:640px}
+.hero-media{position:absolute;inset:0}
+.hero-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:40% 50%;opacity:0;transition:opacity 1.4s ease}
+.hero-media img.on{opacity:1;animation:kb 14s ease-out both}
+@keyframes kb{from{transform:scale(1)}to{transform:scale(1.07)}}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(8,26,23,.9) 0%,rgba(8,26,23,.66) 40%,rgba(8,26,23,.12) 72%),linear-gradient(0deg,rgba(8,26,23,.9) 0%,rgba(8,26,23,0) 42%)}
+.hero-inner{position:relative;z-index:2;width:100%;padding-top:96px;padding-bottom:28px}
+.hero-copy{max-width:600px}
+.hero .eyebrow{color:#e8c47e}
+.hero h1{font-family:var(--display);font-weight:700;font-size:clamp(2.5rem,6.4vw,4.6rem);letter-spacing:-.015em;margin-top:10px;color:#fff;text-shadow:0 2px 24px rgba(0,0,0,.25)}
+.slogan{font-family:var(--display);font-style:italic;font-size:1.25rem;color:#e8c47e;margin-top:8px}
+.hero .lead{margin-top:16px;font-size:1.05rem;color:#dfeae6}
 .hero-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
-.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:32px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.fact{padding:14px 12px 14px 0}
-.fact+.fact{padding-left:14px;border-left:1px solid var(--line)}
-.fact b{display:block;font-size:1.45rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
-.fact span{font-size:.8rem;color:var(--muted);line-height:1.35;display:block}
-.stamp{display:inline-flex;gap:8px;align-items:center;margin-top:16px;font-size:.8rem;color:var(--muted)}
-.stamp i{width:8px;height:8px;border-radius:50%;background:var(--river);display:inline-block}
-.tower-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 10px}
+.hero .btn-ghost{color:#fff;border-color:rgba(255,255,255,.5);background:rgba(255,255,255,.06)}
+.hero .btn-ghost:hover{border-color:#fff;color:#fff;background:rgba(255,255,255,.14)}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:40px}
+.fact{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.fact b{display:block;font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;line-height:1.2}
+.fact span{font-size:.8rem;color:#d3e1dc;line-height:1.35;display:block;margin-top:2px}
+.hero-foot{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:18px}
+.stamp{display:inline-flex;gap:8px;align-items:center;font-size:.8rem;color:#cbdad5}
+.stamp i{width:8px;height:8px;border-radius:50%;background:#7fd1b9;display:inline-block}
+.hero-dots{display:flex;gap:6px;margin-left:auto}
+.hero-dots button{width:26px;height:4px;border-radius:2px;border:0;background:rgba(255,255,255,.35);cursor:pointer;padding:0}
+.hero-dots button.on{background:#e8c47e}
+.hero-cap{font-size:.74rem;color:#b9cbc5}
+@media (max-width:900px){
+  .hero{min-height:0}
+  .hero::after{background:linear-gradient(0deg,rgba(8,26,23,.95) 0%,rgba(8,26,23,.78) 55%,rgba(8,26,23,.35) 100%)}
+  .hero-inner{padding-top:150px}
+  .hero-media img{object-position:28% 70%}
+  .facts{grid-template-columns:1fr 1fr;gap:10px}
+  .hero-dots{margin-left:0}
+}
+.tower-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 10px;margin:0}
 .tower-card figcaption{font-size:.82rem;color:var(--muted);margin-top:6px}
 .tw-phase1{fill:var(--river)}
 .tw-later{fill:none;stroke:#9fb3ad;stroke-width:1.4;stroke-dasharray:4 3}
@@ -106,12 +127,54 @@ p{margin:0}
 .tw-sub{font:500 10.5px var(--body);fill:var(--muted)}
 .tw-dim{stroke:var(--brass);stroke-width:1}
 .tw-dimtext{font:600 11px var(--body);fill:var(--brass)}
-@media (max-width:900px){
-  .hero-grid{grid-template-columns:1fr}
-  .facts{grid-template-columns:repeat(2,1fr)}
-  .fact:nth-child(3){padding-left:0;border-left:0}
-  .fact:nth-child(n+3){border-top:1px solid var(--line)}
-}
+
+/* Photos */
+.zoom{display:block;width:100%;padding:0;border:0;background:none;cursor:zoom-in;overflow:hidden;border-radius:inherit}
+.zoom img{width:100%;height:100%;object-fit:cover;transition:transform .6s ease}
+.zoom:hover img{transform:scale(1.045)}
+.towers{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;align-items:stretch;margin-bottom:36px}
+.photo-fig{margin:0;border-radius:14px;overflow:hidden;position:relative;min-height:320px}
+.photo-fig .zoom{height:100%;position:absolute;inset:0;border-radius:14px}
+.photo-fig figcaption{position:absolute;left:12px;bottom:12px;background:rgba(8,26,23,.7);color:#fff;font-size:.78rem;padding:4px 10px;border-radius:999px}
+@media (max-width:900px){.towers{grid-template-columns:1fr}.photo-fig{min-height:240px}}
+.night{position:relative;margin:0 0 32px;border-radius:16px;overflow:hidden;aspect-ratio:21/8;background:#0d2420}
+.night .zoom{position:absolute;inset:0;border-radius:16px}
+.night figcaption{position:absolute;left:0;right:0;bottom:0;padding:40px 24px 18px;background:linear-gradient(0deg,rgba(8,26,23,.88),rgba(8,26,23,0));color:#fff;display:grid;gap:2px;pointer-events:none}
+.night figcaption b{font-family:var(--display);font-size:1.35rem}
+.night figcaption span{font-size:.84rem;color:#cbdad5}
+@media (max-width:700px){.night{aspect-ratio:4/3}}
+.am-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.am-img{aspect-ratio:16/10;border-radius:0}
+.am-body{padding:16px 18px 18px}
+.am-body ul{margin:8px 0 0;padding-left:18px}
+.am-body li{margin:3px 0;font-size:.94rem}
+.vr{position:relative;overflow:hidden;isolation:isolate}
+.vr-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+.vr::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(13,36,32,.94) 0%,rgba(13,36,32,.78) 55%,rgba(13,36,32,.45) 100%)}
+.sec.dark{background:#0f2a26;color:#e6efec}
+.sec.dark .lead{color:#b9cbc5}
+.sec.dark .eyebrow{color:#e8c47e}
+.gal{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:190px;gap:12px}
+.gal figure{margin:0;position:relative;border-radius:12px;overflow:hidden}
+.gal figure.big{grid-column:span 2;grid-row:span 2}
+.gal .zoom{position:absolute;inset:0;border-radius:12px}
+.gal figcaption{position:absolute;left:0;right:0;bottom:0;padding:24px 12px 10px;font-size:.8rem;color:#fff;background:linear-gradient(0deg,rgba(0,0,0,.65),rgba(0,0,0,0));pointer-events:none}
+@media (max-width:800px){.gal{grid-template-columns:1fr 1fr;grid-auto-rows:140px;gap:8px}}
+.balcony{display:grid;grid-template-columns:1.15fr .85fr;gap:24px;align-items:center;margin-top:32px;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.balcony figure{margin:0;height:100%;min-height:300px;position:relative}
+.balcony .zoom{position:absolute;inset:0}
+.balcony-text{padding:24px 24px 24px 0;display:grid;gap:12px;justify-items:start}
+.balcony-text h3{font-family:var(--display);font-size:1.55rem}
+@media (max-width:900px){.balcony{grid-template-columns:1fr}.balcony figure{min-height:240px}.balcony-text{padding:0 20px 22px}}
+.lb{position:fixed;inset:0;z-index:100;background:rgba(5,16,14,.97);display:flex;align-items:center;justify-content:center;padding:56px 12px}
+.lb figure{margin:0;max-width:min(1400px,100%);display:grid;gap:10px;justify-items:center}
+.lb img{max-width:100%;max-height:calc(100vh - 150px);border-radius:8px;object-fit:contain}
+.lb figcaption{color:#d3e1dc;font-size:.88rem;text-align:center}
+.lb-x{position:absolute;top:10px;right:14px;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font-size:1.6rem;line-height:1;cursor:pointer}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:64px;border:0;border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font-size:2.2rem;cursor:pointer}
+.lb-nav.prev{left:10px}.lb-nav.next{right:10px}
+@media (max-width:700px){.lb-nav{top:auto;bottom:14px;transform:none;height:48px}}
+@media (prefers-reduced-motion:reduce){.hero-media img.on{animation:none}.zoom:hover img{transform:none}}
 
 /* Phase strip */
 .phase{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
@@ -379,27 +442,59 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 
 <!-- HERO -->
 <section class="hero" id="hero">
-  <div class="wrap hero-grid">
-    <div>
+  <div class="hero-media" aria-hidden="true">
+    <img class="on" src="/BPTH/img/st01-l.webp" srcset="/BPTH/img/st01-m.webp 860w, /BPTH/img/st01-l.webp 1920w" sizes="100vw" alt="" fetchpriority="high">
+    <img data-src="/BPTH/img/st02-l.webp" data-srcset="/BPTH/img/st02-m.webp 860w, /BPTH/img/st02-l.webp 1920w" sizes="100vw" alt="">
+    <img data-src="/BPTH/img/st06-l.webp" data-srcset="/BPTH/img/st06-m.webp 860w, /BPTH/img/st06-l.webp 1920w" sizes="100vw" alt="">
+  </div>
+  <div class="wrap hero-inner">
+    <div class="hero-copy">
       <div class="eyebrow">236 Phan Trung · P. Tam Hiệp · TP. Đồng Nai</div>
       <h1>Bcons Central Park</h1>
       <p class="slogan">Theo dòng di sản – Thuận lòng phồn vinh</p>
-      <p class="lead">Khu căn hộ 22 tầng trên khu đất 27.455,7 m², khoảng 2 phút đến Vincom Biên Hòa. Giai đoạn 1 đang nhận đăng ký 3 tháp Orchid, Bamboo, Tamarind với 5 loại căn từ Studio đến 3 phòng ngủ.</p>
+      <p class="lead">Khu căn hộ 22 tầng trên khu đất 27.455,7 m², khoảng 2 phút đến Vincom Biên Hòa. Giai đoạn 1 gồm 3 tháp Orchid, Bamboo, Tamarind với 1.620 căn, từ Studio đến 3 phòng ngủ.</p>
       <div class="hero-cta">
-        <a class="btn btn-primary" href="#lien-he" data-need="Nhận báo giá theo mã căn">Nhận báo giá theo căn</a>
+        <a class="btn btn-brass" href="#lien-he" data-need="Nhận báo giá theo mã căn">Nhận báo giá theo căn</a>
         <a class="btn btn-ghost" href="#lien-he" data-need="Đặt lịch xem nhà mẫu">Đặt lịch xem nhà mẫu</a>
         <a class="btn btn-ghost" href="https://bcons-centralpark-360.2fvisual.com/" target="_blank" rel="noopener">Tham quan ảo 360°</a>
       </div>
-      <div class="facts">
-        <div class="fact"><b>2.820</b><span>căn hộ ở, tầng 3–22</span></div>
-        <div class="fact"><b>113</b><span>căn thương mại dịch vụ, tính riêng</span></div>
-        <div class="fact"><b>60</b><span>tiện ích nội khu</span></div>
-        <div class="fact"><b>Q.II/2029</b><span>dự kiến bàn giao, mốc ràng buộc theo HĐMB</span></div>
-      </div>
-      <div class="stamp"><i></i>Cập nhật 10/11/2026 · Bảng giá 30/10/2026 · Thông báo PTTT 01 ngày 05/11/2026</div>
     </div>
+    <div class="facts">
+      <div class="fact"><b>1.620</b><span>căn giai đoạn 1, 3 tháp</span></div>
+      <div class="fact"><b>60</b><span>tiện ích nội khu</span></div>
+      <div class="fact"><b>12,5%</b><span>chiết khấu khi thanh toán nhanh (PTTT 1N)</span></div>
+      <div class="fact"><b>Q.II/2029</b><span>dự kiến bàn giao, mốc ràng buộc theo HĐMB</span></div>
+    </div>
+    <div class="hero-foot">
+      <div class="stamp"><i></i>Cập nhật 10/11/2026 · Bảng giá 30/10/2026 · Thông báo PTTT 01 ngày 05/11/2026</div>
+      <div class="hero-dots" role="group" aria-label="Chọn ảnh nền">
+        <button type="button" class="on" aria-label="Ảnh ban ngày"></button><button type="button" aria-label="Ảnh ban đêm"></button><button type="button" aria-label="Ảnh hồ bơi nội khu"></button>
+      </div>
+      <span class="hero-cap">Phối cảnh minh họa</span>
+    </div>
+  </div>
+</section>
 
-    <figure class="tower-card" style="margin:0">
+<!-- PHASE -->
+<section class="sec alt" style="padding:40px 0">
+  <div class="wrap phase">
+    <div class="phase-item"><h3>Giai đoạn 1 · 1.620 căn</h3><small>3 tháp Orchid, Bamboo, Tamarind. Căn còn trống cập nhật theo ngày, hỏi trực tiếp để có danh sách mới nhất.</small></div>
+    <div class="phase-item later"><h3>Lotus và Palm</h3><small>Chưa mở bán. Lịch mở bán các đợt sau sẽ theo thông báo chính thức của Chủ đầu tư.</small></div>
+    <div class="phase-item"><h3>Nhà mẫu mở hằng ngày</h3><small>236 Phan Trung, 8h30–19h. Khách cần đăng ký thông tin trước khi tham quan, đặt lịch ở cuối trang.</small></div>
+  </div>
+</section>
+
+<!-- OVERVIEW -->
+<section class="sec" id="tong-quan">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Tổng quan</div>
+      <h2>Thông tin dự án</h2>
+      <p class="lead">Số liệu tổng hợp từ văn bản pháp lý, bảng giá và bộ hỏi đáp chính thức của dự án.</p>
+    </div>
+    <div class="towers">
+      <figure class="photo-fig"><button type="button" class="zoom" data-lb="st03" aria-label="Phóng to ảnh cụm tháp"><img src="/BPTH/img/st03-m.webp" srcset="/BPTH/img/st03-m.webp 860w, /BPTH/img/st03-l.webp 1920w" sizes="(max-width:900px) 100vw, 560px" alt="Phối cảnh cụm tháp nhìn từ trên cao" loading="lazy"></button><figcaption>Phối cảnh minh họa cụm tháp nhìn từ trên cao</figcaption></figure>
+      <figure class="tower-card" style="margin:0">
       <svg viewBox="0 0 520 440" role="img" aria-labelledby="twTitle twDesc">
         <title id="twTitle">Sơ đồ 5 tháp Bcons Central Park</title>
         <desc id="twDesc">Ba tháp Orchid, Bamboo, Tamarind thuộc giai đoạn 1 đang nhận đăng ký. Hai tháp Lotus và Palm mở bán sau. Mỗi tháp 22 tầng nổi trên khối đế 2 tầng, 2 tầng hầm, cao 77,05 m.</desc>
@@ -466,25 +561,6 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
       </svg>
       <figcaption>Sơ đồ minh họa theo số liệu dự án: 22 tầng nổi, 2 tầng hầm, cao 77,05 m; tháp Lotus là khối ghép với Bamboo. Mã căn A12-01 nghĩa là tháp A, tầng 12, căn số 01.</figcaption>
     </figure>
-  </div>
-</section>
-
-<!-- PHASE -->
-<section class="sec alt" style="padding:40px 0">
-  <div class="wrap phase">
-    <div class="phase-item"><h3>Giai đoạn 1 · 996 căn</h3><small>3 tháp Orchid, Bamboo, Tamarind trong bảng giá 30/10/2026. Căn còn trống cập nhật theo ngày, hỏi trực tiếp để có danh sách mới nhất.</small></div>
-    <div class="phase-item later"><h3>Lotus và Palm</h3><small>Chưa mở bán. Lịch mở bán các đợt sau sẽ theo thông báo chính thức của Chủ đầu tư.</small></div>
-    <div class="phase-item"><h3>Nhà mẫu mở hằng ngày</h3><small>236 Phan Trung, 8h30–19h. Khách cần đăng ký thông tin trước khi tham quan, đặt lịch ở cuối trang.</small></div>
-  </div>
-</section>
-
-<!-- OVERVIEW -->
-<section class="sec" id="tong-quan">
-  <div class="wrap">
-    <div class="sec-head">
-      <div class="eyebrow">Tổng quan</div>
-      <h2>Thông tin dự án</h2>
-      <p class="lead">Số liệu tổng hợp từ văn bản pháp lý, bảng giá và bộ hỏi đáp chính thức của dự án.</p>
     </div>
     <div class="ov-grid">
       <dl class="dl">
@@ -496,7 +572,8 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
         <dt>Đơn vị phân phối</dt><dd>Bcons Homes, Bcons PS Land, Tera Land, Sao Kim Land</dd>
         <dt>Địa chỉ</dt><dd>236 Phan Trung, P. Tam Hiệp, TP. Đồng Nai</dd>
         <dt>Diện tích khu đất</dt><dd class="num">27.455,7 m²</dd>
-        <dt>Quy mô</dt><dd>5 tháp (theo tài liệu bán hàng), 22 tầng nổi, 2 tầng hầm, tầng tum, cao 77,05 m, công trình cấp I</dd>
+        <dt>Quy mô</dt><dd>5 tháp, 22 tầng nổi, 2 tầng hầm, tầng tum, cao 77,05 m, công trình cấp I</dd>
+        <dt>Giai đoạn 1</dt><dd>3 tháp Orchid, Bamboo, Tamarind · 1.620 căn</dd>
         <dt>Sản phẩm</dt><dd>2.820 căn hộ ở (141 căn/tầng, tầng 3–22) và 113 căn thương mại dịch vụ, diện tích đến 149,33 m²</dd>
         <dt>Mật độ xây dựng</dt><dd class="num">Khối đế 38,05% · khối tháp 35,99%</dd>
         <dt>Thang máy</dt><dd>Orchid 4, Bamboo 5, Lotus 5, Palm 5, Tamarind 3; mỗi tháp có thang riêng cho chữa cháy; hành lang rộng 1,6 m</dd>
@@ -539,6 +616,7 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
       <h2>Giữa nhịp sống Biên Hòa</h2>
       <p class="lead">Lối chính phía Nam ra đường Phan Trung (lộ giới 19 m), lối phụ phía Tây ra hẻm 238 Phan Trung (lộ giới 13 m). Thời gian di chuyển theo brochure, chưa tính giờ cao điểm.</p>
     </div>
+    <figure class="night"><button type="button" class="zoom" data-lb="st02" aria-label="Phóng to ảnh toàn cảnh ban đêm"><img src="/BPTH/img/st02-m.webp" srcset="/BPTH/img/st02-m.webp 860w, /BPTH/img/st02-l.webp 1920w" sizes="(max-width:1160px) 100vw, 1120px" alt="Phối cảnh toàn cảnh dự án ban đêm" loading="lazy"></button><figcaption><b>Toàn cảnh về đêm giữa khu dân cư Tam Hiệp</b><span>Sông Đồng Nai ở phía xa. Phối cảnh minh họa; tầm nhìn thực tế tùy tầng và vị trí căn.</span></figcaption></figure>
     <div class="loc-grid">
       <div class="tt">
         <div class="tt-row"><div class="tt-min">2<small>phút</small></div><div><div class="tt-bar"><i style="width:8%"></i></div><div class="chips"><span class="chip">Vincom Plaza Biên Hòa</span></div></div></div>
@@ -593,34 +671,18 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
       <div><b>13.000+ m²</b><span>thương mại khối đế</span></div>
     </div>
     <div class="am-grid">
-      <div class="am">
-        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 16c2 0 2-1.5 4-1.5S8 16 10 16s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M2 20c2 0 2-1.5 4-1.5S8 20 10 20s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M7 13V5a2 2 0 0 1 4 0M14 13V5a2 2 0 0 1 4 0M7 8h7M7 11h7"/></svg>Hồ bơi và thư giãn</h3>
-        <ul><li>Cụm hồ bơi khoảng 315 m²: hồ resort, hồ trẻ em, hồ massage thư giãn</li><li>Quảng trường nhạc nước</li></ul>
-      </div>
-      <div class="am">
-        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22V12"/><path d="M12 12c-4 0-7-3-7-7 4 0 7 3 7 7Z"/><path d="M12 15c3 0 6-2.5 6-6-3 0-6 2.5-6 6Z"/></svg>Xanh và tĩnh</h3>
-        <ul><li>Khu thiền định</li><li>Cung đường đi bộ</li><li>Vườn cây xanh 7.730 m²</li></ul>
-      </div>
-      <div class="am">
-        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="6" r="2.5"/><circle cx="16.5" cy="8" r="2"/><path d="M4 21v-5a4 4 0 0 1 8 0v5M13.5 21v-4a3 3 0 0 1 6 0v4"/></svg>Gia đình và trẻ em</h3>
-        <ul><li>Khu vui chơi trẻ em</li><li>Nhà trẻ ở khối đế</li><li>Phòng sinh hoạt cộng đồng</li></ul>
-      </div>
-      <div class="am">
-        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>Thể thao</h3>
-        <ul><li>Khu thể thao ngoài trời</li><li>Sân bóng rổ ngoài trời</li></ul>
-      </div>
-      <div class="am">
-        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-1.5-5h-15Z"/><path d="M4 9v11h16V9M9 20v-6h6v6"/></svg>Cộng đồng và mua sắm</h3>
-        <ul><li>Quảng trường sự kiện</li><li>Thương mại dịch vụ khối đế hơn 13.000 m²</li><li>Shopping mall ở Block B và một phần Block C</li></ul>
-      </div>
-      <div class="am">
-        <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 5 13h6l-1 9 8-11h-6Z"/></svg>Tiện nghi hằng ngày</h3>
-        <ul><li>Trạm sạc xe điện</li><li>2 tầng hầm đỗ xe</li><li>Thu gom rác theo tầng, phòng rác 2 lớp cửa</li></ul>
-      </div>
+      <article class="am-card"><button type="button" class="zoom am-img" data-lb="st07" aria-label="Phóng to ảnh hồ bơi nội khu"><img src="/BPTH/img/st07-m.webp" srcset="/BPTH/img/st07-m.webp 860w, /BPTH/img/st07-l.webp 1920w" sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 380px" alt="Hồ bơi nội khu" loading="lazy"></button><div class="am-body"><h3>Hồ bơi và thư giãn</h3><ul><li>Cụm hồ bơi khoảng 315 m²: hồ resort, hồ trẻ em, hồ massage thư giãn</li></ul></div></article>
+      <article class="am-card"><button type="button" class="zoom am-img" data-lb="st15" aria-label="Phóng to ảnh khu thiền định giữa mặt nước"><img src="/BPTH/img/st15-m.webp" srcset="/BPTH/img/st15-m.webp 860w, /BPTH/img/st15-l.webp 1920w" sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 380px" alt="Khu thiền định giữa mặt nước" loading="lazy"></button><div class="am-body"><h3>Thiền giữa mặt nước</h3><ul><li>Khu thiền định trong nội khu</li><li>Không gian tĩnh giữa hồ cảnh quan</li></ul></div></article>
+      <article class="am-card"><button type="button" class="zoom am-img" data-lb="st10" aria-label="Phóng to ảnh lối dạo dưới tán cây"><img src="/BPTH/img/st10-m.webp" srcset="/BPTH/img/st10-m.webp 860w, /BPTH/img/st10-l.webp 1920w" sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 380px" alt="Lối dạo dưới tán cây" loading="lazy"></button><div class="am-body"><h3>Cây xanh và đường dạo</h3><ul><li>Cung đường đi bộ dưới tán cây</li><li>Cây xanh 7.730 m², gần 29% khu đất</li></ul></div></article>
+      <article class="am-card"><button type="button" class="zoom am-img" data-lb="st25" aria-label="Phóng to ảnh khu vui chơi trẻ em"><img src="/BPTH/img/st25-m.webp" srcset="/BPTH/img/st25-m.webp 860w, /BPTH/img/st25-l.webp 1920w" sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 380px" alt="Khu vui chơi trẻ em" loading="lazy"></button><div class="am-body"><h3>Gia đình và trẻ em</h3><ul><li>Khu vui chơi trẻ em</li><li>Nhà trẻ ở khối đế</li><li>Phòng sinh hoạt cộng đồng</li></ul></div></article>
+      <article class="am-card"><button type="button" class="zoom am-img" data-lb="st22" aria-label="Phóng to ảnh sân bóng rổ ngoài trời"><img src="/BPTH/img/st22-m.webp" srcset="/BPTH/img/st22-m.webp 860w, /BPTH/img/st22-l.webp 1920w" sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 380px" alt="Sân bóng rổ ngoài trời" loading="lazy"></button><div class="am-body"><h3>Thể thao ngoài trời</h3><ul><li>Khu thể thao ngoài trời</li><li>Sân bóng rổ ngoài trời</li></ul></div></article>
+      <article class="am-card"><button type="button" class="zoom am-img" data-lb="st32" aria-label="Phóng to ảnh quảng trường nhạc nước"><img src="/BPTH/img/st32-m.webp" srcset="/BPTH/img/st32-m.webp 860w, /BPTH/img/st32-l.webp 1920w" sizes="(max-width:600px) 100vw, (max-width:900px) 50vw, 380px" alt="Quảng trường nhạc nước" loading="lazy"></button><div class="am-body"><h3>Quảng trường và thương mại</h3><ul><li>Quảng trường nhạc nước, quảng trường sự kiện</li><li>Thương mại dịch vụ khối đế hơn 13.000 m²</li><li>Shopping mall ở Block B và một phần Block C</li></ul></div></article>
     </div>
-    <p class="note" style="margin-top:16px">Ngoại khu: Vincom Plaza, BV Hoàn Mỹ, rạp chiếu phim, CV Dương Tử Giang, phố ẩm thực, trường học. Danh mục đủ 60 tiện ích và bộ ảnh phối cảnh, nhắn Zalo 0784 313 668 để nhận.</p>
+    <div class="chips" style="margin-top:16px"><span class="chip">Trạm sạc xe điện</span><span class="chip">2 tầng hầm đỗ xe</span><span class="chip">Thu gom rác theo tầng, phòng rác 2 lớp cửa</span><span class="chip">Nhà trẻ ở khối đế</span></div>
+    <p class="note" style="margin-top:16px">Ngoại khu: Vincom Plaza, BV Hoàn Mỹ, rạp chiếu phim, CV Dương Tử Giang, phố ẩm thực, trường học. Danh mục đủ 60 tiện ích, nhắn Zalo 0784 313 668 để nhận. Hình ảnh là phối cảnh minh họa; biển hiệu, thương hiệu trong ảnh là dàn dựng minh họa.</p>
 
     <div class="vr" style="margin-top:32px">
+      <img class="vr-bg" src="/BPTH/img/st04-m.webp" srcset="/BPTH/img/st04-m.webp 860w, /BPTH/img/st04-l.webp 1920w" sizes="(max-width:1160px) 100vw, 1120px" alt="" loading="lazy">
       <div>
         <h3>Đi một vòng dự án ngay trên điện thoại</h3>
         <p>Bản tham quan ảo 360° của dự án. Xem xong, đặt lịch đến nhà mẫu để tự bước vào không gian thật.</p>
@@ -633,23 +695,27 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   </div>
 </section>
 
-<!-- GALLERY: tự hiện khi đặt ảnh phối cảnh vào thư mục img/ cạnh file này -->
-<section class="sec alt" id="thu-vien" hidden>
+<!-- GALLERY -->
+<section class="sec dark" id="thu-vien">
   <div class="wrap">
     <div class="sec-head">
       <div class="eyebrow">Hình ảnh</div>
-      <h2>Phối cảnh dự án</h2>
-      <p class="note">Hình ảnh phối cảnh mang tính minh họa. Tầm nhìn thực tế tùy tầng và vị trí căn.</p>
+      <h2>Một ngày ở Bcons Central Park</h2>
+      <p class="lead">Chạm vào ảnh để xem lớn. Phối cảnh mang tính minh họa; tầm nhìn thực tế tùy tầng và vị trí căn.</p>
     </div>
-    <div class="gallery">
-      <figure><img data-src="st01.jpg" alt="Cụm tháp nhìn từ góc phố" loading="lazy"><figcaption>Toàn cảnh dự án</figcaption></figure>
-      <figure><img data-src="st04.jpg" alt="Hồ bơi và vườn nội khu nhìn từ trên cao" loading="lazy"><figcaption>Hồ bơi và vườn nội khu</figcaption></figure>
-      <figure><img data-src="st07.jpg" alt="Hồ bơi ngang tầm mắt" loading="lazy"><figcaption>Hồ bơi</figcaption></figure>
-      <figure><img data-src="st10.jpg" alt="Lối dạo nhiều cây xanh" loading="lazy"><figcaption>Lối dạo cây xanh</figcaption></figure>
-      <figure><img data-src="st15.jpg" alt="Sàn thiền giữa hồ sen" loading="lazy"><figcaption>Khu thiền định</figcaption></figure>
-      <figure><img data-src="st25.jpg" alt="Khu vui chơi trẻ em" loading="lazy"><figcaption>Khu vui chơi trẻ em</figcaption></figure>
-      <figure><img data-src="st32.jpg" alt="Quảng trường nhạc nước" loading="lazy"><figcaption>Quảng trường nhạc nước</figcaption></figure>
-      <figure><img data-src="st16.jpg" alt="Ban công nhìn xuống nội khu" loading="lazy"><figcaption>Từ ban công căn hộ</figcaption></figure>
+    <div class="gal">
+      <figure class="big"><button type="button" class="zoom" data-lb="st01" aria-label="Phóng to: Toàn cảnh dự án nhìn từ góc phố"><img src="/BPTH/img/st01-m.webp" srcset="/BPTH/img/st01-m.webp 860w, /BPTH/img/st01-l.webp 1920w" sizes="(max-width:700px) 100vw, 560px" alt="Toàn cảnh dự án nhìn từ góc phố" loading="lazy"></button><figcaption>Toàn cảnh dự án nhìn từ góc phố</figcaption></figure>
+      <figure><button type="button" class="zoom" data-lb="st04" aria-label="Phóng to: Hồ bơi và vườn nội khu nhìn từ trên cao"><img src="/BPTH/img/st04-m.webp" srcset="/BPTH/img/st04-m.webp 860w, /BPTH/img/st04-l.webp 1920w" sizes="(max-width:700px) 50vw, 280px" alt="Hồ bơi và vườn nội khu nhìn từ trên cao" loading="lazy"></button><figcaption>Hồ bơi và vườn nội khu nhìn từ trên cao</figcaption></figure>
+      <figure><button type="button" class="zoom" data-lb="st06" aria-label="Phóng to: Dòng hồ bơi chạy giữa các tháp"><img src="/BPTH/img/st06-m.webp" srcset="/BPTH/img/st06-m.webp 860w, /BPTH/img/st06-l.webp 1920w" sizes="(max-width:700px) 50vw, 280px" alt="Dòng hồ bơi chạy giữa các tháp" loading="lazy"></button><figcaption>Dòng hồ bơi chạy giữa các tháp</figcaption></figure>
+      <figure><button type="button" class="zoom" data-lb="st09" aria-label="Phóng to: Bể sục cạnh lối dạo"><img src="/BPTH/img/st09-m.webp" srcset="/BPTH/img/st09-m.webp 860w, /BPTH/img/st09-l.webp 1920w" sizes="(max-width:700px) 50vw, 280px" alt="Bể sục cạnh lối dạo" loading="lazy"></button><figcaption>Bể sục cạnh lối dạo</figcaption></figure>
+      <figure><button type="button" class="zoom" data-lb="st14" aria-label="Phóng to: Hồ cảnh quan và lối đá bước"><img src="/BPTH/img/st14-m.webp" srcset="/BPTH/img/st14-m.webp 860w, /BPTH/img/st14-l.webp 1920w" sizes="(max-width:700px) 50vw, 280px" alt="Hồ cảnh quan và lối đá bước" loading="lazy"></button><figcaption>Hồ cảnh quan và lối đá bước</figcaption></figure>
+      <figure><button type="button" class="zoom" data-lb="st29" aria-label="Phóng to: Vườn, sân chơi và sân bóng rổ nhìn từ trên"><img src="/BPTH/img/st29-m.webp" srcset="/BPTH/img/st29-m.webp 860w, /BPTH/img/st29-l.webp 1920w" sizes="(max-width:700px) 50vw, 280px" alt="Vườn, sân chơi và sân bóng rổ nhìn từ trên" loading="lazy"></button><figcaption>Vườn, sân chơi và sân bóng rổ nhìn từ trên</figcaption></figure>
+      <figure><button type="button" class="zoom" data-lb="st24" aria-label="Phóng to: Khu tập ngoài trời và đường chạy"><img src="/BPTH/img/st24-m.webp" srcset="/BPTH/img/st24-m.webp 860w, /BPTH/img/st24-l.webp 1920w" sizes="(max-width:700px) 50vw, 280px" alt="Khu tập ngoài trời và đường chạy" loading="lazy"></button><figcaption>Khu tập ngoài trời và đường chạy</figcaption></figure>
+      <figure><button type="button" class="zoom" data-lb="st18" aria-label="Phóng to: Quán cà phê khối đế nhìn ra vườn"><img src="/BPTH/img/st18-m.webp" srcset="/BPTH/img/st18-m.webp 860w, /BPTH/img/st18-l.webp 1920w" sizes="(max-width:700px) 50vw, 280px" alt="Quán cà phê khối đế nhìn ra vườn" loading="lazy"></button><figcaption>Quán cà phê khối đế nhìn ra vườn</figcaption></figure>
+      <figure><button type="button" class="zoom" data-lb="st33" aria-label="Phóng to: Phố đi bộ khối đế"><img src="/BPTH/img/st33-m.webp" srcset="/BPTH/img/st33-m.webp 860w, /BPTH/img/st33-l.webp 1920w" sizes="(max-width:700px) 50vw, 280px" alt="Phố đi bộ khối đế" loading="lazy"></button><figcaption>Phố đi bộ khối đế</figcaption></figure>
+      <figure><button type="button" class="zoom" data-lb="st37" aria-label="Phóng to: Góc phố thương mại khối đế"><img src="/BPTH/img/st37-m.webp" srcset="/BPTH/img/st37-m.webp 860w, /BPTH/img/st37-l.webp 1920w" sizes="(max-width:700px) 50vw, 280px" alt="Góc phố thương mại khối đế" loading="lazy"></button><figcaption>Góc phố thương mại khối đế</figcaption></figure>
+      <figure><button type="button" class="zoom" data-lb="st12" aria-label="Phóng to: Phố mua sắm chân đế"><img src="/BPTH/img/st12-m.webp" srcset="/BPTH/img/st12-m.webp 860w, /BPTH/img/st12-l.webp 1920w" sizes="(max-width:700px) 50vw, 280px" alt="Phố mua sắm chân đế" loading="lazy"></button><figcaption>Phố mua sắm chân đế</figcaption></figure>
+      <figure><button type="button" class="zoom" data-lb="st16" aria-label="Phóng to: Từ ban công nhìn xuống nội khu"><img src="/BPTH/img/st16-m.webp" srcset="/BPTH/img/st16-m.webp 860w, /BPTH/img/st16-l.webp 1920w" sizes="(max-width:700px) 50vw, 280px" alt="Từ ban công nhìn xuống nội khu" loading="lazy"></button><figcaption>Từ ban công nhìn xuống nội khu</figcaption></figure>
     </div>
   </div>
 </section>
@@ -659,42 +725,42 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   <div class="wrap">
     <div class="sec-head">
       <div class="eyebrow">Sản phẩm giai đoạn 1</div>
-      <h2>5 loại căn, 996 căn trong bảng giá</h2>
+      <h2>5 loại căn, 1.620 căn giai đoạn 1</h2>
       <p class="lead">Diện tích tim tường theo bảng giá; sổ hồng ghi diện tích thông thủy. Giá từ là mức thấp nhất của loại căn theo PTTT 01, đã gồm VAT, chưa gồm phí bảo trì 2%. Giá thanh toán nhanh (PTTT 1N) là ước tính.</p>
     </div>
     <div class="units">
       <article class="unit">
         <div class="unit-type">Studio</div>
         <div class="unit-area">37,6–40,5<small> m²</small></div>
-        <div class="unit-meta">198 căn · Orchid, Bamboo, Tamarind</div>
+        <div class="unit-meta">Orchid, Bamboo, Tamarind</div>
         <div class="unit-price">Từ<b>2,08 tỷ</b><small>Thanh toán nhanh ≈ 1,99 tỷ</small></div>
         <button class="btn btn-ghost btn-sm" type="button" data-calc="2.27">Tính dòng tiền</button>
       </article>
       <article class="unit">
         <div class="unit-type">1PN · 1WC</div>
         <div class="unit-area">42,95<small> m²</small></div>
-        <div class="unit-meta">180 căn · Orchid, Bamboo</div>
+        <div class="unit-meta">Orchid, Bamboo</div>
         <div class="unit-price">Từ<b>2,27 tỷ</b><small>Thanh toán nhanh ≈ 2,17 tỷ</small></div>
         <button class="btn btn-ghost btn-sm" type="button" data-calc="2.48">Tính dòng tiền</button>
       </article>
       <article class="unit">
         <div class="unit-type">2PN · 1WC</div>
         <div class="unit-area">50,5–53,4<small> m²</small></div>
-        <div class="unit-meta">92 căn · Bamboo, Tamarind</div>
+        <div class="unit-meta">Bamboo, Tamarind</div>
         <div class="unit-price">Từ<b>2,91 tỷ</b><small>Thanh toán nhanh ≈ 2,78 tỷ</small></div>
         <button class="btn btn-ghost btn-sm" type="button" data-calc="3.18">Tính dòng tiền</button>
       </article>
       <article class="unit">
         <div class="unit-type">2PN · 2WC</div>
         <div class="unit-area">53,5–73,2<small> m²</small></div>
-        <div class="unit-meta">480 căn · cả 3 tháp</div>
+        <div class="unit-meta">Cả 3 tháp</div>
         <div class="unit-price">Từ<b>3,09 tỷ</b><small>Thanh toán nhanh ≈ 2,95 tỷ</small></div>
         <button class="btn btn-ghost btn-sm" type="button" data-calc="3.37">Tính dòng tiền</button>
       </article>
       <article class="unit">
         <div class="unit-type">3PN · 2WC</div>
         <div class="unit-area">87,1–88,5<small> m²</small></div>
-        <div class="unit-meta">46 căn góc · cả 3 tháp</div>
+        <div class="unit-meta">Căn góc · cả 3 tháp</div>
         <div class="unit-price">Từ<b>5,30 tỷ</b><small>Thanh toán nhanh ≈ 5,07 tỷ</small></div>
         <button class="btn btn-ghost btn-sm" type="button" data-calc="5.79">Tính dòng tiền</button>
       </article>
@@ -704,6 +770,16 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
       <div><b>1,6 m</b>hành lang mỗi tầng</div>
       <div><b>Nhà mẫu</b>3PN-2WC, 2PN-1WC, 2PN-2WC; nội thất mang tính minh họa</div>
       <div><b>Không thông căn</b>máy giặt ở lô gia hoặc ban công; không dùng gas</div>
+    </div>
+    <div class="balcony">
+      <figure><button type="button" class="zoom" data-lb="st16" aria-label="Phóng to ảnh ban công"><img src="/BPTH/img/st16-m.webp" srcset="/BPTH/img/st16-m.webp 860w, /BPTH/img/st16-l.webp 1920w" sizes="(max-width:900px) 100vw, 640px" alt="Từ ban công nhìn xuống nội khu" loading="lazy"></button></figure>
+      <div class="balcony-text">
+        <div class="eyebrow">Nhà mẫu</div>
+        <h3>Tự bước vào không gian trước khi quyết định</h3>
+        <p>Nhà mẫu có 3 căn 3PN-2WC, 2PN-1WC, 2PN-2WC tại 236 Phan Trung, mở 8h30–19h hằng ngày. Đăng ký trước để Bạch Đằng đón và đi cùng anh chị.</p>
+        <p class="note">Ảnh là phối cảnh minh họa từ một vị trí cụ thể; tầm nhìn thực tế tùy tầng và vị trí căn. Nội thất, đồ rời không thuộc tiêu chuẩn bàn giao.</p>
+        <a class="btn btn-primary" href="#lien-he" data-need="Đặt lịch xem nhà mẫu">Đặt lịch xem nhà mẫu</a>
+      </div>
     </div>
   </div>
 </section>
@@ -770,7 +846,7 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
         </tbody>
       </table>
     </div>
-    <p class="note" style="margin-top:10px">Chiết khấu tính trên giá PTTT 02 chưa VAT, chưa phí bảo trì; áp dụng đến khi có thông báo mới. Các PTTT không cộng dồn. PTTT 02–05 chỉ áp dụng khách cá nhân. Cột PTTT 1N là ước tính từ giá PTTT 02 trừ 12,5%, làm tròn; số chính xác theo báo giá từng căn.</p>
+    <p class="note" style="margin-top:10px">Chiết khấu tính trên giá PTTT 02 chưa VAT, chưa phí bảo trì; áp dụng đến khi có thông báo mới. Các PTTT không cộng dồn. PTTT 02–05 chỉ áp dụng khách cá nhân. Cột PTTT 1N là ước tính từ giá PTTT 02 trừ 12,5%, làm tròn; số chính xác theo báo giá từng căn. Bảng giá ngày 30/10 chưa cập nhật đủ 1.620 căn giai đoạn 1, khoảng giá có thể thay đổi khi bổ sung.</p>
 
     <div class="fastpay">
       <div>
@@ -911,8 +987,6 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
       <details><summary>2.820 căn có tính shophouse không?</summary><p>Không. 2.820 là căn hộ ở. 113 căn thương mại dịch vụ là sản phẩm riêng, được đăng ký kinh doanh.</p></details>
       <details><summary>Mua tháp Palm, Lotus được không?</summary><p>Hai tháp này chưa mở bán. Giai đoạn 1 gồm Orchid, Bamboo, Tamarind.</p></details>
       <details><summary>Metro bao giờ có?</summary><p>Metro số 1 kéo dài là định hướng dài hạn, chưa có mốc vận hành. Ga quy hoạch dự kiến cách dự án khoảng 1,5 km.</p></details>
-      <details><summary>Vì sao hồ sơ ghi 02 tòa nhà, tài liệu bán hàng ghi 5 tháp?</summary><p>Hồ sơ thẩm định của Sở Xây dựng mô tả 02 tòa nhà độc lập; tài liệu bán hàng gọi theo 5 tháp Orchid, Bamboo, Lotus, Palm, Tamarind. Chi tiết cấu trúc theo hồ sơ của Chủ đầu tư.</p></details>
-      <details><summary>"Thời hạn 50 năm" trong hồ sơ là thời hạn sở hữu?</summary><p>Không. 50 năm trong văn bản của Sở Xây dựng là thời hạn sử dụng theo thiết kế công trình chính, tức tuổi thọ thiết kế. Quyền sở hữu theo quy định pháp luật hiện hành.</p></details>
       <details><summary>Được sửa lại thiết kế căn không?</summary><p>Chỉ sau khi hoàn công và có sổ, ở tường không chịu lực, không ảnh hưởng hệ thống kỹ thuật, và phải được Ban quản lý hoặc Ban quản trị duyệt trước. Không thông 2 căn.</p></details>
     </div>
   </div>
@@ -1034,6 +1108,13 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   <a href="https://zalo.me/0784313668" target="_blank" rel="noopener"><b>Zalo</b>Nhắn tin</a>
   <a class="primary" href="#lien-he" data-need="Nhận báo giá theo mã căn"><b>Nhận báo giá</b>Đặt lịch nhà mẫu</a>
 </nav>
+
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Xem ảnh lớn">
+  <button type="button" class="lb-x" id="lbClose" aria-label="Đóng">×</button>
+  <button type="button" class="lb-nav prev" id="lbPrev" aria-label="Ảnh trước">‹</button>
+  <figure><img id="lbImg" alt=""><figcaption id="lbCap"></figcaption></figure>
+  <button type="button" class="lb-nav next" id="lbNext" aria-label="Ảnh sau">›</button>
+</div>
 
 <script>
 /* Khi đưa trang lên tên miền riêng: dán URL Google Apps Script (Web App) vào đây để lưu đăng ký vào Google Sheet.
@@ -1188,18 +1269,52 @@ if (typeof document !== "undefined") {
   $("#copyZalo").addEventListener("click", ()=>{ copyMsg(); });
   $("#copyOnly").addEventListener("click", copyMsg);
 
-  /* Ảnh phối cảnh: tự hiện khi có file trong thư mục img/ */
-  /* Trên hoangbachdang.com/BPTH ảnh nằm ở /BPTH/img/; nơi khác dùng img/ cạnh file */
-  const IMG = /^\/bpth/i.test(location.pathname) ? "/BPTH/img/" : "img/";
-  const gal = $("#thu-vien");
-  gal.querySelectorAll("img[data-src]").forEach(img=>{
-    img.addEventListener("load", ()=>{ gal.hidden = false; });
-    img.addEventListener("error", ()=>{ img.closest("figure").remove(); });
-    img.src = IMG + img.dataset.src;
+  /* Ảnh nền đầu trang: chuyển ảnh mỗi 6,5 giây */
+  const slides = [...document.querySelectorAll(".hero-media img")];
+  const dots = [...document.querySelectorAll(".hero-dots button")];
+  let cur = 0, timer = null;
+  function show(n){
+    const im = slides[n];
+    if (!im.getAttribute("src")) return;
+    slides[cur].classList.remove("on"); dots[cur].classList.remove("on");
+    cur = n; im.classList.remove("on"); void im.offsetWidth; im.classList.add("on"); dots[cur].classList.add("on");
+  }
+  window.addEventListener("load", ()=>{
+    slides.slice(1).forEach(im=>{ im.srcset = im.dataset.srcset; im.src = im.dataset.src; });
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches)
+      timer = setInterval(()=>{ const n=(cur+1)%slides.length; if (slides[n].complete && slides[n].naturalWidth) show(n); }, 6500);
   });
-  const heroImg = new Image();
-  heroImg.onload = ()=>{ const h=$("#hero"); h.style.setProperty("--hero-photo",`url("${IMG}st01.jpg")`); h.classList.add("has-photo"); };
-  heroImg.src = IMG + "st01.jpg";
+  dots.forEach((d,n)=>d.addEventListener("click",()=>{ if (slides[n].getAttribute("src")) { show(n); clearInterval(timer); } }));
+
+  /* Xem ảnh lớn */
+  const LB = [["st01", "Toàn cảnh dự án nhìn từ góc phố"], ["st02", "Toàn cảnh về đêm giữa khu dân cư Tam Hiệp"], ["st03", "Cụm tháp nhìn từ trên cao"], ["st04", "Hồ bơi và vườn nội khu nhìn từ trên cao"], ["st06", "Dòng hồ bơi chạy giữa các tháp"], ["st07", "Hồ bơi nội khu"], ["st09", "Bể sục cạnh lối dạo"], ["st10", "Lối dạo dưới tán cây"], ["st14", "Hồ cảnh quan và lối đá bước"], ["st15", "Khu thiền định giữa mặt nước"], ["st16", "Từ ban công nhìn xuống nội khu"], ["st18", "Quán cà phê khối đế nhìn ra vườn"], ["st22", "Sân bóng rổ ngoài trời"], ["st24", "Khu tập ngoài trời và đường chạy"], ["st25", "Khu vui chơi trẻ em"], ["st29", "Vườn, sân chơi và sân bóng rổ nhìn từ trên"], ["st32", "Quảng trường nhạc nước"], ["st33", "Phố đi bộ khối đế"], ["st37", "Góc phố thương mại khối đế"], ["st12", "Phố mua sắm chân đế"]];
+  const lb = $("#lb"), lbImg = $("#lbImg"), lbCap = $("#lbCap");
+  let li = 0, lastFocus = null;
+  function lbShow(n){
+    li = (n + LB.length) % LB.length;
+    lbImg.src = "/BPTH/img/" + LB[li][0] + "-l.webp"; lbImg.alt = LB[li][1];
+    lbCap.textContent = LB[li][1] + " · Phối cảnh minh họa · " + (li+1) + "/" + LB.length;
+  }
+  function lbOpen(code){
+    lastFocus = document.activeElement;
+    const n = LB.findIndex(x=>x[0]===code); lbShow(n<0?0:n);
+    lb.hidden = false; document.body.style.overflow = "hidden"; $("#lbClose").focus();
+  }
+  function lbClose(){ lb.hidden = true; document.body.style.overflow = ""; if (lastFocus) lastFocus.focus(); }
+  document.querySelectorAll("[data-lb]").forEach(b=>b.addEventListener("click",()=>lbOpen(b.dataset.lb)));
+  $("#lbClose").addEventListener("click", lbClose);
+  $("#lbPrev").addEventListener("click", ()=>lbShow(li-1));
+  $("#lbNext").addEventListener("click", ()=>lbShow(li+1));
+  lb.addEventListener("click", e=>{ if (e.target === lb) lbClose(); });
+  document.addEventListener("keydown", e=>{
+    if (lb.hidden) return;
+    if (e.key === "Escape") lbClose();
+    if (e.key === "ArrowLeft") lbShow(li-1);
+    if (e.key === "ArrowRight") lbShow(li+1);
+  });
+  let tx = null;
+  lb.addEventListener("touchstart", e=>{ tx = e.touches[0].clientX; }, {passive:true});
+  lb.addEventListener("touchend", e=>{ if (tx===null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 40) lbShow(li + (dx<0?1:-1)); tx = null; });
 }
 
 if (typeof module !== "undefined") module.exports = { computePlan, PTTT, fmt };
