@@ -1,3 +1,7 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/ccmg", "destination": "/CCMG/index.html" },
+    { "source": "/ccmg/", "destination": "/CCMG/index.html" }
+  ]
 }
