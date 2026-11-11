@@ -115,9 +115,11 @@ p{margin:0}
 .hero-foot{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:18px}
 .stamp{display:inline-flex;gap:8px;align-items:center;font-size:.8rem;color:#4d6b62}
 .stamp i{width:8px;height:8px;border-radius:50%;background:#17a06a;display:inline-block}
-.hero-dots{display:flex;gap:6px;margin-left:auto}
-.hero-dots button{width:26px;height:4px;border-radius:2px;border:0;background:rgba(15,61,48,.22);cursor:pointer;padding:0}
-.hero-dots button.on{background:#f28a1e}
+.hero-dots{position:absolute;left:12px;bottom:10px;z-index:2;display:flex;gap:2px;padding:0 6px;border-radius:999px;background:rgba(15,61,48,.5)}
+.hero-dots button{width:36px;height:30px;border:0;background:none;cursor:pointer;padding:0;display:grid;place-items:center}
+.hero-dots button::before{content:"";width:20px;height:4px;border-radius:2px;background:rgba(255,255,255,.6);transition:width .3s,background .3s}
+.hero-dots button.on::before{width:28px;background:#ffb21e}
+.hero-media{touch-action:pan-y}
 @media (max-width:900px){
   .hero-media{position:relative;top:0;right:auto;width:100%;height:auto;aspect-ratio:6/5;max-height:560px;border-radius:0;box-shadow:none}
   .hero-media img{object-position:52% 50%}
@@ -128,7 +130,6 @@ p{margin:0}
   .hero-price{max-width:none}
   .hero-cta .btn{flex:1 1 100%}
   .facts{grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}
-  .hero-dots{margin-left:0}
 }
 /* Towers */
 .towers{display:grid;grid-template-columns:1.45fr .55fr;gap:20px;align-items:stretch;margin-bottom:36px}
@@ -491,11 +492,14 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 
 <!-- HERO -->
 <section class="hero" id="hero">
-  <div class="hero-media" aria-hidden="true">
+  <div class="hero-media">
     <img class="on" src="/BPTH/img/st01-hm.webp" srcset="/BPTH/img/st01-hm.webp 1200w, /BPTH/img/st01-hx.webp 2400w" sizes="(max-width:900px) 100vw, 620px" alt="" fetchpriority="high">
     <img data-src="/BPTH/img/st02-hm.webp" data-srcset="/BPTH/img/st02-hm.webp 1200w, /BPTH/img/st02-hx.webp 2400w" sizes="(max-width:900px) 100vw, 620px" alt="">
     <img data-src="/BPTH/img/st06-hm.webp" data-srcset="/BPTH/img/st06-hm.webp 1200w, /BPTH/img/st06-hx.webp 2400w" sizes="(max-width:900px) 100vw, 620px" alt="">
-    <span class="hm-cap">Phối cảnh minh họa</span>
+    <span class="hm-cap" aria-hidden="true">Phối cảnh minh họa</span>
+    <div class="hero-dots" role="group" aria-label="Chọn ảnh nền">
+      <button type="button" class="on" aria-label="Ảnh ban ngày"></button><button type="button" aria-label="Ảnh ban đêm"></button><button type="button" aria-label="Ảnh hồ bơi nội khu"></button>
+    </div>
   </div>
   <div class="wrap hero-inner">
     <div class="hero-copy">
@@ -522,9 +526,6 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
     </div>
     <div class="hero-foot">
       <div class="stamp"><i></i>Cập nhật 10/11/2026 · Bảng giá áp dụng từ 07/11/2026</div>
-      <div class="hero-dots" role="group" aria-label="Chọn ảnh nền">
-        <button type="button" class="on" aria-label="Ảnh ban ngày"></button><button type="button" aria-label="Ảnh ban đêm"></button><button type="button" aria-label="Ảnh hồ bơi nội khu"></button>
-      </div>
     </div>
   </div>
 </section>
@@ -1291,22 +1292,33 @@ if (typeof document !== "undefined") {
   $("#copyZalo").addEventListener("click", ()=>{ copyMsg(); });
   $("#copyOnly").addEventListener("click", copyMsg);
 
-  /* Ảnh nền đầu trang: chuyển ảnh mỗi 6,5 giây */
-  const slides = [...document.querySelectorAll(".hero-media img")];
-  const dots = [...document.querySelectorAll(".hero-dots button")];
+  /* Ảnh đầu trang: tự chuyển mỗi 6,5 giây; chạm vạch hoặc vuốt ngang để chuyển tay, sau đó vẫn tự chạy tiếp */
+  const hm = document.querySelector(".hero-media");
+  const slides = [...hm.querySelectorAll("img")];
+  const dots = [...hm.querySelectorAll(".hero-dots button")];
+  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let cur = 0, timer = null;
+  function ready(n){ const im = slides[n]; return im.getAttribute("src") && im.complete && im.naturalWidth; }
   function show(n){
+    if (n === cur || !ready(n)) return;
     const im = slides[n];
-    if (!im.getAttribute("src")) return;
     slides[cur].classList.remove("on"); dots[cur].classList.remove("on");
-    cur = n; im.classList.remove("on"); void im.offsetWidth; im.classList.add("on"); dots[cur].classList.add("on");
+    cur = n; im.classList.add("on"); dots[cur].classList.add("on");
   }
+  function step(d){ show((cur + d + slides.length) % slides.length); }
+  function restart(){ clearInterval(timer); if (!calm) timer = setInterval(()=>step(1), 6500); }
   window.addEventListener("load", ()=>{
     slides.slice(1).forEach(im=>{ im.srcset = im.dataset.srcset; im.src = im.dataset.src; });
-    if (!matchMedia("(prefers-reduced-motion: reduce)").matches)
-      timer = setInterval(()=>{ const n=(cur+1)%slides.length; if (slides[n].complete && slides[n].naturalWidth) show(n); }, 6500);
+    restart();
   });
-  dots.forEach((d,n)=>d.addEventListener("click",()=>{ if (slides[n].getAttribute("src")) { show(n); clearInterval(timer); } }));
+  dots.forEach((d,n)=>d.addEventListener("click",()=>{ show(n); restart(); }));
+  let hx = null, hy = 0;
+  hm.addEventListener("touchstart", e=>{ hx = e.touches[0].clientX; hy = e.touches[0].clientY; }, {passive:true});
+  hm.addEventListener("touchend", e=>{
+    if (hx === null) return;
+    const dx = e.changedTouches[0].clientX - hx, dy = e.changedTouches[0].clientY - hy; hx = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) { step(dx < 0 ? 1 : -1); restart(); }
+  }, {passive:true});
 
   /* Xem ảnh lớn */
   const LB = [["plan-site", "Mặt bằng tổng thể, 3 tháp đang bán", "Mặt bằng minh họa"], ["map", "Bản đồ vị trí và kết nối", "Bản đồ minh họa"], ["plan-60", "Mặt bằng 60 tiện ích nội khu", "Mặt bằng minh họa"], ["plan-orchid", "Orchid · mặt bằng điển hình tầng 3", "Mặt bằng"], ["plan-bamboo", "Bamboo · mặt bằng điển hình tầng 3", "Mặt bằng"], ["plan-tamarind", "Tamarind · mặt bằng điển hình tầng 3", "Mặt bằng"], ["st01", "Toàn cảnh dự án nhìn từ góc phố"], ["st02", "Toàn cảnh về đêm giữa khu dân cư Tam Hiệp"], ["st03", "Cụm tháp nhìn từ trên cao"], ["st04", "Hồ bơi và vườn nội khu nhìn từ trên cao"], ["st06", "Dòng hồ bơi chạy giữa các tháp"], ["st07", "Hồ bơi nội khu"], ["st09", "Bể sục cạnh lối dạo"], ["st10", "Lối dạo dưới tán cây"], ["st14", "Hồ cảnh quan và lối đá bước"], ["st15", "Khu thiền định giữa mặt nước"], ["st16", "Từ ban công nhìn xuống nội khu"], ["st18", "Quán cà phê khối đế nhìn ra vườn"], ["st22", "Sân bóng rổ ngoài trời"], ["st24", "Khu tập ngoài trời và đường chạy"], ["st25", "Khu vui chơi trẻ em"], ["st29", "Vườn, sân chơi và sân bóng rổ nhìn từ trên"], ["st32", "Quảng trường nhạc nước"], ["st33", "Phố đi bộ khối đế"], ["st37", "Góc phố thương mại khối đế"], ["st12", "Phố mua sắm chân đế"]];
