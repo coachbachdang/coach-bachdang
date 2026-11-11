@@ -430,6 +430,7 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .seg input{accent-color:var(--river);width:auto;padding:0;border:0;margin:0}
 .seg label{white-space:nowrap}
 .seg label:has(input:checked){border-color:var(--river);background:var(--river-soft)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .consent{display:flex;gap:10px;align-items:flex-start;font-size:.86rem;color:var(--muted)}
 .consent input{margin-top:4px;accent-color:var(--river)}
 .err{color:#a3341f;font-size:.84rem;min-height:1.2em}
@@ -1084,6 +1085,7 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
         <div class="field"><label for="f-time">Thời gian tiện liên hệ / xem nhà</label><input id="f-time" name="time" placeholder="Ví dụ: sáng thứ Bảy"></div>
       </div>
       <div class="field"><label for="f-note">Câu hỏi thêm (không bắt buộc)</label><textarea id="f-note" name="note"></textarea></div>
+      <div class="hp" aria-hidden="true"><label for="f-website">Website</label><input id="f-website" name="website" tabindex="-1" autocomplete="off"></div>
       <label class="consent"><input type="checkbox" id="f-consent" required> Tôi đồng ý để Bạch Đằng dùng thông tin trên để liên hệ tư vấn về dự án Bcons Central Park.</label>
       <div class="err" id="formErr" role="alert"></div>
       <button class="btn btn-primary" type="submit">Tạo tin nhắn gửi Bạch Đằng</button>
@@ -1139,7 +1141,7 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 <script>
 /* Khi đưa trang lên tên miền riêng: dán URL Google Apps Script (Web App) vào đây để lưu đăng ký vào Google Sheet.
    Để trống thì form tạo tin nhắn và chuyển sang Zalo. */
-const LEAD_ENDPOINT = "";
+const LEAD_ENDPOINT = "https://script.google.com/macros/s/AKfycbws3j1_3qA0fsKx9-fDK7eGTipLh3vzBGoEd1lbfDKdc_vlQq3rRvrpJnBqaj34R9PDrA/exec";
 
 /* ---------- Dữ liệu phương thức thanh toán (bảng giá áp dụng từ 07/11/2026, TB 11/TB-ĐTTH) ---------- */
 const PTTT = {
@@ -1265,7 +1267,7 @@ if (typeof document !== "undefined") {
     if (!/^(0|\+84)\d{9}$/.test(phone)){ err.textContent = "Số điện thoại cần 10 số, bắt đầu bằng 0. Ví dụ 0784313668."; f.phone.focus(); return; }
     if (!$("#f-consent").checked){ err.textContent = "Anh chị đánh dấu đồng ý để Bạch Đằng liên hệ."; return; }
     err.textContent = "";
-    const data = { name, phone, need:f.need.value, type:f.type.value, goal:f.goal.value, budget:f.budget.value, time:f.time.value.trim(), note:f.note.value.trim() };
+    const data = { name, phone, need:f.need.value, type:f.type.value, goal:f.goal.value, budget:f.budget.value, time:f.time.value.trim(), note:f.note.value.trim(), website:f.website.value, source:location.host + location.pathname };
     lastMsg = [
       `Chào anh Bạch Đằng, tôi là ${data.name}, SĐT ${data.phone}.`,
       `Nhu cầu: ${data.need}`,
@@ -1280,7 +1282,7 @@ if (typeof document !== "undefined") {
     $("#result").hidden = false;
     if (LEAD_ENDPOINT){
       try {
-        await fetch(LEAD_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({...data,source:"bcons-central-park",at:new Date().toISOString()})});
+        await fetch(LEAD_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(data)});
         $("#resultMsg").innerHTML = "<b>Đã gửi thông tin đến Bạch Đằng.</b> Anh chị sẽ được liên hệ trong giờ làm việc. Có thể nhắn Zalo thêm nếu cần gấp.";
       } catch(_){}
     }
