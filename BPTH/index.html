@@ -6,7 +6,7 @@
 <title>Bcons Central Park | Bạch Đằng</title>
 <meta name="description" content="Bcons Central Park, 236 Phan Trung, P. Tam Hiệp, TP. Đồng Nai. Thông tin dự án, bảng giá theo loại căn, 5 phương thức thanh toán, pháp lý và lịch xem nhà mẫu. Tư vấn: Bạch Đằng 0784 313 668.">
 <meta property="og:title" content="Bcons Central Park | Tư vấn Bạch Đằng 0784 313 668">
-<meta property="og:description" content="Dữ liệu dự án cập nhật 10/11/2026: giá theo loại căn, thanh toán nhanh chiết khấu 12,5%, máy tính dòng tiền, pháp lý minh bạch, đăng ký xem nhà mẫu.">
+<meta property="og:description" content="Dữ liệu dự án cập nhật 12/11/2026: chính sách cam kết thuê lại 24 tháng hoặc chiết khấu thêm 4%, giá theo loại căn, thanh toán nhanh chiết khấu 12,5%, máy tính dòng tiền, pháp lý minh bạch, đăng ký xem nhà mẫu.">
 <meta property="og:image" content="https://hoangbachdang.com/BPTH/img/og-bcons-central-park.jpg">
 <meta property="og:type" content="website">
 <link rel="canonical" href="https://hoangbachdang.com/BPTH">
@@ -352,6 +352,43 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .sum b{display:block;font-size:1.3rem;font-variant-numeric:tabular-nums}
 .sum small{font-size:.78rem;color:var(--muted)}
 .sum .hl{border-color:var(--river);background:var(--river-soft)}
+/* Chính sách 12/TB-ĐTTH: thuê lại 24 tháng hoặc chiết khấu 4% */
+.hero-new{display:flex;align-items:center;gap:10px;margin-top:12px;max-width:470px;padding:10px 14px;border-radius:12px;background:#0f3d30;color:#fff;text-decoration:none;font-size:.9rem;line-height:1.35;box-shadow:0 10px 24px rgba(15,61,48,.22)}
+.hero-new b{flex:none;padding:3px 9px;border-radius:999px;background:linear-gradient(120deg,#f3d98b,#c9963a);color:#0f3d30;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase}
+.hero-new span{flex:1}
+.hero-new i{font-style:normal;color:#f3d98b;font-weight:700}
+.hero-new:hover{background:#13513f}
+.rent{background:linear-gradient(180deg,#0f3d30,#124a3a);color:#eef5f1}
+.rent .eyebrow{color:#f0d595}
+.rent h2{color:#fff}
+.rent .lead{color:#d4e5dd}
+.opts{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:20px;margin-top:26px}
+.opt{position:relative;border-radius:16px;padding:24px 24px 20px;background:#fff;color:var(--ink);box-shadow:0 18px 40px rgba(0,0,0,.18)}
+.opt-tag{display:inline-block;padding:4px 12px;border-radius:999px;background:#0f3d30;color:#f3d98b;font-size:.76rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.opt h3{font-family:var(--display);font-size:1.5rem;line-height:1.2;margin:12px 0 8px}
+.opt p{font-size:.95rem;margin:0}
+.opt .rent-t{width:100%;min-width:0;border-collapse:collapse;margin:16px 0 6px;font-size:.95rem}
+.opt .rent-t th{font-size:.76rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:none;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+.opt .rent-t th.r{text-align:right}
+.opt .rent-t td{padding:10px 8px;border-bottom:1px solid var(--line)}
+.opt .rent-t .r{text-align:right;font-variant-numeric:tabular-nums}
+.opt .rent-t td.r b{font-family:var(--display);font-size:1.35rem;color:#0f3d30}
+.opt .rent-t small{color:var(--muted)}
+.opt ul{margin:12px 0 0;padding-left:18px;display:grid;gap:6px;font-size:.9rem;color:#2f4a43}
+.opt-disc{background:linear-gradient(160deg,#fff8e6,#f4e2b8);border:1px solid #d6b064}
+.opt-disc .big{font-family:var(--display);font-size:clamp(4rem,9vw,5.6rem);font-weight:700;line-height:1;color:#0f3d30;margin:10px 0 6px}
+.opt-disc .big small{font-family:var(--body);font-size:1rem;font-weight:700;color:#8a6420;margin-left:6px}
+.opt-disc .note{margin-top:12px;color:#6b4f1c}
+.opt-hint{margin-top:18px;padding-top:14px;border-top:1px dashed rgba(138,100,32,.45)}
+.opt-hint b{display:block;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:#8a6420;margin-bottom:6px}
+.opt-hint p{font-size:.9rem;margin-top:6px}
+.opt-hint span{font-weight:700;color:#0f3d30}
+.opt-rules{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px}
+.opt-rules div{padding:14px 16px;border-radius:12px;border:1px solid rgba(240,213,149,.35);background:rgba(255,255,255,.06);font-size:.9rem;color:#dbe9e2}
+.opt-rules b{display:block;color:#f0d595;font-size:.95rem;margin-bottom:4px}
+.rent .src{margin-top:14px;font-size:.82rem;color:#b8cfc5}
+@media (max-width:900px){.opts{grid-template-columns:minmax(0,1fr)}.opt-rules{grid-template-columns:1fr}}
+@media (max-width:480px){.opt{padding:20px 16px 16px}.opt .rent-t{font-size:.88rem}.opt .rent-t td,.opt .rent-t th{padding:8px 5px}.opt .rent-t td.r b{font-size:1.15rem}.opt .rent-t td.r,.opt .rent-t th.r{white-space:normal}}
 .fastpay{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;margin-top:24px;padding:22px 24px;border:1px solid var(--brass);border-radius:14px;background:var(--brass-soft)}
 .fastpay h3{font-family:var(--display);font-size:1.45rem;margin:6px 0 10px}
 .fastpay p{font-size:.95rem}
@@ -480,6 +517,7 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
       <a href="#vi-tri">Vị trí</a>
       <a href="#tien-ich">Tiện ích</a>
       <a href="#san-pham">Sản phẩm</a>
+      <a href="#chinh-sach">Chính sách mới</a>
       <a href="#gia">Giá &amp; thanh toán</a>
       <a href="#phap-ly">Pháp lý</a>
       <a href="#hoi-dap">Hỏi đáp</a>
@@ -511,6 +549,7 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
         <span class="hp-num">1,99 tỷ</span>
         <span class="hp-note">Studio, thanh toán nhanh PTTT 1N, đã gồm VAT · chiết khấu đến 12,5%</span>
       </div>
+      <a class="hero-new" href="#chinh-sach"><b>Mới 12/11</b><span>Chọn 1 trong 2: cam kết thuê lại 24 tháng, 12–15 triệu/tháng, hoặc chiết khấu thêm 4%</span><i aria-hidden="true">→</i></a>
       <p class="lead">236 Phan Trung, Tam Hiệp, khoảng 2 phút đến Vincom Biên Hòa. Hồ bơi, vườn, quảng trường nhạc nước ngay dưới chân nhà.</p>
       <div class="hero-cta">
         <a class="btn btn-brass btn-lg" href="#lien-he" data-need="Nhận báo giá theo mã căn">Nhận báo giá theo căn</a>
@@ -525,7 +564,7 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
       <div class="fact"><b>Q.II/2029</b><span>dự kiến bàn giao</span></div>
     </div>
     <div class="hero-foot">
-      <div class="stamp"><i></i>Cập nhật 10/11/2026 · Bảng giá áp dụng từ 07/11/2026</div>
+      <div class="stamp"><i></i>Cập nhật 12/11/2026 · Bảng giá áp dụng từ 07/11/2026</div>
     </div>
   </div>
 </section>
@@ -536,6 +575,60 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
     <div class="phase-item"><h3>Giai đoạn 1 · 1.620 căn</h3><small>3 tháp Orchid, Bamboo, Tamarind. Căn còn trống cập nhật theo ngày, hỏi trực tiếp để có danh sách mới nhất.</small></div>
     <div class="phase-item later"><h3>Lotus và Palm</h3><small>Chưa mở bán. Lịch mở bán các đợt sau sẽ theo thông báo chính thức của Chủ đầu tư.</small></div>
     <div class="phase-item"><h3>Nhà mẫu mở hằng ngày</h3><small>236 Phan Trung, 8h30–19h. Khách cần đăng ký thông tin trước khi tham quan, đặt lịch ở cuối trang.</small></div>
+  </div>
+</section>
+
+<!-- POLICY 12/TB-DTTH -->
+<section class="sec rent" id="chinh-sach">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Chính sách mới · Thông báo 12/TB-ĐTTH ngày 12/11/2026</div>
+      <h2>Chọn 1 trong 2: cam kết thuê lại 24 tháng hoặc chiết khấu thêm 4%</h2>
+      <p class="lead">Anh chị chọn một trong hai lựa chọn ngay khi ký Thỏa thuận đăng ký. Hai lựa chọn độc lập, không áp dụng đồng thời cho cùng một căn.</p>
+    </div>
+    <div class="opts">
+      <article class="opt">
+        <span class="opt-tag">Lựa chọn 1</span>
+        <h3>Chủ đầu tư cam kết thuê lại căn hộ 24 tháng</h3>
+        <p>Chủ đầu tư thuê lại căn và trả tiền thuê định kỳ hằng tháng, trong vòng 24 tháng kể từ ngày phát hành Thông báo bàn giao căn hộ.</p>
+        <table class="rent-t">
+          <thead><tr><th>Loại căn</th><th class="r">Tiền thuê mỗi tháng</th><th class="r">Cộng 24 tháng</th></tr></thead>
+          <tbody>
+            <tr><td>Studio và 1PN</td><td class="r"><b>12</b> triệu</td><td class="r">288 triệu</td></tr>
+            <tr><td>2PN</td><td class="r"><b>14</b> triệu</td><td class="r">336 triệu</td></tr>
+            <tr><td>3PN</td><td class="r"><b>15</b> triệu</td><td class="r">360 triệu</td></tr>
+            <tr><td>Shophouse<br><small>thông thủy dưới 80 m² / từ 80 m²</small></td><td class="r">14 / 15 triệu</td><td class="r">336 / 360 triệu</td></tr>
+          </tbody>
+        </table>
+        <ul>
+          <li>Giá thuê đã gồm các loại thuế, phí liên quan. Chủ đầu tư trả đúng mức cam kết, không khấu trừ tại nguồn; anh chị tự kê khai, nộp thuế, phí (nếu có) theo quy định.</li>
+          <li>Áp dụng với căn theo tiêu chuẩn bàn giao của Chủ đầu tư.</li>
+          <li>Điều kiện: thanh toán đầy đủ, đúng hạn và tuân thủ các điều khoản của Hợp đồng mua bán.</li>
+          <li>Chuyển nhượng HĐMB: bên nhận chuyển nhượng được kế thừa quyền lợi này nếu vẫn đáp ứng đủ điều kiện.</li>
+        </ul>
+      </article>
+      <article class="opt opt-disc">
+        <span class="opt-tag">Lựa chọn 2</span>
+        <h3>Không chọn thuê lại: chiết khấu thêm</h3>
+        <div class="big">4%<small>trên giá bán</small></div>
+        <p>Chiết khấu thêm 4% trên giá bán căn hộ tương ứng với từng phương thức thanh toán, tính trên giá chưa VAT, chưa phí bảo trì.</p>
+        <p class="note">Bảng giá ở mục Giá và thanh toán chưa trừ khoản này. Số tiền cụ thể theo báo giá mã căn.</p>
+        <div class="opt-hint">
+          <b>Gợi ý cách chọn</b>
+          <p><span>Chiết khấu 4%</span> hợp khi gia đình định dọn vào ở lúc nhận nhà và muốn giảm thẳng số tiền phải trả.</p>
+          <p><span>Thuê lại 24 tháng</span> hợp khi chưa cần ở ngay và muốn có khoản tiền thuê cố định trong hai năm đầu.</p>
+        </div>
+      </article>
+    </div>
+    <div class="opt-rules">
+      <div><b>Chọn khi nào</b>Xác nhận Lựa chọn 1 hoặc Lựa chọn 2 ngay tại thời điểm ký Thỏa thuận đăng ký.</div>
+      <div><b>Áp dụng cho căn nào</b>Căn hộ giao dịch thành công, xác định khi khách đạt thỏa thuận đăng ký quyền chọn sản phẩm với Chủ đầu tư.</div>
+      <div><b>Hiệu lực</b>Từ ngày 12/11/2026 đến khi Chủ đầu tư có thông báo mới thay thế.</div>
+    </div>
+    <p class="src">Nguồn: Thông báo số 12/TB-ĐTTH ngày 12/11/2026 của Công ty CP Phát triển Đô thị Tam Hiệp, Chủ đầu tư dự án. Mức thuê là cam kết của Chủ đầu tư trong văn bản; ngoài phạm vi này, Bạch Đằng không cam kết lợi nhuận hay giá thuê thị trường.</p>
+    <div class="hero-cta" style="margin-top:18px">
+      <a class="btn btn-brass btn-lg" href="#lien-he" data-need="So sánh cam kết thuê lại và chiết khấu 4% theo căn">So sánh 2 lựa chọn cho căn của tôi</a>
+    </div>
   </div>
 </section>
 
@@ -868,7 +961,7 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
         </tbody>
       </table>
     </div>
-    <p class="note" style="margin-top:10px">Chiết khấu tính trên giá PTTT 02 chưa VAT, chưa phí bảo trì; áp dụng đến khi có thông báo mới. Các PTTT không cộng dồn. PTTT 02–05 chỉ áp dụng khách cá nhân. Bảng giá hiện gồm 996 căn đang mở trong tổng 1.620 căn giai đoạn 1; khoảng giá có thể thay đổi khi bổ sung căn. Giá từng căn theo báo giá mã căn.</p>
+    <p class="note" style="margin-top:10px">Chiết khấu tính trên giá PTTT 02 chưa VAT, chưa phí bảo trì; áp dụng đến khi có thông báo mới. Các PTTT không cộng dồn. PTTT 02–05 chỉ áp dụng khách cá nhân. Bảng giá hiện gồm 996 căn đang mở trong tổng 1.620 căn giai đoạn 1; khoảng giá có thể thay đổi khi bổ sung căn. Giá từng căn theo báo giá mã căn. Bảng giá chưa trừ chiết khấu thêm 4% của <a href="#chinh-sach">chính sách mới</a> (khi không chọn cam kết thuê lại).</p>
 
     <div class="fastpay">
       <div>
@@ -1002,7 +1095,9 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
       <details><summary>Thanh toán nhanh chiết khấu 12,5% là gì?</summary><p>Theo Thông báo 11/TB-ĐTTH ngày 05/11/2026, khách chọn PTTT 01 có thể gộp đợt 3 đến đợt 10 thành 50% giá trị căn hộ (đã gồm VAT), trả trong 20 ngày kể từ ngày ký HĐMB. Khi đó chiết khấu thêm 4%, lũy tiến 12,5% trên giá PTTT 02 chưa VAT và phí bảo trì. Chỉ áp dụng cho 200 căn hộ đầu tiên chọn phương án này.</p></details>
       <details><summary>Hết ưu đãi thì lãi bao nhiêu?</summary><p>Theo lãi suất ngân hàng tại thời điểm đó, thả nổi. Không ai cam kết được con số cụ thể. Với PTTT 03 và 04, Chủ đầu tư cam kết trần 6,9%/năm trong thời gian áp dụng của chính sách.</p></details>
       <details><summary>Vay thêm cho đợt 25% bàn giao được không?</summary><p>Được nếu ngân hàng duyệt, nhưng phần vay thêm nằm ngoài chính sách hỗ trợ của Chủ đầu tư; lãi theo ngân hàng.</p></details>
-      <details><summary>Mua để cho thuê có được không?</summary><p>Được cho thuê, sang nhượng, đăng ký thường trú theo quy định. Bạch Đằng không cam kết lợi nhuận hay giá thuê; mình cùng tính kịch bản dòng tiền theo số liệu thật của căn anh chị chọn.</p></details>
+      <details><summary>Cam kết thuê lại 24 tháng là gì?</summary><p>Theo Thông báo 12/TB-ĐTTH ngày 12/11/2026, khi ký Thỏa thuận đăng ký anh chị có thể chọn để Chủ đầu tư thuê lại căn trong 24 tháng kể từ ngày phát hành Thông báo bàn giao: Studio và 1PN 12 triệu/tháng, 2PN 14 triệu/tháng, 3PN 15 triệu/tháng. Giá thuê đã gồm thuế, phí; Chủ đầu tư trả hằng tháng, không khấu trừ tại nguồn, khách tự kê khai nộp thuế (nếu có). Điều kiện là thanh toán đầy đủ, đúng hạn theo HĐMB.</p></details>
+      <details><summary>Nên chọn thuê lại hay chiết khấu 4%?</summary><p>Tùy kế hoạch của gia đình. Chiết khấu 4% giảm thẳng vào giá mua, tính trên giá chưa VAT theo phương thức thanh toán đã chọn. Cam kết thuê lại cho khoản tiền thuê cố định trong 24 tháng đầu sau thông báo bàn giao, hợp với người chưa cần dọn vào ở ngay. Chỉ chọn được một, và phải chốt khi ký Thỏa thuận đăng ký. Bạch Đằng tính hai phương án trên đúng căn anh chị chọn để so sánh.</p></details>
+      <details><summary>Mua để cho thuê có được không?</summary><p>Được cho thuê, sang nhượng, đăng ký thường trú theo quy định. Ngoài mức thuê Chủ đầu tư cam kết trong Thông báo 12/TB-ĐTTH, Bạch Đằng không cam kết lợi nhuận hay giá thuê thị trường; mình cùng tính kịch bản dòng tiền theo số liệu thật của căn anh chị chọn.</p></details>
       <details><summary>Giá đợt sau có tăng không?</summary><p>Chưa có văn bản về giá đợt sau. Giá hiện hành theo bảng giá và có thể điều chỉnh theo đợt mở bán.</p></details>
       <details><summary>Có smart home không? Có nấu gas được không?</summary><p>Không có app căn hộ thông minh tập trung; cửa chính có khóa điện tử thông minh. Không dùng gas trong căn hộ; bàn giao bếp điện từ.</p></details>
       <details><summary>Hai người không phải vợ chồng đứng tên chung được không?</summary><p>Được, nếu cùng quốc tịch Việt Nam. Dự án không bán cho người nước ngoài.</p></details>
@@ -1050,6 +1145,7 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
             <option>Nhận báo giá theo mã căn</option>
             <option>Đặt lịch xem nhà mẫu</option>
             <option>Tính dòng tiền và phương án vay</option>
+            <option>So sánh cam kết thuê lại và chiết khấu 4% theo căn</option>
             <option>Tìm hiểu pháp lý</option>
             <option>Nhận bộ ảnh phối cảnh và danh mục tiện ích</option>
           </select>
@@ -1112,7 +1208,7 @@ td.r,th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
       <div>
         <p><b>Bcons Central Park</b> · 236 Phan Trung, P. Tam Hiệp, TP. Đồng Nai</p>
         <p style="margin-top:8px">Chủ đầu tư: Công ty CP Phát triển Đô thị Tam Hiệp, công ty con Tập đoàn Bcons.</p>
-        <p style="margin-top:12px">Trang thông tin do chuyên viên tư vấn Bạch Đằng (Sàn Bcons Biên Hòa) biên soạn từ tài liệu bán hàng và văn bản của dự án, cập nhật 10/11/2026. Đây không phải website chính thức của Chủ đầu tư. Giá, chính sách và hình ảnh mang tính tham khảo, có thể thay đổi; giá trị ràng buộc theo văn bản của Chủ đầu tư và hợp đồng ký kết.</p>
+        <p style="margin-top:12px">Trang thông tin do chuyên viên tư vấn Bạch Đằng (Sàn Bcons Biên Hòa) biên soạn từ tài liệu bán hàng và văn bản của dự án, cập nhật 12/11/2026. Đây không phải website chính thức của Chủ đầu tư. Giá, chính sách và hình ảnh mang tính tham khảo, có thể thay đổi; giá trị ràng buộc theo văn bản của Chủ đầu tư và hợp đồng ký kết.</p>
       </div>
       <div>
         <p><b>Liên hệ tư vấn</b></p>
