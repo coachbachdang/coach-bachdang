@@ -208,7 +208,14 @@ body.cust .cell.od{box-shadow:none}body.cust .cell.od::after{display:none}
 @media (prefers-reduced-motion:reduce){.sheet{animation:none}}
 @media (min-width:760px){.ov{align-items:center}.sheet{border-radius:20px}}
 .sh-top{display:flex;align-items:center;gap:10px;position:sticky;top:-18px;z-index:5;background:var(--surface);margin:-18px -16px 0;padding:14px 16px 10px;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
+.sh-top .ttl{flex:1;min-width:0}
+.sh-top .row1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .sh-top .sub{font-size:.8rem;color:var(--muted);margin-top:2px}
+@media (max-width:759px){
+  .ov{align-items:stretch;background:var(--surface)}
+  .sheet{max-width:none;max-height:none;height:100%;height:100dvh;border-radius:0;animation:none}
+  .sh-top{border-radius:0;padding-top:calc(12px + env(safe-area-inset-top))}
+}
 .sh-top .sub b{color:var(--ink)}
 .sh-top h2{font-size:1.4rem}
 .sh-top .x{margin-left:auto}
@@ -649,7 +656,7 @@ function drawUnit(){
   const pt = S.dpt, q = quoteOf(u, pt, S.cs), pl = PLANS[pt];
   const iBG = q.rows.length - 2;
   $("#dlg").innerHTML =
-    `<div class="sh-top"><div><h2 id="dTitle">${u.code}</h2><div class="sub">${t.name} · ${pl.short} · <b>${tyS(q.T)} tỷ</b></div></div><span class="st ${st[2]} int">${st[0]}</span><button class="icon-btn x" type="button" data-act="close" aria-label="Đóng">✕</button></div>`+
+    `<div class="sh-top"><div class="ttl"><div class="row1"><h2 id="dTitle">${u.code}</h2><span class="st ${st[2]} int">${st[0]}</span></div><div class="sub">${t.name} · ${pl.short} · <b>${tyS(q.T)} tỷ</b></div></div><button class="icon-btn x" type="button" data-act="close" aria-label="Đóng">✕</button></div>`+
     `<div class="facts"><div><span>Tòa</span><b>${u.t} · ${D.towers[u.t].name}</b></div><div><span>Tầng</span><b>${u.floor}</b></div><div><span>Loại</span><b>${t.name}</b></div>`+
     `<div><span>Tim tường</span><b>${u.dt.toLocaleString("vi-VN")} m²</b></div><div><span>Thông thủy</span><b>${u.tt.toLocaleString("vi-VN")} m²</b></div><div><span>Giá gốc / m² TT</span><b>${(u.net/u.tt/1e6).toLocaleString("vi-VN",{maximumFractionDigits:1})} tr</b></div></div>`+
     (HAS_ST && (u.coc || u.dl || u.ht) ? `<p class="small int" style="margin:-4px 0 0">${u.coc ? `Cọc ngày ${esc(u.coc)}` : ""}${u.dl ? ` · hạn hoàn tất ${esc(u.dl)}` : ""}${u.ht ? ` · đã vào tiền ${esc(u.ht)}` : ""}${u.od ? ` · <b style="color:#9b2c1f">quá hạn, có thể sắp bung</b>` : ""}</p>` : "")+
