@@ -65,6 +65,7 @@ def main():
     ap.add_argument("--stock-at")
     ap.add_argument("--price-src", default="file check giá 07/11/2026")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--live-url", help="Đường dẫn /exec của Apps Script rổ hàng; mã khóa lấy từ biến môi trường BPTH_LIVE_KEY")
     a = ap.parse_args()
     pw = os.environ.get("BPTH_PASS")
     if not pw or len(pw) < 12: sys.exit("Thiếu BPTH_PASS (ít nhất 12 ký tự)")
@@ -86,12 +87,16 @@ def main():
     data = {"v": 1, "builtAt": datetime.now(timezone(timedelta(hours=7))).strftime("%d/%m/%Y %H:%M"),
             "priceSrc": a.price_src, "stockAt": stock_at, "towers": towers, "units": units}
     if prev and stock_at: data["prev"], data["prevAt"] = prev, prev_at
+    if a.live_url:
+        k = os.environ.get("BPTH_LIVE_KEY")
+        if not k: sys.exit("Thiếu BPTH_LIVE_KEY cho rổ hàng trực tiếp")
+        data["live"] = {"url": a.live_url, "k": k}
     salt, iv = os.urandom(16), os.urandom(12)
     ct = AESGCM(kdf(pw, salt)).encrypt(iv, json.dumps(data, ensure_ascii=False, separators=(",", ":")).encode(), None)
     out = {"v": 1, "alg": "AES-GCM", "kdf": "PBKDF2-SHA256", "iter": ITER,
            "salt": base64.b64encode(salt).decode(), "iv": base64.b64encode(iv).decode(), "ct": base64.b64encode(ct).decode()}
     json.dump(out, open(a.out, "w"))
-    print(f"{len(units)} căn · {len(towers)} tòa · rổ hàng: {stock_at or 'chưa có'} · {os.path.getsize(a.out)//1024} KB")
+    print(f"{len(units)} căn · {len(towers)} tòa · rổ hàng: {'trực tiếp' if a.live_url else (stock_at or 'chưa có')} · {os.path.getsize(a.out)//1024} KB")
 
 if __name__ == "__main__":
     main()

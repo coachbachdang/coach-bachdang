@@ -142,6 +142,18 @@ input:focus,select:focus{outline:none;border-color:var(--river);box-shadow:0 0 0
 .cell.s3{background:var(--lock-bg);color:var(--muted);background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(0,0,0,.05) 5px 7px)}
 .cell.sx{border-style:dashed;color:var(--muted)}
 .cell.sn{border:1px solid #b9cbc5}
+.cell.od{box-shadow:0 0 0 2px #d9534a;position:relative}
+.cell.od::after{content:"";position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#d9534a}
+body.cust .cell.od{box-shadow:none}body.cust .cell.od::after{display:none}
+.pill-btn{border:0;cursor:pointer;font:inherit}
+.pill-btn.err{background:#fbecea;color:#9b2c1f}
+.pill-btn.err .dot{background:#d9534a;box-shadow:0 0 0 3px rgba(217,83,74,.18)}
+.today{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1.5px solid var(--ink);background:var(--surface);border-radius:14px;padding:11px 14px;font-size:.92rem}
+.today b{font-weight:700}
+.today .go{margin-left:auto;color:var(--muted);font-size:.8rem;white-space:nowrap}
+.today[aria-pressed=true]{background:var(--ink);color:#fff}
+.today[aria-pressed=true] .go{color:#cfe0da}
+.unk{font-size:.78rem;color:#8a4b12}
 .cell.sn b{color:var(--river)}
 .cell.dim{opacity:.28}
 .cell.hit{box-shadow:0 0 0 3px var(--brass)}
@@ -257,7 +269,7 @@ body.cust .cust-bar button{margin-left:auto}
       </div>
     </div>
     <div class="pills">
-      <span class="pill int"><i class="dot"></i>Rổ hàng <b id="stockAt"></b></span>
+      <button class="pill pill-btn int" type="button" id="stockBtn" title="Đọc lại rổ hàng"><i class="dot"></i>Rổ hàng <b id="stockAt"></b></button>
       <span class="pill"><b id="unitCount"></b> căn trong bảng giá</span>
       <span class="pill int">Giá theo <b id="priceSrc"></b></span>
     </div>
@@ -273,6 +285,8 @@ body.cust .cust-bar button{margin-left:auto}
     <div><b>Trang nội bộ cho sale, không phải trang chính thức của công ty hay Chủ đầu tư.</b> Giá và trạng thái căn chỉ để tham khảo: luôn kiểm tra lại báo giá mã căn và rổ hàng chính thức trước khi báo khách hoặc nhận cọc.</div>
     <button type="button" id="bannerX" aria-label="Ẩn thông báo">×</button>
   </div>
+
+  <button class="today int" type="button" id="today" aria-pressed="false" hidden style="margin-top:12px"></button>
 
   <nav class="tabs" role="tablist" aria-label="Chức năng" style="margin-top:12px">
     <button class="tab" role="tab" data-tab="ro" aria-selected="true">Rổ hàng</button>
@@ -317,6 +331,7 @@ body.cust .cust-bar button{margin-left:auto}
 
     <div class="summary" id="summary"></div>
     <div class="legend int" id="legend" role="group" aria-label="Lọc theo trạng thái"></div>
+    <div class="unk int" id="unk" hidden></div>
     <div id="view"></div>
   </section>
 
@@ -415,7 +430,7 @@ $("#gateForm").addEventListener("submit", async e=>{
 $("#lockBtn").addEventListener("click", ()=>{ store.del(KEY_STORE); location.reload(); });
 
 /* ---------- TRẠNG THÁI GIAO DIỆN ---------- */
-const S = { tower:"all", types:new Set(), max:0, pt:"1N", cs:"0", view:"grid", st:{0:true,1:true,2:true,3:true,"-1":true}, from:3, to:22, sort:"price", preset:"", cust:false, cmp:[], tab:"ro", open:null, dpt:null };
+const S = { od:false, tower:"all", types:new Set(), max:0, pt:"1N", cs:"0", view:"grid", st:{0:true,1:true,2:true,3:true,"-1":true}, from:3, to:22, sort:"price", preset:"", cust:false, cmp:[], tab:"ro", open:null, dpt:null };
 let D = null, U = [], BY = new Map(), HAS_ST = false;
 const avail = u => HAS_ST ? u.s === 0 : true;
 
@@ -426,8 +441,6 @@ function start(data){
   document.body.classList.toggle("nost", !HAS_ST);
   U.forEach(u=>BY.set(u.code, u));
   $("#gate").hidden = true; $("#app").hidden = false;
-  $("#stockAt").textContent = data.stockAt || "chưa cập nhật";
-  if (!HAS_ST) $("#stockAt").parentElement.querySelector(".dot").style.cssText = "background:#b9c3be;box-shadow:none";
   $("#unitCount").textContent = U.length.toLocaleString("vi-VN");
   $("#priceSrc").textContent = data.priceSrc || "";
   const floors = [...new Set(U.map(u=>u.floor))].sort((a,b)=>a-b);
@@ -443,6 +456,7 @@ function start(data){
   try { if (sessionStorage.getItem("bpth-banner") === "x") $("#banner").hidden = true; } catch(_){}
   readHash();
   render();
+  startLive();
 }
 
 /* ---------- TÍNH GIÁ (có bộ nhớ đệm theo PTTT + chính sách) ---------- */
@@ -462,7 +476,7 @@ function baseMatch(u){
   if (S.max && T(u) > S.max * 1e9) return false;
   return true;
 }
-function stMatch(u){ if (!HAS_ST) return true; return S.cust ? u.s === 0 : !!S.st[u.s]; }
+function stMatch(u){ if (!HAS_ST) return true; if (S.od) return !!u.od; return S.cust ? u.s === 0 : !!S.st[u.s]; }
 const match = u => baseMatch(u) && stMatch(u);
 const inTower = u => S.tower === "all" || u.t === S.tower;
 
@@ -477,7 +491,7 @@ function render(){
   $$(".tab").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab === S.tab)));
   $$("[data-panel]").forEach(p=>p.hidden = p.dataset.panel !== S.tab);
   const cc = $("#cmpCnt"); cc.hidden = !S.cmp.length; cc.textContent = S.cmp.length;
-  renderTowers(); renderSummary(); renderLegend();
+  renderTowers(); renderSummary(); renderLegend(); paintToday();
   if (S.tab === "ro") (S.view === "grid" ? renderGrid : renderList)();
   if (S.tab === "ss") renderCompare();
   if (S.tab === "tim") renderFind();
@@ -507,7 +521,7 @@ function renderSummary(){
   if (S.from !== +$("#fFrom").options[0]?.value || S.to !== +$("#fTo").options[$("#fTo").options.length-1]?.value) parts.push(`tầng ${S.from}–${S.to}`);
   const cs = S.cs === "thue" ? " · chọn thuê lại" : S.cs === "ck4" ? (NO_CK4.includes(S.pt) ? " · CK 4% không áp dụng PTTT này" : " · đã trừ CK 4%") : "";
   $("#summary").innerHTML = (HAS_ST ? `<b>${free}</b> căn trống` + (S.cust ? "" : ` / ${us.length} căn đang hiện`) : `<b>${us.length}</b> căn`) + ` · ${parts.join(" · ")} · giá theo <b>${PLANS[S.pt].short}</b>${cs}` +
-    (HAS_ST ? "" : `<div class="small int" style="color:#8a4b12;margin-top:4px">Chưa cập nhật rổ hàng trên trang: kiểm tra căn còn trống trên rổ hàng chung trước khi báo khách.</div>`);
+    (HAS_ST ? (S.od ? `<div class="small int" style="margin-top:4px">Đang lọc: cọc quá hạn hoàn tất, có thể sắp bung. Bấm lại thanh "Hôm nay" để bỏ lọc.</div>` : "") : `<div class="small int" style="color:#8a4b12;margin-top:4px">${liveNote()}</div>`);
 }
 
 function renderLegend(){
@@ -522,7 +536,7 @@ function renderLegend(){
 function cellHtml(u){
   const st = HAS_ST ? (STATUS[u.s] || STATUS["-1"]) : ["Kiểm tra rổ hàng","sn","stx"];
   const ok = match(u);
-  return `<button class="cell ${st[1]}${ok ? "" : " dim"}" type="button" data-u="${u.code}" aria-label="${u.code}, ${TYPES[u.type].name}, ${st[0]}, ${tyS(T(u))} tỷ"><b>${u.stack}</b><span>${tyS(T(u))}</span></button>`;
+  return `<button class="cell ${st[1]}${ok ? "" : " dim"}${HAS_ST && u.od ? " od" : ""}" type="button" data-u="${u.code}" aria-label="${u.code}, ${TYPES[u.type].name}, ${st[0]}, ${tyS(T(u))} tỷ"><b>${u.stack}</b><span>${tyS(T(u))}</span></button>`;
 }
 function renderGrid(){
   const towers = S.tower === "all" ? Object.keys(D.towers) : [S.tower];
@@ -607,6 +621,7 @@ function drawUnit(){
     `<div class="sh-top"><h2 id="dTitle">${u.code}</h2><span class="st ${st[2]} int">${st[0]}</span><button class="icon-btn x" type="button" data-act="close" aria-label="Đóng">✕</button></div>`+
     `<div class="facts"><div><span>Tòa</span><b>${u.t} · ${D.towers[u.t].name}</b></div><div><span>Tầng</span><b>${u.floor}</b></div><div><span>Loại</span><b>${t.name}</b></div>`+
     `<div><span>Tim tường</span><b>${u.dt.toLocaleString("vi-VN")} m²</b></div><div><span>Thông thủy</span><b>${u.tt.toLocaleString("vi-VN")} m²</b></div><div><span>Giá gốc / m² TT</span><b>${(u.net/u.tt/1e6).toLocaleString("vi-VN",{maximumFractionDigits:1})} tr</b></div></div>`+
+    (HAS_ST && (u.coc || u.dl || u.ht) ? `<p class="small int" style="margin:-4px 0 0">${u.coc ? `Cọc ngày ${esc(u.coc)}` : ""}${u.dl ? ` · hạn hoàn tất ${esc(u.dl)}` : ""}${u.ht ? ` · đã vào tiền ${esc(u.ht)}` : ""}${u.od ? ` · <b style="color:#9b2c1f">quá hạn, có thể sắp bung</b>` : ""}</p>` : "")+
     `<div class="seg" role="group" aria-label="Chính sách 12/TB" style="width:100%;display:grid;grid-template-columns:repeat(3,1fr)">`+
       [["0","Chưa áp dụng"],["thue","Thuê lại 24 th"],["ck4","CK thêm 4%"]].map(([v,l])=>`<button type="button" data-cs="${v}" aria-pressed="${S.cs===v}">${l}</button>`).join("")+`</div>`+
     `<table class="pt-t num"><thead><tr><th>Phương thức</th><th>Tổng gồm VAT</th><th>Đến HĐMB</th><th>Ngân hàng</th></tr></thead><tbody>`+
@@ -622,7 +637,7 @@ function drawUnit(){
       `<button class="btn btn-ghost" type="button" data-act="zalo">Chép tin Zalo</button>`+
       `<button class="btn btn-ghost" type="button" data-act="cmp">${S.cmp.includes(u.code) ? "Bỏ khỏi so sánh" : "So sánh"}</button>`+
       `<a class="btn btn-ghost wide" href="${shareLink(u, pt, S.cs)}" target="_blank" rel="noopener">Mở phiếu báo giá đầy đủ</a></div>`+
-    `<p class="small muted int">Trước khi báo khách: xác nhận căn còn trống trên rổ hàng chung và giá trên báo giá mã căn. Rổ hàng trên trang này cập nhật ${D.stockAt || "chưa rõ"}.</p>`;
+    `<p class="small muted int">${HAS_ST ? `Trạng thái đọc trực tiếp từ rổ hàng chung lúc ${D.stockAt}. Trước khi nhận cọc vẫn xác nhận lại với admin.` : liveNote()}</p>`;
 }
 
 /* ---------- TRẢ NỢ SAU BÀN GIAO (gốc đều, lãi trên dư nợ giảm dần, như bảng vay ngân hàng của sàn) ---------- */
@@ -697,8 +712,8 @@ function renderFind(){
 
 /* ---------- BIẾN ĐỘNG ---------- */
 function renderChanges(){
-  if (!HAS_ST) { $("#chgView").innerHTML = `<div class="empty">Chưa có rổ hàng trên trang. Khi Bạch Đằng cập nhật rổ hàng, trạng thái từng căn và các căn đổi trạng thái sẽ hiện ở đây.</div>`; return; }
-  if (!D.prev) { $("#chgView").innerHTML = `<div class="empty">Đây là lần cập nhật rổ hàng đầu tiên trên trang. Từ lần cập nhật sau, các căn đổi trạng thái (bung cọc, mới cọc, hoàn tất cọc) sẽ hiện ở đây.</div>`; return; }
+  if (!HAS_ST) { $("#chgView").innerHTML = `<div class="empty">${liveNote()}</div>`; return; }
+  if (!D.prev) { $("#chgView").innerHTML = `<div class="empty">Đây là lần đầu máy này mở bảng giá. Từ lần mở sau, các căn đổi trạng thái (bung cọc, mới cọc, hoàn tất cọc) kể từ lần trước sẽ hiện ở đây.</div>`; return; }
   const groups = { bung:[], moi:[], ht:[], khac:[] };
   for (const u of U) {
     const p = D.prev[u.code]; if (p === undefined || p === u.s) continue;
@@ -706,7 +721,7 @@ function renderChanges(){
   }
   const sect = (title, arr) => arr.length ? `<h3>${title} (${arr.length})</h3><div class="list">${arr.map(([u,p])=>rowHtml(u, ` · trước: ${(STATUS[p]||STATUS["-1"])[0]}`)).join("")}</div>` : "";
   const html = sect("Về trống, có thể chào lại", groups.bung) + sect("Mới cọc", groups.moi) + sect("Hoàn tất cọc", groups.ht) + sect("Thay đổi khác", groups.khac);
-  $("#chgView").innerHTML = `<p class="small muted">So với lần cập nhật ${D.prevAt || "trước"} → ${D.stockAt}.</p><div class="chg">${html || `<div class="empty">Không có căn nào đổi trạng thái.</div>`}</div>`;
+  $("#chgView").innerHTML = `<p class="small muted">So với lần anh chị mở trang trước trên máy này (${D.prevAt || "chưa rõ"}) đến ${D.stockAt}.</p><div class="chg">${html || `<div class="empty">Không có căn nào đổi trạng thái.</div>`}</div>`;
 }
 
 /* ---------- GỢI Ý CHO KHÁCH ---------- */
@@ -750,6 +765,90 @@ function readHash(){
   if (h.get("u") && BY.has(h.get("u"))) setTimeout(()=>openUnit(h.get("u")), 0);
 }
 
+/* ---------- RỔ HÀNG TRỰC TIẾP (Apps Script chỉ đọc, gọi bằng mã khóa nằm trong dữ liệu đã mã hóa) ---------- */
+const LIVE = { state: "off", t: 0, err: "", unknown: {} };
+const SEEN = "bpth-seen-v1";
+const normTxt = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").replace(/\s+/g, " ").trim().toUpperCase();
+function normSt(raw){
+  const t = normTxt(raw);
+  if (!t || t.includes("TRONG")) return 0;
+  if (t.includes("LOCK") || t.includes("KHOA")) return 3;
+  if (t.startsWith("HT") || t.includes("HOAN TAT") || t.includes("TTDC") || t.includes("D1")) return 2;
+  if (t.includes("COC") || t.includes("BOOK") || t.includes("GIU")) return 1;
+  return -1;
+}
+function parseVN(s){ const m = String(s || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if (!m) return null; let y = +m[3]; if (y < 100) y += 2000; return new Date(y, +m[2] - 1, +m[1]); }
+const hhmm = d => d.toLocaleTimeString("vi-VN", { hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false });
+function liveNote(){
+  if (!D || !D.live) return "Chưa kết nối rổ hàng trực tiếp: kiểm tra căn còn trống trên rổ hàng chung trước khi báo khách.";
+  if (LIVE.state === "load") return "Đang đọc rổ hàng chung…";
+  if (LIVE.state === "err") return `Không đọc được rổ hàng chung (${LIVE.err}). Bấm nút Rổ hàng ở đầu trang để thử lại, hoặc mở rổ hàng chung để kiểm tra.`;
+  return "Kiểm tra căn còn trống trên rổ hàng chung trước khi báo khách.";
+}
+function paintStock(){
+  const b = $("#stockBtn"), at = $("#stockAt"), dot = b.querySelector(".dot");
+  b.classList.toggle("err", LIVE.state === "err");
+  dot.style.cssText = LIVE.state === "ok" ? "" : (LIVE.state === "err" ? "" : "background:#b9c3be;box-shadow:none");
+  at.textContent = LIVE.state === "ok" ? `trực tiếp · ${D.stockAt}` : LIVE.state === "load" ? "đang đọc…" : LIVE.state === "err" ? "lỗi, bấm để thử lại" : (D.live ? "chưa đọc" : "chưa kết nối");
+}
+let liveBusy = false;
+async function fetchLive(fresh){
+  if (!D.live || liveBusy) return;
+  liveBusy = true; if (!HAS_ST) LIVE.state = "load"; paintStock();
+  try {
+    const url = D.live.url + (D.live.url.includes("?") ? "&" : "?") + "k=" + encodeURIComponent(D.live.k) + (fresh ? "&fresh=1" : "") + "&_=" + Date.now();
+    const r = await fetch(url, { redirect:"follow", cache:"no-store" });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error === "unauthorized" ? "sai mã khóa" : (j.error || "dữ liệu lỗi"));
+    applyLive(j);
+    LIVE.state = "ok"; LIVE.err = ""; LIVE.t = Date.now();
+  } catch (ex) {
+    LIVE.state = HAS_ST ? "ok" : "err"; LIVE.err = (ex && ex.message) || "mất kết nối";
+    if (HAS_ST) toast("Chưa đọc lại được rổ hàng, đang hiện lần đọc lúc " + D.stockAt);
+  }
+  liveBusy = false; paintStock(); render(); if (S.open) drawUnit();
+}
+function applyLive(j){
+  const seen = new Set(); const unknown = {}; const today = new Date(); today.setHours(0,0,0,0);
+  for (const row of j.rows) {
+    const [code, st, coc, dl, ht, qh, stSau] = row; const u = BY.get(code); if (!u) continue; seen.add(code);
+    const s2 = normTxt(stSau) ? normSt(stSau) : -9;
+    u.s = s2 >= 0 ? s2 : normSt(st);
+    if (u.s < 0) { const k = (st || "").trim() || "(trống)"; unknown[k] = (unknown[k] || 0) + 1; }
+    u.coc = coc || ""; u.dl = dl || ""; u.ht = ht || "";
+    const d = parseVN(dl);
+    u.od = u.s === 1 && (normTxt(qh).includes("QUA HAN") || (!!d && d < today));
+  }
+  for (const u of U) if (!seen.has(u.code)) { u.s = -1; u.od = false; }
+  LIVE.unknown = unknown;
+  const now = new Date(); D.stockAt = `${hhmm(now)} ${now.toLocaleDateString("vi-VN")}`;
+  /* Mốc so sánh cho tab Biến động: lần mở trước trên máy này */
+  if (!HAS_ST) {
+    try { const prev = JSON.parse(store.get(SEEN) || "null"); if (prev && prev.st) { D.prev = prev.st; D.prevAt = prev.at; } } catch(_){}
+    const cur = {}; U.forEach(u=>cur[u.code] = u.s); store.set(SEEN, JSON.stringify({ at:D.stockAt, st:cur }));
+  }
+  HAS_ST = true; document.body.classList.remove("nost");
+}
+function paintToday(){
+  const el = $("#today"); if (!HAS_ST) { el.hidden = true; return; }
+  const od = U.filter(u=>u.od).length;
+  const chg = D.prev ? U.filter(u=>D.prev[u.code] !== undefined && D.prev[u.code] !== u.s).length : 0;
+  const bung = D.prev ? U.filter(u=>u.s === 0 && D.prev[u.code] !== undefined && D.prev[u.code] !== 0).length : 0;
+  el.hidden = !(od || chg);
+  el.setAttribute("aria-pressed", String(S.od));
+  el.innerHTML = `<span><b>Hôm nay</b> · ${od ? `<b>${od}</b> cọc quá hạn, có thể sắp bung` : "không có cọc quá hạn"}${chg ? ` · ${chg} căn đổi trạng thái từ lần mở trước${bung ? `, ${bung} căn mới bung` : ""}` : ""}</span><span class="go">${S.od ? "Bỏ lọc" : (od ? "Xem căn quá hạn" : "")}</span>`;
+  const unk = Object.entries(LIVE.unknown); const ue = $("#unk");
+  ue.hidden = !unk.length;
+  ue.textContent = unk.length ? "Tình trạng trên rổ hàng chưa nhận dạng được: " + unk.map(([k,n])=>`"${k}" ${n} căn`).join(", ") + ". Báo Bạch Đằng để cập nhật." : "";
+}
+function startLive(){
+  paintStock();
+  if (!D.live) return;
+  fetchLive();
+  setInterval(()=>{ if (!document.hidden) fetchLive(); }, 90000);
+  document.addEventListener("visibilitychange", ()=>{ if (!document.hidden && Date.now() - LIVE.t > 30000) fetchLive(); });
+}
+
 /* ---------- SỰ KIỆN ---------- */
 let toastT;
 function toast(msg){ const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(()=>t.hidden = true, 3500); }
@@ -789,7 +888,9 @@ document.addEventListener("click", async e=>{
   }
   if (el.id === "moreList") { listLimit += 60; renderList(); }
   if (el.id === "moreBtn") { const m = $("#more"); m.hidden = !m.hidden; el.setAttribute("aria-expanded", String(!m.hidden)); }
-  if (el.id === "resetBtn") { Object.assign(S, { tower:"all", types:new Set(), max:0, pt:"1N", cs:"0", st:{0:true,1:true,2:true,3:true,"-1":true}, preset:"", sort:"price" }); S.from = +$("#fFrom").options[0].value; S.to = +$("#fTo").options[$("#fTo").options.length-1].value; $("#presetNote").textContent = ""; render(); }
+  if (el.id === "resetBtn") { Object.assign(S, { od:false, tower:"all", types:new Set(), max:0, pt:"1N", cs:"0", st:{0:true,1:true,2:true,3:true,"-1":true}, preset:"", sort:"price" }); S.from = +$("#fFrom").options[0].value; S.to = +$("#fTo").options[$("#fTo").options.length-1].value; $("#presetNote").textContent = ""; render(); }
+  if (el.id === "stockBtn") { fetchLive(true); return; }
+  if (el.id === "today") { S.od = !S.od; if (S.od) { S.tab = "ro"; S.view = "list"; S.sort = "code"; } render(); return; }
   if (el.id === "bannerX") { $("#banner").hidden = true; try { sessionStorage.setItem("bpth-banner","x"); } catch(_){} }
 });
 $("#ov").addEventListener("click", e=>{ if (e.target.id === "ov") closeUnit(); });
