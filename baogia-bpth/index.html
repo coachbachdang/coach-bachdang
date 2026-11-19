@@ -796,9 +796,7 @@ async function fetchLive(fresh){
   if (!D.live || liveBusy) return;
   liveBusy = true; if (!HAS_ST) LIVE.state = "load"; paintStock();
   try {
-    const url = D.live.url + (D.live.url.includes("?") ? "&" : "?") + "k=" + encodeURIComponent(D.live.k) + (fresh ? "&fresh=1" : "") + "&_=" + Date.now();
-    const r = await fetch(url, { redirect:"follow", cache:"no-store" });
-    const j = await r.json();
+    const j = D.live.gviz ? await readGviz() : await readScript(fresh);
     if (!j.ok) throw new Error(j.error === "unauthorized" ? "sai mã khóa" : (j.error || "dữ liệu lỗi"));
     applyLive(j);
     LIVE.state = "ok"; LIVE.err = ""; LIVE.t = Date.now();
@@ -808,6 +806,40 @@ async function fetchLive(fresh){
   }
   liveBusy = false; paintStock(); render(); if (S.open) drawUnit();
 }
+/* Cách 1: đọc thẳng Google Sheets (rổ hàng chung chia sẻ "ai có link đều xem được"), chỉ lấy các cột trạng thái */
+const GV_COLS = ["MA CAN", "TINH TRANG", "NGAY COC", "DEADLINE HT TTDC", "NGAY HT", "THEO DOI QUA HAN", "TINH TRANG SAU CHECK"];
+const GV_LETTERS = ["B", "F", "H", "I", "J", "K", "P"];   /* vị trí cột hiện tại của tab DATA, dùng khi không đọc được tiêu đề */
+async function readGviz(){
+  const L = D.live, base = L.base || "https://docs.google.com";
+  const url = `${base}/spreadsheets/d/${L.gviz}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(L.sheet || "DATA")}&range=${L.range || "A2:P2000"}&headers=1&_=${Date.now()}`;
+  const r = await fetch(url, { cache:"no-store" });
+  if (!r.ok) throw new Error("Google trả lỗi " + r.status);
+  const txt = await r.text();
+  const m = txt.match(/setResponse\(([\s\S]*)\);?\s*$/);
+  if (!m) throw new Error("rổ hàng không cho đọc (kiểm tra quyền chia sẻ)");
+  const res = JSON.parse(m[1]);
+  if (res.status === "error") throw new Error((res.errors && res.errors[0] && (res.errors[0].detailed_message || res.errors[0].message)) || "Google báo lỗi");
+  const cols = res.table.cols.map(c=>({ id:c.id, label:normTxt(c.label) }));
+  const idx = GV_COLS.map((name, j)=>{ let i = cols.findIndex(c=>c.label.indexOf(name) === 0); if (i < 0) i = cols.findIndex(c=>c.id === GV_LETTERS[j]); return i; });
+  if (idx[0] < 0 || idx[1] < 0) throw new Error("không thấy cột MÃ CĂN hoặc TÌNH TRẠNG");
+  const cell = (row, i) => { if (i < 0) return ""; const c = row.c[i]; if (!c) return ""; return String(c.f != null ? c.f : (c.v != null ? c.v : "")).trim(); };
+  const rows = [];
+  for (const row of res.table.rows) {
+    if (!row || !row.c) continue;
+    const code = cell(row, idx[0]).toUpperCase();
+    if (!/^[A-E]\d{1,2}-\d{2}$/.test(code)) continue;
+    rows.push(idx.map((i, j)=> j === 0 ? code : cell(row, i)));
+  }
+  if (!rows.length) throw new Error("rổ hàng trống hoặc đổi cấu trúc");
+  return { ok:true, rows };
+}
+/* Cách 2 (dự phòng): Apps Script chỉ đọc, gọi bằng mã khóa */
+async function readScript(fresh){
+  const url = D.live.url + (D.live.url.includes("?") ? "&" : "?") + "k=" + encodeURIComponent(D.live.k) + (fresh ? "&fresh=1" : "") + "&_=" + Date.now();
+  const r = await fetch(url, { redirect:"follow", cache:"no-store" });
+  return r.json();
+}
+
 function applyLive(j){
   const seen = new Set(); const unknown = {}; const today = new Date(); today.setHours(0,0,0,0);
   for (const row of j.rows) {
