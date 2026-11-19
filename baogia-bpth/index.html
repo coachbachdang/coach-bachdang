@@ -387,8 +387,8 @@ body.cust .cust-bar button{margin-left:auto}
         <label>Phương thức<select id="vPt"><option value="all">Mọi phương thức trừ 02</option></select></label>
         <label>Loại căn<select id="vType"><option value="all">Tất cả loại</option></select></label>
       </div>
-      <label class="chk"><input type="checkbox" id="v1nLoan" checked>Khách 1N tự vay ngân hàng khoản 50%</label>
-      <p class="small muted">Ô thứ hai là số lũy kế: tổng tiền khách tự đóng từ lúc ký đến trước đợt bàn giao, đã gồm tiền đến HĐMB, không tính phần ngân hàng cho vay. Ví dụ có 0,8 tỷ lúc ký, gom thêm 0,7 tỷ sau đó thì nhập 1,5. Chưa biết thì bỏ trống, khi đó chỉ lọc theo tiền đến HĐMB.</p><p class="small muted">Ô vay tối đa: để trống là vay đủ 50%. Nhập số nhỏ hơn mức 50% của căn thì PTTT 03, 04, 05 bị loại (các phương thức này vay đủ 50% mới có lợi), chỉ còn PTTT 01 và 1N; với 1N, phần không vay được cộng vào tiền tự có trước bàn giao. Khoản vay riêng của khách ngoài phương thức thì cộng vào hai ô tự có. Đợt bàn giao 25% không tính vào các ô này; khách tự trả hoặc vay thêm, xem Kế hoạch vay trong chi tiết căn.</p><p class="small muted">Chỉ xét căn còn trống. Mỗi căn hiện phương thức có tổng giá thấp nhất mà khách đáp ứng được cả hai mức vốn. Theo chính sách đang chọn ở bộ lọc.</p>
+      <label class="chk"><input type="checkbox" id="v1nLoan" checked>Khách 1N, 01 tự vay ngân hàng khoản 50%</label>
+      <p class="small muted">Ô thứ hai là số lũy kế: tổng tiền khách tự đóng từ lúc ký đến trước đợt bàn giao, đã gồm tiền đến HĐMB, không tính phần ngân hàng cho vay. Ví dụ có 0,8 tỷ lúc ký, gom thêm 0,7 tỷ sau đó thì nhập 1,5. Chưa biết thì bỏ trống, khi đó chỉ lọc theo tiền đến HĐMB.</p><p class="small muted">Ô vay tối đa: để trống là vay đủ 50%. Nhập số nhỏ hơn mức 50% của căn thì PTTT 03, 04, 05 bị loại (các phương thức này vay đủ 50% mới có lợi), chỉ còn PTTT 01 và 1N; với 01 và 1N, phần không vay được cộng vào tiền tự có trước bàn giao. Khoản vay riêng của khách ngoài phương thức thì cộng vào hai ô tự có. Đợt bàn giao 25% không tính vào các ô này; khách tự trả hoặc vay thêm, xem Kế hoạch vay trong chi tiết căn.</p><p class="small muted">Chỉ xét căn còn trống. Mỗi căn hiện phương thức có tổng giá thấp nhất mà khách đáp ứng được cả hai mức vốn. Theo chính sách đang chọn ở bộ lọc.</p>
     </div>
     <div id="findView"></div>
   </section>
@@ -618,7 +618,7 @@ function shareLink(u, pt, cs){
   const p = new URLSearchParams({ ma:u.code, loai:u.type, dt:String(u.dt).replace(".", ","), gia:g.toLocaleString("vi-VN"), theo:"02", pt, cs, dg:u.dg, tt:String(u.tt).replace(".", ",") });
   const L = { r1:LOAN.r1, yr:LOAN.y, mt:LOAN.mt, th:LOAN.M, ls:LOAN.r0, n0:LOAN.n0 }, DEF = { r1:"11", yr:"30", mt:"goc", th:"24", ls:"10,7", n0:"18" };
   for (const [k,v] of Object.entries(L)) if (v && v !== DEF[k]) p.set(k, v);
-  if (pt === "1N" && LOAN.amt && LOAN.amtFor === u.code) p.set("vt", LOAN.amt);
+  if ((pt === "1N" || pt === "01") && LOAN.amt && LOAN.amtFor === u.code) p.set("vt", LOAN.amt);
   if (LOAN.bg) { p.set("vbg", "1"); if (LOAN.r2) p.set("r2", LOAN.r2); }
   if (cs === "0") p.delete("cs");
   return PHIEU_URL + "?" + p.toString();
@@ -685,22 +685,23 @@ function drawUnit(){
 const LOAN = { r1:"11", y:"30", mt:"goc", M:"24", r0:"10,7", n0:"18", amt:"", amtFor:"", bg:false, r2:"" };
 /* Số tiền vay chỉ áp dụng cho căn đang nhập; mở căn khác thì về mức tối đa của phương thức */
 const loanAmt = u => LOAN.amt && LOAN.amtFor === u.code ? parseMoney(LOAN.amt) : NaN;
-function loanOpts(u, pt){ return { M:parseNum(LOAN.M), years:parseNum(LOAN.y), r1:parseNum(LOAN.r1), r0:parseNum(LOAN.r0), n0:parseNum(LOAN.n0), method:LOAN.mt, selfLoan: pt === "1N", rent: S.cs === "thue" ? TYPES[u.type].rent * 1e6 : 0, amt: loanAmt(u), addBG: LOAN.bg, r2: parseNum(LOAN.r2) }; }
+function loanOpts(u, pt){ return { M:parseNum(LOAN.M), years:parseNum(LOAN.y), r1:parseNum(LOAN.r1), r0:parseNum(LOAN.r0), n0:parseNum(LOAN.n0), method:LOAN.mt, selfLoan: pt === "1N" || pt === "01", rent: S.cs === "thue" ? TYPES[u.type].rent * 1e6 : 0, amt: loanAmt(u), addBG: LOAN.bg, r2: parseNum(LOAN.r2) }; }
 function loanBox(u, q, pt){
   const p = loanPlan(q, loanOpts(u, pt));
-  const full = pt === "1N" ? q.rows[2].pay : q.bank;
+  const self1N = pt === "1N" || pt === "01";
+  const full = self1N ? selfLoanMax(q) : q.bank;
   const f = (k, lab, mode="decimal", ph="") => `<label>${lab}<input type="text" inputmode="${mode}" data-loan="${k}" value="${esc(k === "amt" && LOAN.amtFor !== u.code ? "" : LOAN[k])}"${ph ? ` placeholder="${ph}"` : ""}></label>`;
-  const self1N = pt === "1N";
-  const head = self1N ? `Kế hoạch vay · khách tự vay tối đa ${ty(full)}` : full ? `Kế hoạch vay · ngân hàng giải ngân ${ty(full)} (50%) theo ${PLANS[pt].short}` : "Kế hoạch vay";
-  const intro = self1N ? `<p class="small muted" style="margin:0">Để trống ô số tiền vay là vay đủ khoản 50%. Khách vay ít hơn thì nhập số tiền, phần còn lại khách tự đóng trong 20 ngày sau ký HĐMB.</p>`
+  const head = self1N ? `Kế hoạch vay · khách tự vay tối đa ${ty(full)}${pt === "01" ? " (đợt 3–10)" : ""}` : full ? `Kế hoạch vay · ngân hàng giải ngân ${ty(full)} (50%) theo ${PLANS[pt].short}` : "Kế hoạch vay";
+  const intro = pt === "01" ? `<p class="small muted" style="margin:0">Ngân hàng giải ngân thay khách các đợt 3–10 (50% gồm VAT) theo tiến độ, khách trả lãi trên số đã giải ngân. Để trống ô số tiền vay là vay đủ; khách tự thanh toán, không vay thì nhập 0.</p>`
+    : self1N ? `<p class="small muted" style="margin:0">Để trống ô số tiền vay là vay đủ khoản 50%. Khách vay ít hơn thì nhập số tiền, phần còn lại khách tự đóng trong 20 ngày sau ký HĐMB.</p>`
     : full ? `<p class="small muted" style="margin:0">${PLANS[pt].short} vay đủ 50% mới hưởng trọn chính sách vay. Khách muốn vay ít hơn thì tư vấn PTTT 01 hoặc 1N, chiết khấu cao hơn và tự chọn mức vay.</p>`
     : `<p class="small muted" style="margin:0">${PLANS[pt].short}: không có khoản vay theo phương thức, khách tự đóng theo tiến độ. Khách vẫn tự vay ngân hàng được theo chính sách riêng của ngân hàng.</p>`;
   const bg = `<label class="chk"><input type="checkbox" data-loan-bg${LOAN.bg ? " checked" : ""}>Vay thêm đợt bàn giao 25% (${ty(q.atBG - q.fee)}), lãi suất khách tự thỏa thuận với ngân hàng</label>` +
     (LOAN.bg ? `<div class="lp-in">${f("r2","Lãi phần vay thêm %/năm","decimal",LOAN.r1 || "11")}</div>` : "");
-  const ins = (self1N ? f("amt","Số tiền vay (tỷ)","decimal",tyS(full)) : "") + (p ? f("r1","Lãi sau ưu đãi %/năm") + f("y","Thời hạn vay (năm)","numeric") + f("M","Tháng HĐMB → bàn giao","numeric") + (pt === "1N" && p.base ? f("r0","Ưu đãi ngân hàng %/năm") + f("n0","Số tháng ưu đãi","numeric") : "") : "");
+  const ins = (self1N ? f("amt","Số tiền vay (tỷ)","decimal",tyS(full)) : "") + (p ? f("r1","Lãi sau ưu đãi %/năm") + f("y","Thời hạn vay (năm)","numeric") + f("M","Tháng HĐMB → bàn giao","numeric") + (self1N && p.base ? f("r0","Ưu đãi ngân hàng %/năm") + f("n0","Số tháng ưu đãi","numeric") : "") : "");
   return `<div class="card" style="padding:12px;display:grid;gap:10px;background:#fbfdfc"><div class="small" style="font-weight:700">${head}</div>${intro}`+
     (ins ? `<div class="lp-in">${ins}</div>` : "") + bg +
-    (p ? `<div class="lp-seg" role="group" aria-label="Cách trả"><button type="button" data-lm="goc" aria-pressed="${LOAN.mt !== "deu"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${LOAN.mt === "deu"}">Trả đều hằng tháng</button></div>` + loanHtml(p)
+    (p ? `<div class="lp-seg" role="group" aria-label="Cách trả"><button type="button" data-lm="goc" aria-pressed="${LOAN.mt !== "deu" && LOAN.mt !== "bac"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${LOAN.mt === "deu"}">Trả đều</button><button type="button" data-lm="bac" aria-pressed="${LOAN.mt === "bac"}">Bậc thang</button></div>` + loanHtml(p)
        : (full ? `<p class="small muted" style="margin:0">Khách không vay, tự đóng toàn bộ theo tiến độ.</p>` : "")) + `</div>`;
 }
 document.addEventListener("change", e=>{
@@ -747,9 +748,10 @@ function renderFind(){
     let best = null;
     for (const c of plans) {
       const q = quoteOf(u, c, S.cs);
-      const fullL = c === "1N" ? (loan1N ? q.rows[2].pay : 0) : q.bank;
+      const selfP = c === "1N" || c === "01";
+      const fullL = selfP ? (loan1N ? selfLoanMax(q) : 0) : q.bank;
       /* PTTT có vay theo chính sách (03, 04, 05) chỉ xét khi khách vay đủ 50% */
-      if (c !== "1N" && fullL && cap >= 0 && cap < fullL) continue;
+      if (!selfP && fullL && cap >= 0 && cap < fullL) continue;
       const loan = cap >= 0 ? Math.min(fullL, cap) : fullL;
       const before = q.selfBefore + q.bank - loan;
       if (q.toHD <= hd*1e9 && (!(bg > 0) || before <= bg*1e9) && (!best || q.T < best.q.T)) best = { c, q, before, loan, short: fullL - loan };
@@ -950,7 +952,7 @@ document.addEventListener("click", async e=>{
       S.dpt = el.dataset.fpt;
       /* Mang mức vay tối đa từ tab Tính vốn sang Kế hoạch vay của căn, nếu thấp hơn mức của phương thức */
       const v = $("#vLoan").value.trim();
-      if (v && el.dataset.fpt === "1N" && parseMoney(v) < quoteOf(BY.get(el.dataset.u), "1N", S.cs).rows[2].pay) { LOAN.amt = v; LOAN.amtFor = el.dataset.u; }
+      if (v && (el.dataset.fpt === "1N" || el.dataset.fpt === "01") && parseMoney(v) < selfLoanMax(quoteOf(BY.get(el.dataset.u), el.dataset.fpt, S.cs))) { LOAN.amt = v; LOAN.amtFor = el.dataset.u; }
     }
     openUnit(el.dataset.u); return;
   }

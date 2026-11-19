@@ -555,11 +555,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
         <input id="th" type="number" min="6" max="40" step="1" value="24" inputmode="numeric">
       </div>
       <div class="field">
-        <label class="lbl" for="ls">Lãi tự vay khi chọn 1N (%/năm, giả định)</label>
+        <label class="lbl" for="ls">Lãi tự vay khi chọn 1N, 01 (%/năm, giả định)</label>
         <input id="ls" type="text" inputmode="decimal" value="10,7">
       </div>
       <div class="field" style="align-content:end">
-        <label class="chk"><input type="checkbox" id="vay1n" checked>Tính 1N có vay ngân hàng khoản 50%</label>
+        <label class="chk"><input type="checkbox" id="vay1n" checked>Tính 1N và 01 có tự vay ngân hàng 50%</label>
       </div>
     </div>
     <div class="table-wrap">
@@ -746,7 +746,7 @@ if (typeof document !== "undefined") {
   function shareUrl(){
     const p = new URLSearchParams();
     const def = { loai:"2pn2", theo:"02", pt:"1N", cs:"0", th:"24", ls:"10,7", vay:"1", r1:"11", yr:"30", mt:"goc", n0:"18", vbg:"0" };
-    for (const [k,v] of Object.entries(state)) if (v && v !== def[k] && !((k === "dg" || k === "tt") && !last_ux) && !(k === "vt" && state.pt !== "1N")) p.set(k, k === "ma" && parseUnit(v) ? parseUnit(v).code : v);
+    for (const [k,v] of Object.entries(state)) if (v && v !== def[k] && !((k === "dg" || k === "tt") && !last_ux) && !(k === "vt" && state.pt !== "1N" && state.pt !== "01")) p.set(k, k === "ma" && parseUnit(v) ? parseUnit(v).code : v);
     const s = p.toString();
     return PAGE_URL + (s ? "?" + s : "");
   }
@@ -831,13 +831,13 @@ if (typeof document !== "undefined") {
     $("#shKpis").innerHTML =
       `<div class="kpi hl"><span>Ít hơn giá gốc PTTT 02</span><b>${q.saving > 0 ? ty(q.saving) : "0"}</b><small>${q.saving > 0 ? pctTxt(q.saving/q.b02*100) + " tổng giá" : "Giá gốc"}</small></div>`+
       `<div class="kpi"><span>Tự có đến khi ký HĐMB</span><b>${ty(q.toHD)}</b><small>đợt 1 + đợt 2, gồm VAT</small></div>`+
-      `<div class="kpi"><span>${q.bank ? "Ngân hàng giải ngân" : (state.pt==="1N" ? "Đợt 50% trong 20 ngày" : "Tự có trước bàn giao")}</span><b>${q.bank ? ty(q.bank) : (state.pt==="1N" ? ty(q.rows[2].pay) : ty(q.selfBefore))}</b><small>${q.bank ? q.bankPct + "% giá trị gồm VAT" : (state.pt==="1N" ? "tự có hoặc tự vay" : "chia 10 đợt trong 18 tháng")}</small></div>`+
+      `<div class="kpi"><span>${q.bank ? "Ngân hàng giải ngân" : (state.pt==="1N" ? "Đợt 50% trong 20 ngày" : state.pt==="01" ? "Đợt 3–10 trong 18 tháng" : "Tự có trước bàn giao")}</span><b>${q.bank ? ty(q.bank) : (state.pt==="1N" || state.pt==="01" ? ty(selfLoanMax(q)) : ty(q.selfBefore))}</b><small>${q.bank ? q.bankPct + "% giá trị gồm VAT" : (state.pt==="1N" || state.pt==="01" ? "tự có hoặc tự vay" : "chia 10 đợt trong 18 tháng")}</small></div>`+
       `<div class="kpi"><span>Khi bàn giao và nhận sổ</span><b>${ty(q.atBG + q.atGCN)}</b><small>gồm phí bảo trì 2%</small></div>`;
 
     /* Tiến độ thanh toán */
     $("#shRows").innerHTML = q.rows.map((r,i)=>{
       const sub = i===0 ? `<small>đã gồm ${vnd(DEPOSIT)} cọc đăng ký</small>` : i===1 ? `<small>gồm VAT của đợt 1 và đợt 2</small>` : i===iBG ? `<small>gồm VAT đợt bàn giao và đợt nhận sổ</small>` : i===q.rows.length-1 ? `<small>không VAT</small>` : "";
-      const who = r.src==="bank" ? `<span class="src src-bank">Ngân hàng</span>` : `<span class="src src-self">${state.pt==="1N" && i===2 ? "Tự có / tự vay" : "Tự có"}</span>`;
+      const who = r.src==="bank" ? `<span class="src src-bank">Ngân hàng</span>` : `<span class="src src-self">${(state.pt==="1N" && i===2) || (state.pt==="01" && i>=2 && i<=9) ? "Tự có / tự vay" : "Tự có"}</span>`;
       const split = r.vat ? `chưa VAT ${vnd(r.net)} · VAT ${vnd(r.vat)}` : `chưa VAT ${vnd(r.net)} · không VAT`;
       const main = `<tr><td class="n">${r.n}</td><td class="when">${r.when}${sub}</td><td class="r pct">${r.pct}%</td><td class="r pay">${vnd(r.net + r.vat)}<span class="cum">${split}</span><span class="cum">lũy kế ${pctTxt(r.cumPct)} giá trị gồm VAT</span></td><td class="who">${who}</td></tr>`;
       const fee = r.fee ? `<tr class="fee"><td class="n"></td><td class="when">Phí bảo trì 2% giá chưa VAT, đóng cùng đợt bàn giao</td><td class="r pct">2%</td><td class="r pay">${vnd(r.fee)}<span class="cum">không VAT, không nằm trong khoản vay</span></td><td class="who"><span class="src src-self">Tự có</span></td></tr>` : "";
@@ -863,23 +863,26 @@ if (typeof document !== "undefined") {
     } else rent.hidden = true;
 
     /* Kế hoạch vay chi tiết */
-    const fullL = state.pt === "1N" ? (state.vay === "1" ? q.rows[2].pay : 0) : q.bank;
+    const selfP = state.pt === "1N" || state.pt === "01";
+    const fullL = selfP ? (state.vay === "1" ? selfLoanMax(q) : 0) : q.bank;
     const lopt = { M:parseNum(state.th), years:parseNum(state.yr), r1:parseNum(state.r1), r0:parseNum(state.ls), n0:parseNum(state.n0), method:state.mt, selfLoan: state.vay === "1", rent: state.cs === "thue" ? t.rent * 1e6 : 0,
-      amt: state.pt === "1N" && state.vt ? parseMoney(state.vt) : NaN, addBG: state.vbg === "1", r2: parseNum(state.r2) };
+      amt: selfP && state.vt ? parseMoney(state.vt) : NaN, addBG: state.vbg === "1", r2: parseNum(state.r2) };
     const lp = loanPlan(q, lopt); last_lp = lp;
     const lf = (k, lab, mode="decimal", ph="") => `<label>${lab}<input type="text" inputmode="${mode}" data-k="${k}" value="${esc(state[k])}"${ph ? ` placeholder="${ph}"` : ""}></label>`;
     const tyS2 = v => (v/1e9).toLocaleString("vi-VN",{minimumFractionDigits:2,maximumFractionDigits:2});
-    const self1N = state.pt === "1N";
-    const ins = (self1N && fullL ? lf("vt","Số tiền vay (tỷ)","decimal",tyS2(fullL)) : "") + (lp ? lf("r1","Lãi sau ưu đãi %/năm") + lf("yr","Thời hạn vay (năm)","numeric") + lf("th","Tháng HĐMB → bàn giao","numeric") + (state.pt === "1N" && lp.base ? lf("ls","Ưu đãi ngân hàng %/năm") + lf("n0","Số tháng ưu đãi","numeric") : "") : "");
-    const intro = self1N && fullL ? `<p class="note no-print">Để trống ô số tiền vay là vay đủ khoản 50% (${ty(fullL)}). Vay ít hơn thì nhập số tiền, phần còn lại tự đóng trong 20 ngày sau ký HĐMB.</p>`
+    const self1N = selfP;
+    const ins = (self1N && fullL ? lf("vt","Số tiền vay (tỷ)","decimal",tyS2(fullL)) : "") + (lp ? lf("r1","Lãi sau ưu đãi %/năm") + lf("yr","Thời hạn vay (năm)","numeric") + lf("th","Tháng HĐMB → bàn giao","numeric") + (selfP && lp.base ? lf("ls","Ưu đãi ngân hàng %/năm") + lf("n0","Số tháng ưu đãi","numeric") : "") : "");
+    const intro = state.pt === "01" && fullL ? `<p class="note no-print">Ngân hàng giải ngân thay khách các đợt 3–10 (tổng ${ty(fullL)}, 50% gồm VAT) theo tiến độ, khách trả lãi trên số đã giải ngân. Để trống ô số tiền vay là vay đủ; vay ít hơn thì nhập số tiền, phần còn lại tự đóng theo tiến độ.</p>`
+      : self1N && fullL ? `<p class="note no-print">Để trống ô số tiền vay là vay đủ khoản 50% (${ty(fullL)}). Vay ít hơn thì nhập số tiền, phần còn lại tự đóng trong 20 ngày sau ký HĐMB.</p>`
       : fullL ? `<p class="note no-print">${pl.short}: ngân hàng giải ngân đủ 50% để hưởng trọn chính sách vay. Nếu muốn vay ít hơn, PTTT 01 hoặc 1N có chiết khấu cao hơn và tự chọn mức vay.</p>`
-      : state.pt === "1N" ? `<p class="note">Khách tự có 50% trong 20 ngày sau ký HĐMB. Nếu cần vay khoản này, đánh dấu "Tính 1N có vay ngân hàng khoản 50%" ở mục So sánh.</p>`
+      : state.pt === "1N" ? `<p class="note">Khách tự có 50% trong 20 ngày sau ký HĐMB. Nếu cần vay khoản này, đánh dấu "Tính 1N và 01 có tự vay ngân hàng 50%" ở mục So sánh.</p>`
+      : state.pt === "01" ? `<p class="note">Khách tự thanh toán các đợt theo tiến độ. Nếu cần vay các đợt 3–10, đánh dấu "Tính 1N và 01 có tự vay ngân hàng 50%" ở mục So sánh.</p>`
       : `<p class="note">${pl.short} không có khoản vay theo phương thức; khách tự đóng theo tiến độ hoặc tự vay ngân hàng theo chính sách riêng của ngân hàng.</p>`;
     const bgChk = `<label class="chk no-print"><input type="checkbox" data-k="vbg"${state.vbg === "1" ? " checked" : ""}>Vay thêm đợt bàn giao 25% (${ty(q.atBG - q.fee)}), lãi suất khách tự thỏa thuận với ngân hàng</label>` +
       (state.vbg === "1" ? `<div class="lp-in no-print" style="margin-bottom:8px">${lf("r2","Lãi phần vay thêm %/năm","decimal",state.r1 || "11")}</div>` : "");
     $("#shLoan").innerHTML = `<div class="sh-title">Kế hoạch vay${self1N && fullL ? ` · tự vay tối đa ${ty(fullL)}` : fullL ? ` · ngân hàng giải ngân ${ty(fullL)} theo ${pl.short}` : ""}</div>${intro}`+
       (ins ? `<div class="lp-in no-print">${ins}</div>` : "") + bgChk +
-      (lp ? `<div class="lp-seg no-print" role="group" aria-label="Cách trả" style="margin:8px 0"><button type="button" data-lm="goc" aria-pressed="${state.mt !== "deu"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${state.mt === "deu"}">Trả đều hằng tháng</button></div>` + loanHtml(lp)
+      (lp ? `<div class="lp-seg no-print" role="group" aria-label="Cách trả" style="margin:8px 0"><button type="button" data-lm="goc" aria-pressed="${state.mt !== "deu" && state.mt !== "bac"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${state.mt === "deu"}">Trả đều</button><button type="button" data-lm="bac" aria-pressed="${state.mt === "bac"}">Bậc thang</button></div>` + loanHtml(lp)
           : (fullL ? `<p class="note">Khách không vay, tự đóng toàn bộ theo tiến độ.</p>` : ""));
     const mg = area ? `<p>Phí quản lý ước tính ${vnd(area*MGMT_FEE)}/tháng chưa VAT (11.000 đ/m²; thực tế tính trên diện tích thông thủy ghi trong HĐMB).</p>` : "";
     $("#shFine").innerHTML =
@@ -902,11 +905,11 @@ if (typeof document !== "undefined") {
     $("#cmpRows").innerHTML = rows.map(({c,q,i})=>{
       const p = PLANS[c];
       const cost = q.T + q.fee + i.v;
-      const bankTxt = q.bank ? `${ty(q.bank)}` : (c==="1N" && loan1N ? `${ty(q.rows[2].pay)} <small style="display:block;color:var(--muted);font-size:.72rem">tự vay</small>` : "Không vay");
+      const bankTxt = q.bank ? `${ty(q.bank)}` : ((c==="1N" || c==="01") && loan1N ? `${ty(selfLoanMax(q))} <small style="display:block;color:var(--muted);font-size:.72rem">tự vay</small>` : "Không vay");
       const intTxt = i.over ? `0 <span class="flag">quá 24 tháng: cần xác nhận</span>` : i.v ? ty(i.v) : "0";
       return `<tr data-c="${c}" class="${c===state.pt ? "on" : ""}"><td><b>${p.short}</b><small>${p.title} · ${p.loan}</small></td>`+
         `<td class="r" data-l="Giá trị gồm VAT">${ty(q.T)}</td><td class="r" data-l="Ít hơn giá gốc">${q.saving>0 ? "−"+ty(q.saving) : "0"}</td>`+
-        `<td class="r" data-l="Tự có đến HĐMB">${ty(q.toHD)}</td><td class="r" data-l="Tự có trước bàn giao">${ty(q.selfBefore)}</td><td class="r" data-l="Ngân hàng giải ngân">${bankTxt}</td>`+
+        `<td class="r" data-l="Tự có đến HĐMB">${ty(q.toHD)}</td><td class="r" data-l="Tự có trước bàn giao">${ty(q.selfBefore - ((c==="1N" || c==="01") && loan1N ? selfLoanMax(q) : 0))}</td><td class="r" data-l="Ngân hàng giải ngân">${bankTxt}</td>`+
         `<td class="r" data-l="Lãi khách trả đến bàn giao">${intTxt}<small style="display:block;color:var(--muted);font-size:.72rem">${i.how}</small></td>`+
         `<td class="r tot" data-l="Tổng chi phí đến bàn giao"><b>${ty(cost)}</b></td></tr>`;
     }).join("");
