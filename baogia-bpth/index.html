@@ -382,12 +382,12 @@ body.cust .cust-bar button{margin-left:auto}
       <h2>Khách có bao nhiêu vốn thì chọn được căn nào</h2>
       <div class="find">
         <label>Tiền có sẵn đến khi ký HĐMB (tỷ)<input type="text" inputmode="decimal" id="vHD" placeholder="0,5"></label>
-        <label>Tổng tự có đến trước bàn giao (tỷ)<input type="text" inputmode="decimal" id="vBG" placeholder="Không bắt buộc"></label>
+        <label>Lũy kế tự có đến trước bàn giao (tỷ)<input type="text" inputmode="decimal" id="vBG" placeholder="Không bắt buộc"></label>
         <label>Phương thức<select id="vPt"><option value="all">Mọi phương thức trừ 02</option></select></label>
         <label>Loại căn<select id="vType"><option value="all">Tất cả loại</option></select></label>
       </div>
       <label class="chk"><input type="checkbox" id="v1nLoan" checked>Khách 1N tự vay ngân hàng khoản 50%</label>
-      <p class="small muted">Ô thứ hai là tổng tiền khách tự đóng từ lúc ký đến trước đợt bàn giao, đã gồm tiền đến HĐMB, không tính phần ngân hàng cho vay. Chưa biết thì bỏ trống, khi đó chỉ lọc theo tiền đến HĐMB.</p><p class="small muted">Chỉ xét căn còn trống. Mỗi căn hiện phương thức có tổng giá thấp nhất mà khách đáp ứng được cả hai mức vốn. Theo chính sách đang chọn ở bộ lọc.</p>
+      <p class="small muted">Ô thứ hai là số lũy kế: tổng tiền khách tự đóng từ lúc ký đến trước đợt bàn giao, đã gồm tiền đến HĐMB, không tính phần ngân hàng cho vay. Ví dụ có 0,8 tỷ lúc ký, gom thêm 0,7 tỷ sau đó thì nhập 1,5. Chưa biết thì bỏ trống, khi đó chỉ lọc theo tiền đến HĐMB.</p><p class="small muted">Chỉ xét căn còn trống. Mỗi căn hiện phương thức có tổng giá thấp nhất mà khách đáp ứng được cả hai mức vốn. Theo chính sách đang chọn ở bộ lọc.</p>
     </div>
     <div id="findView"></div>
   </section>
@@ -722,6 +722,7 @@ function renderFind(){
   if (!(hd > 0)) { $("#findView").innerHTML = `<div class="empty">Nhập số tiền khách có sẵn đến khi ký HĐMB để tìm căn.</div>`; return; }
   const plans = $("#vPt").value === "all" ? PLAN_ORDER.filter(c=>c!=="02") : [$("#vPt").value];
   const ty1 = $("#vType").value, loan1N = $("#v1nLoan").checked;
+  if (bg > 0 && bg < hd) { $("#findView").innerHTML = `<div class="empty">Ô thứ hai là số lũy kế nên phải lớn hơn hoặc bằng tiền đến HĐMB. Khách có ${String(hd).replace(".",",")} tỷ lúc ký, gom thêm ${String(bg).replace(".",",")} tỷ sau đó thì nhập ${String(+(hd+bg).toFixed(3)).replace(".",",")}.</div>`; return; }
   const out = [];
   for (const u of U) {
     if (!avail(u) || (ty1 !== "all" && u.type !== ty1)) continue;
