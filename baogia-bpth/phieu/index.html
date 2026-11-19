@@ -695,7 +695,7 @@ const PAGE_URL = "https://hoangbachdang.com/baogia-bpth/phieu";
 /* ---------- GIAO DIỆN ---------- */
 if (typeof document !== "undefined") {
   const $ = s => document.querySelector(s);
-  const state = { ma:"", loai:"2pn2", dt:"", gia:"3,37", theo:"02", pt:"1N", cs:"0", kh:"", th:"24", ls:"10,7", vay:"1", dg:"", tt:"", r1:"11", yr:"30", mt:"goc", n0:"18", vt:"", vbg:"0" };
+  const state = { ma:"", loai:"2pn2", dt:"", gia:"3,37", theo:"02", pt:"1N", cs:"0", kh:"", th:"24", ls:"10,7", vay:"1", dg:"", tt:"", r1:"11", yr:"30", mt:"goc", n0:"18", vt:"", vbg:"0", r2:"" };
 
   /* Đọc tham số trên đường dẫn để mở đúng phiếu đã gửi */
   const qs = new URLSearchParams(location.search);
@@ -865,7 +865,7 @@ if (typeof document !== "undefined") {
     /* Kế hoạch vay chi tiết */
     const fullL = state.pt === "1N" ? (state.vay === "1" ? q.rows[2].pay : 0) : q.bank;
     const lopt = { M:parseNum(state.th), years:parseNum(state.yr), r1:parseNum(state.r1), r0:parseNum(state.ls), n0:parseNum(state.n0), method:state.mt, selfLoan: state.vay === "1", rent: state.cs === "thue" ? t.rent * 1e6 : 0,
-      amt: state.pt === "1N" && state.vt ? parseMoney(state.vt) : NaN, addBG: state.vbg === "1" };
+      amt: state.pt === "1N" && state.vt ? parseMoney(state.vt) : NaN, addBG: state.vbg === "1", r2: parseNum(state.r2) };
     const lp = loanPlan(q, lopt); last_lp = lp;
     const lf = (k, lab, mode="decimal", ph="") => `<label>${lab}<input type="text" inputmode="${mode}" data-k="${k}" value="${esc(state[k])}"${ph ? ` placeholder="${ph}"` : ""}></label>`;
     const tyS2 = v => (v/1e9).toLocaleString("vi-VN",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -875,7 +875,8 @@ if (typeof document !== "undefined") {
       : fullL ? `<p class="note no-print">${pl.short}: ngân hàng giải ngân đủ 50% để hưởng trọn chính sách vay. Nếu muốn vay ít hơn, PTTT 01 hoặc 1N có chiết khấu cao hơn và tự chọn mức vay.</p>`
       : state.pt === "1N" ? `<p class="note">Khách tự có 50% trong 20 ngày sau ký HĐMB. Nếu cần vay khoản này, đánh dấu "Tính 1N có vay ngân hàng khoản 50%" ở mục So sánh.</p>`
       : `<p class="note">${pl.short} không có khoản vay theo phương thức; khách tự đóng theo tiến độ hoặc tự vay ngân hàng theo chính sách riêng của ngân hàng.</p>`;
-    const bgChk = `<label class="chk no-print"><input type="checkbox" data-k="vbg"${state.vbg === "1" ? " checked" : ""}>Vay thêm đợt bàn giao 25% (${ty(q.atBG - q.fee)}, ngoài chính sách Chủ đầu tư)</label>`;
+    const bgChk = `<label class="chk no-print"><input type="checkbox" data-k="vbg"${state.vbg === "1" ? " checked" : ""}>Vay thêm đợt bàn giao 25% (${ty(q.atBG - q.fee)}), lãi suất khách tự thỏa thuận với ngân hàng</label>` +
+      (state.vbg === "1" ? `<div class="lp-in no-print" style="margin-bottom:8px">${lf("r2","Lãi phần vay thêm %/năm","decimal",state.r1 || "11")}</div>` : "");
     $("#shLoan").innerHTML = `<div class="sh-title">Kế hoạch vay${self1N && fullL ? ` · tự vay tối đa ${ty(fullL)}` : fullL ? ` · ngân hàng giải ngân ${ty(fullL)} theo ${pl.short}` : ""}</div>${intro}`+
       (ins ? `<div class="lp-in no-print">${ins}</div>` : "") + bgChk +
       (lp ? `<div class="lp-seg no-print" role="group" aria-label="Cách trả" style="margin:8px 0"><button type="button" data-lm="goc" aria-pressed="${state.mt !== "deu"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${state.mt === "deu"}">Trả đều hằng tháng</button></div>` + loanHtml(lp)

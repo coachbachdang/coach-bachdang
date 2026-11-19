@@ -167,6 +167,8 @@ function loanPlan(q, o){
   const r1 = (o.r1 > 0 ? o.r1 : 11) / 100;
   const r0 = (o.r0 > 0 ? o.r0 : (o.r1 || 11)) / 100, n0 = Math.max(0, Math.round(o.n0 || 0));
   const cap = CAP_RATE / 100, capEnd = Math.min(48, M + 24);
+  /* Lãi phần vay thêm vượt 50%: khách tự thỏa thuận với ngân hàng; để trống thì tạm lấy bằng lãi sau ưu đãi */
+  const r2 = (o.r2 > 0 ? o.r2 : r1 * 100) / 100;
   /* Khoản vay theo phương thức. PTTT 02–05 luôn vay đủ 50% (khách muốn vay ít hơn thì tư vấn PTTT 01 hoặc 1N).
      1N: khách tự vay khoản 50%; o.amt là số tiền khách muốn vay, tối đa bằng khoản 50% */
   const base = code === "1N" ? (o.selfLoan ? [{ off:0, amt:q.rows[2].pay }] : [])
@@ -186,7 +188,7 @@ function loanPlan(q, o){
     if (code === "03" || code === "04") return t <= capEnd ? cap : r1;
     return t <= n0 ? r0 : r1;
   };
-  const rateK = (t, x) => x.ext ? r1 : rateAt(t, x.off);
+  const rateK = (t, x) => x.ext ? r2 : rateAt(t, x.off);
   const kindAt = (t) => {
     if (!hasBase) return t <= M ? "none-pre" : "float";
     if (t <= M) {
@@ -233,7 +235,7 @@ function loanPlan(q, o){
     if (!Y) Y = years_[y - 1] = { y, int:0, prin:0, pay:0, rent:0, n:0, end:0 };
     Y.int += m.interest; Y.prin += m.principal; Y.pay += m.pay; Y.rent += m.rent; Y.n++; Y.end = m.bal - m.principal;
   }
-  return { code, L, full, base:want, short:full - want, ext, M, years, N, r0:r0*100, r1:r1*100, n0, capEnd, method:o.method === "deu" ? "deu" : "goc", months, segs, years_,
+  return { code, L, full, base:want, short:full - want, ext, M, years, N, r0:r0*100, r1:r1*100, r2:r2*100, n0, capEnd, method:o.method === "deu" ? "deu" : "goc", months, segs, years_,
     totalInt: months.reduce((a,m)=>a + m.interest, 0), totalRent: months.reduce((a,m)=>a + m.rent, 0), over24: (code === "02" || code === "05") && M > 24 };
 }
 
@@ -247,9 +249,9 @@ function loanHtml(p){
     "cap-pre": ["Trước bàn giao", "chỉ trả lãi, Chủ đầu tư cam kết trần 6,9% (tính ở mức trần)"],
     "promo-pre": ["Trước bàn giao", `chỉ trả lãi, ưu đãi ngân hàng ${pct(p.r0)} (giả định)`],
     "float-pre": ["Trước bàn giao", `chỉ trả lãi, lãi ${pct(p.r1)}`],
-    "cap-post": ["Sau bàn giao, vẫn trong trần 6,9%", `bắt đầu trả gốc, lãi tối đa 6,9%${p.ext ? `; phần vay thêm đợt bàn giao lãi ${pct(p.r1)}` : ""}`],
-    "promo-post": ["Sau bàn giao, còn ưu đãi ngân hàng", `bắt đầu trả gốc, lãi ${pct(p.r0)}${p.ext ? `; phần vay thêm đợt bàn giao lãi ${pct(p.r1)}` : ""}`],
-    float: ["Sau ưu đãi", `lãi thả nổi giả định ${pct(p.r1)}${p.method === "deu" ? ", trả đều" : ", giảm dần theo dư nợ"}`]
+    "cap-post": ["Sau bàn giao, vẫn trong trần 6,9%", `bắt đầu trả gốc, lãi tối đa 6,9%${p.ext ? `; phần vay thêm lãi ${pct(p.r2)} (giả định)` : ""}`],
+    "promo-post": ["Sau bàn giao, còn ưu đãi ngân hàng", `bắt đầu trả gốc, lãi ${pct(p.r0)}${p.ext ? `; phần vay thêm lãi ${pct(p.r2)} (giả định)` : ""}`],
+    float: ["Sau ưu đãi", `lãi thả nổi giả định ${pct(p.r1)}${p.ext && p.base && Math.abs(p.r2 - p.r1) > 1e-9 ? `, phần vay thêm ${pct(p.r2)}` : ""}${p.method === "deu" ? ", trả đều" : ", giảm dần theo dư nợ"}`]
   };
   const tm = (a,b) => a === b ? `tháng ${a}` : `tháng ${a}–${b}`;
   const money = v => v < 0.5 ? "0 đ" : vnd(v);
@@ -278,7 +280,7 @@ function loanNotes(p){
   const out = [];
   const head = p.base ? `Khách vay ${vnd(p.base)}, ít hơn mức tối đa ${vnd(p.full)}.` : "Khách không vay khoản này.";
   if (p.short > 0.5) out.push(`${head} Phần còn lại ${vnd(p.short)} khách tự đóng trong 20 ngày sau ký HĐMB.`);
-  if (p.ext) out.push(`Vay thêm đợt bàn giao ${vnd(p.ext)} (25% và VAT, không gồm phí bảo trì 2%) nằm ngoài chính sách Chủ đầu tư: lãi theo ngân hàng, bảng tính dùng ${p.r1.toLocaleString("vi-VN",{maximumFractionDigits:2})}%/năm từ tháng ${p.M + 1}. Mức vay tối đa theo thẩm định của ngân hàng.`);
+  if (p.ext) out.push(`Vay thêm đợt bàn giao ${vnd(p.ext)} (25% và VAT, không gồm phí bảo trì 2%)${p.base ? " là phần vượt mức vay 50%," : ""} nằm ngoài chính sách Chủ đầu tư. Khách làm việc riêng với ngân hàng về lãi suất và mức vay của phần này; bảng tính tạm dùng ${p.r2.toLocaleString("vi-VN",{maximumFractionDigits:2})}%/năm từ tháng ${p.M + 1}.`);
   return out.map(t=>`<p class="lp-note">${t}</p>`).join("");
 }
 
@@ -296,7 +298,7 @@ function loanBrief(p){
   }
   if (p.totalRent) out.push("24 tháng đầu sau bàn giao có tiền thuê Chủ đầu tư cam kết để trả nợ");
   if (p.short > 0.5) out.push(`Phần không vay ${ty(p.short)} tự đóng trong 20 ngày sau ký HĐMB`);
-  if (p.ext) out.push(`Phần vay thêm đợt bàn giao ngoài chính sách Chủ đầu tư, lãi theo ngân hàng`);
+  if (p.ext) out.push(`Phần vay thêm đợt bàn giao${p.base ? " vượt mức 50%" : ""} nằm ngoài chính sách Chủ đầu tư; lãi suất phần này khách làm việc riêng với ngân hàng, bảng tính tạm dùng ${pct(p.r2)}/năm`);
   return out;
 }
 
