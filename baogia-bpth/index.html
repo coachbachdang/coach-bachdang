@@ -382,12 +382,12 @@ body.cust .cust-bar button{margin-left:auto}
       <h2>Khách có bao nhiêu vốn thì chọn được căn nào</h2>
       <div class="find">
         <label>Tiền có sẵn đến khi ký HĐMB (tỷ)<input type="text" inputmode="decimal" id="vHD" placeholder="0,5"></label>
-        <label>Tổng tự có đến trước bàn giao (tỷ)<input type="text" inputmode="decimal" id="vBG" placeholder="Để trống nếu không giới hạn"></label>
+        <label>Tổng tự có đến trước bàn giao (tỷ)<input type="text" inputmode="decimal" id="vBG" placeholder="Không bắt buộc"></label>
         <label>Phương thức<select id="vPt"><option value="all">Mọi phương thức trừ 02</option></select></label>
         <label>Loại căn<select id="vType"><option value="all">Tất cả loại</option></select></label>
       </div>
       <label class="chk"><input type="checkbox" id="v1nLoan" checked>Khách 1N tự vay ngân hàng khoản 50%</label>
-      <p class="small muted">Chỉ xét căn còn trống. Mỗi căn hiện phương thức có tổng giá thấp nhất mà khách đáp ứng được cả hai mức vốn. Theo chính sách đang chọn ở bộ lọc.</p>
+      <p class="small muted">Ô thứ hai là tổng tiền khách tự đóng từ lúc ký đến trước đợt bàn giao, đã gồm tiền đến HĐMB, không tính phần ngân hàng cho vay. Chưa biết thì bỏ trống, khi đó chỉ lọc theo tiền đến HĐMB.</p><p class="small muted">Chỉ xét căn còn trống. Mỗi căn hiện phương thức có tổng giá thấp nhất mà khách đáp ứng được cả hai mức vốn. Theo chính sách đang chọn ở bộ lọc.</p>
     </div>
     <div id="findView"></div>
   </section>
@@ -735,7 +735,7 @@ function renderFind(){
   }
   out.sort((a,b)=>a.q.T - b.q.T);
   $("#findView").innerHTML = out.length ?
-    `<p class="summary"><b>${out.length}</b> căn ${HAS_ST ? "trống " : ""}phù hợp${bg>0 ? "" : " (chưa giới hạn vốn trước bàn giao)"}</p><div class="list">`+
+    `<p class="summary"><b>${out.length}</b> căn ${HAS_ST ? "trống " : ""}phù hợp${bg>0 ? "" : " (chưa nhập vốn trước bàn giao nên chỉ lọc theo tiền đến HĐMB)"}</p><div class="list">`+
     out.slice(0,80).map(x=>`<button class="row" type="button" data-u="${x.u.code}" data-fpt="${x.c}"><div><div class="code">${x.u.code}</div><span class="st st0">${PLANS[x.c].short}</span></div>`+
       `<div class="meta">${TYPES[x.u.type].name} · ${x.u.dt.toLocaleString("vi-VN")} m² · tầng ${x.u.floor}<br>Đến HĐMB ${ty(x.q.toHD)} · trước bàn giao ${ty(x.before)}${x.c==="1N" && loan1N ? " (vay 50%)" : ""}</div>`+
       `<div class="price num">${tyS(x.q.T)} tỷ<small>tổng gồm VAT</small></div></button>`).join("")+`</div>`
