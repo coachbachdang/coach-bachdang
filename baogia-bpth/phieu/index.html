@@ -125,6 +125,32 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
 .input-unit span{padding:0 12px;color:var(--muted);font-size:.88rem;white-space:nowrap}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .hint{font-size:.8rem;color:var(--muted);min-height:1.2em}
+
+/* Kế hoạch vay chi tiết */
+.lp{display:grid;gap:10px;min-width:0}
+.lp > *,.lp-d,.lp-w{min-width:0;max-width:100%}
+.sh-body > *{min-width:0}
+.lp-h{font-size:.84rem;color:var(--muted)}
+.lp-h b{color:var(--ink)}
+.lp-t{width:100%;border-collapse:collapse;font-size:.88rem}
+.lp-t td{padding:8px 0;border-bottom:1px dashed var(--line);vertical-align:top;text-align:left}
+.lp-t td.r{text-align:right;white-space:nowrap;padding-left:10px}
+.lp-t small{display:block;color:var(--muted);font-size:.74rem;white-space:normal;font-weight:400}
+.lp-note{font-size:.76rem;color:var(--muted);margin:0}
+.lp-d summary{cursor:pointer;font-weight:600;font-size:.86rem;color:var(--river);padding:6px 0}
+.lp-w{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:8px;-webkit-overflow-scrolling:touch}
+.lp-t2{width:100%;border-collapse:collapse;font-size:.8rem;font-variant-numeric:tabular-nums}
+.lp-t2 th{position:sticky;top:0;background:#f7faf8;font-weight:600;color:var(--muted);padding:6px 8px;text-align:left;white-space:nowrap;font-size:.74rem}
+.lp-t2 td{padding:6px 8px;border-top:1px solid var(--line);white-space:nowrap;text-align:left}
+.lp-t2 .r{text-align:right}
+.lp-t2 tr.bg td{background:var(--brass-soft)}
+.lp-in{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.lp-in label{display:grid;gap:3px;font-size:.72rem;font-weight:600;color:var(--muted)}
+.lp-in input{padding:8px 10px;font-size:.95rem;width:100%}
+.lp-seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.lp-seg button{border:0;background:var(--surface);padding:7px 12px;font:600 .82rem var(--body);color:var(--ink);cursor:pointer}
+.lp-seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+
 .gate-box{border:1px solid #e3d2ad;background:#fcf8ef;border-radius:10px;padding:12px;display:grid;gap:10px}
 .gate-box .chk{display:flex;gap:8px;align-items:flex-start;font-size:.82rem;color:var(--muted)}
 .gate-box .chk input{margin-top:3px;accent-color:var(--river)}
@@ -499,6 +525,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
             <div class="policy-box" id="shPolicy"></div>
             <div class="policy-box rent" id="shRent" hidden></div>
 
+            <div id="shLoan"></div>
+
             <div class="fine" id="shFine"></div>
           </div>
           <footer class="sh-foot">
@@ -665,7 +693,7 @@ const PAGE_URL = "https://hoangbachdang.com/baogia-bpth/phieu";
 /* ---------- GIAO DIỆN ---------- */
 if (typeof document !== "undefined") {
   const $ = s => document.querySelector(s);
-  const state = { ma:"", loai:"2pn2", dt:"", gia:"3,37", theo:"02", pt:"1N", cs:"0", kh:"", th:"24", ls:"10,7", vay:"1", dg:"", tt:"" };
+  const state = { ma:"", loai:"2pn2", dt:"", gia:"3,37", theo:"02", pt:"1N", cs:"0", kh:"", th:"24", ls:"10,7", vay:"1", dg:"", tt:"", r1:"11", yr:"30", mt:"goc", n0:"18" };
 
   /* Đọc tham số trên đường dẫn để mở đúng phiếu đã gửi */
   const qs = new URLSearchParams(location.search);
@@ -715,13 +743,13 @@ if (typeof document !== "undefined") {
 
   function shareUrl(){
     const p = new URLSearchParams();
-    const def = { loai:"2pn2", theo:"02", pt:"1N", cs:"0", th:"24", ls:"10,7", vay:"1" };
+    const def = { loai:"2pn2", theo:"02", pt:"1N", cs:"0", th:"24", ls:"10,7", vay:"1", r1:"11", yr:"30", mt:"goc", n0:"18" };
     for (const [k,v] of Object.entries(state)) if (v && v !== def[k] && !((k === "dg" || k === "tt") && !last_ux)) p.set(k, k === "ma" && parseUnit(v) ? parseUnit(v).code : v);
     const s = p.toString();
     return PAGE_URL + (s ? "?" + s : "");
   }
 
-  let last = null, last_ux = null;
+  let last = null, last_ux = null, last_lp = null;
 
   function render(){
     const t = TYPES[state.loai];
@@ -832,6 +860,15 @@ if (typeof document !== "undefined") {
         `<span>Theo Thông báo 12/TB-ĐTTH ngày 12/11/2026 và file check giá 14/11/2026: chiết khấu 4% trên giá trị căn hộ sau chiết khấu ${pl.short}, chưa VAT và phí bảo trì. Đã trừ vào giá trị căn hộ và các đợt thanh toán ở trên. Không áp dụng cho PTTT 02, 03.</span>`;
     } else rent.hidden = true;
 
+    /* Kế hoạch vay chi tiết */
+    const lopt = { M:parseNum(state.th), years:parseNum(state.yr), r1:parseNum(state.r1), r0:parseNum(state.ls), n0:parseNum(state.n0), method:state.mt, selfLoan: state.vay === "1", rent: state.cs === "thue" ? t.rent * 1e6 : 0 };
+    const lp = loanPlan(q, lopt); last_lp = lp;
+    const lf = (k, lab, mode="decimal") => `<label>${lab}<input type="text" inputmode="${mode}" data-k="${k}" value="${esc(state[k])}"></label>`;
+    $("#shLoan").innerHTML = lp ? `<div class="sh-title">Kế hoạch vay${state.pt === "1N" ? " · khách tự vay 50%" : ""}</div>`+
+      `<div class="lp-in no-print">${lf("r1","Lãi sau ưu đãi %/năm")}${lf("yr","Thời hạn vay (năm)","numeric")}${lf("th","Tháng HĐMB → bàn giao","numeric")}${state.pt === "1N" ? lf("ls","Ưu đãi ngân hàng %/năm") + lf("n0","Số tháng ưu đãi","numeric") : ""}</div>`+
+      `<div class="lp-seg no-print" role="group" aria-label="Cách trả" style="margin:8px 0"><button type="button" data-lm="goc" aria-pressed="${state.mt !== "deu"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${state.mt === "deu"}">Trả đều hằng tháng</button></div>`+
+      loanHtml(lp)
+      : (state.pt === "1N" ? `<p class="note">Khách tự có 50% trong 20 ngày sau ký HĐMB. Nếu cần vay, đánh dấu "Tính 1N có vay ngân hàng khoản 50%" ở mục So sánh để xem kế hoạch vay.</p>` : "");
     const mg = area ? `<p>Phí quản lý ước tính ${vnd(area*MGMT_FEE)}/tháng chưa VAT (11.000 đ/m²; thực tế tính trên diện tích thông thủy ghi trong HĐMB).</p>` : "";
     $("#shFine").innerHTML =
       `<p>Báo giá tham khảo lập theo bảng giá áp dụng từ 07/11/2026, file check giá 14/11/2026, Thông báo 11/TB-ĐTTH ngày 05/11/2026 và 12/TB-ĐTTH ngày 12/11/2026. Giá trị ràng buộc theo báo giá mã căn do Chủ đầu tư phát hành và HĐMB.</p>`+
@@ -889,6 +926,7 @@ if (typeof document !== "undefined") {
       `Tổng giá trị gồm VAT: ${vnd(q.T)}`,
       `Phí bảo trì 2%: ${vnd(q.fee)}`,
       `Tổng thanh toán: ${vnd(q.T + q.fee)}`,
+      ...(last_lp ? ["", ...loanBrief(last_lp)] : []),
       q.saving > 0 ? `Ít hơn giá gốc PTTT 02: ${vnd(q.saving)}` : "",
       "",
       "Tiến độ thanh toán",
@@ -913,6 +951,8 @@ if (typeof document !== "undefined") {
     }
     clearTimeout(copy.t); copy.t = setTimeout(()=>toast.textContent = "", 5000);
   }
+  $("#shLoan").addEventListener("change", e=>{ const k = e.target.dataset && e.target.dataset.k; if (k) { state[k] = e.target.value.trim(); syncInputs(); render(); } });
+  $("#shLoan").addEventListener("click", e=>{ const b = e.target.closest("button[data-lm]"); if (b) { state.mt = b.dataset.lm; render(); } });
   $("#btnZalo").addEventListener("click", ()=>copy(zaloText(), "Đã chép báo giá. Mở Zalo và dán vào khung chat."));
   $("#btnLink").addEventListener("click", async ()=>{
     const url = shareUrl();

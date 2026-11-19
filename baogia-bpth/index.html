@@ -30,6 +30,32 @@ button{cursor:pointer}
 .wrap{max-width:1180px;margin:0 auto;padding:14px 14px 90px}
 .muted{color:var(--muted)}
 .small{font-size:.82rem}
+
+/* Kế hoạch vay chi tiết */
+.lp{display:grid;gap:10px;min-width:0}
+.lp > *,.lp-d,.lp-w{min-width:0;max-width:100%}
+.sheet > *,#dlg .card{min-width:0}
+.lp-h{font-size:.84rem;color:var(--muted)}
+.lp-h b{color:var(--ink)}
+.lp-t{width:100%;border-collapse:collapse;font-size:.88rem}
+.lp-t td{padding:8px 0;border-bottom:1px dashed var(--line);vertical-align:top;text-align:left}
+.lp-t td.r{text-align:right;white-space:nowrap;padding-left:10px}
+.lp-t small{display:block;color:var(--muted);font-size:.74rem;white-space:normal;font-weight:400}
+.lp-note{font-size:.76rem;color:var(--muted);margin:0}
+.lp-d summary{cursor:pointer;font-weight:600;font-size:.86rem;color:var(--river);padding:6px 0}
+.lp-w{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:8px;-webkit-overflow-scrolling:touch}
+.lp-t2{width:100%;border-collapse:collapse;font-size:.8rem;font-variant-numeric:tabular-nums}
+.lp-t2 th{position:sticky;top:0;background:#f7faf8;font-weight:600;color:var(--muted);padding:6px 8px;text-align:left;white-space:nowrap;font-size:.74rem}
+.lp-t2 td{padding:6px 8px;border-top:1px solid var(--line);white-space:nowrap;text-align:left}
+.lp-t2 .r{text-align:right}
+.lp-t2 tr.bg td{background:var(--brass-soft)}
+.lp-in{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.lp-in label{display:grid;gap:3px;font-size:.72rem;font-weight:600;color:var(--muted)}
+.lp-in input{padding:8px 10px;font-size:.95rem;width:100%}
+.lp-seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.lp-seg button{border:0;background:var(--surface);padding:7px 12px;font:600 .82rem var(--body);color:var(--ink);cursor:pointer}
+.lp-seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+
 .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
 .eyebrow{font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--river)}
 h1{font-size:1.45rem;line-height:1.2;margin:2px 0 0;font-weight:700}
@@ -580,6 +606,8 @@ function renderList(){
 function shareLink(u, pt, cs){
   const g = u.net + Math.round(u.net * VAT_RATE);
   const p = new URLSearchParams({ ma:u.code, loai:u.type, dt:String(u.dt).replace(".", ","), gia:g.toLocaleString("vi-VN"), theo:"02", pt, cs, dg:u.dg, tt:String(u.tt).replace(".", ",") });
+  const L = { r1:LOAN.r1, yr:LOAN.y, mt:LOAN.mt, th:LOAN.M, ls:LOAN.r0, n0:LOAN.n0 }, DEF = { r1:"11", yr:"30", mt:"goc", th:"24", ls:"10,7", n0:"18" };
+  for (const [k,v] of Object.entries(L)) if (v && v !== DEF[k]) p.set(k, v);
   if (cs === "0") p.delete("cs");
   return PHIEU_URL + "?" + p.toString();
 }
@@ -596,6 +624,7 @@ function zaloText(u, pt, cs){
     `Phí bảo trì 2%: ${vnd(q.fee)}`,
     `Tự có đến khi ký HĐMB: ${vnd(q.toHD)}`,
     q.bank ? `Ngân hàng giải ngân: ${vnd(q.bank)}` : "",
+    ...loanBrief(loanPlan(q, loanOpts(u, pt))),
     "",
     "Tiến độ thanh toán",
     ...q.rows.map(r=>`Đợt ${r.n} · ${r.pct}% · ${r.when}: ${vnd(r.net + r.vat + r.fee)}${r.src==="bank" ? " (ngân hàng)" : ""}${r.fee ? " (gồm phí bảo trì)" : ""}`),
@@ -632,7 +661,7 @@ function drawUnit(){
     `<div><div class="small muted" style="font-weight:600;margin-bottom:4px">Tiến độ ${pl.short} · tổng ${vnd(q.T)} + phí bảo trì ${vnd(q.fee)}</div><div class="sched num">`+
       q.rows.map((r,i)=>`<div><span>${r.n}</span><span>${r.pct}% · ${r.when}${r.fee ? `<small>gồm phí bảo trì ${vnd(r.fee)}</small>` : ""}${i===0 ? `<small>đã gồm 30 triệu cọc đăng ký</small>` : ""}</span><b>${vnd(r.net + r.vat + r.fee)}${r.src==="bank" ? `<small>ngân hàng</small>` : ""}</b></div>`).join("")+
     `</div></div>`+
-    loanHtml(u, q, pt)+
+    loanBox(u, q, pt)+
     `<div class="acts"><button class="btn btn-primary wide" type="button" data-act="share">Gửi phiếu cho khách</button>`+
       `<button class="btn btn-ghost" type="button" data-act="zalo">Chép tin Zalo</button>`+
       `<button class="btn btn-ghost" type="button" data-act="cmp">${S.cmp.includes(u.code) ? "Bỏ khỏi so sánh" : "So sánh"}</button>`+
@@ -640,25 +669,19 @@ function drawUnit(){
     `<p class="small muted int">${HAS_ST ? `Trạng thái đọc trực tiếp từ rổ hàng chung lúc ${D.stockAt}. Trước khi nhận cọc vẫn xác nhận lại với admin.` : liveNote()}</p>`;
 }
 
-/* ---------- TRẢ NỢ SAU BÀN GIAO (gốc đều, lãi trên dư nợ giảm dần, như bảng vay ngân hàng của sàn) ---------- */
-const LOAN = { r:"11", y:"25" };
-function loanHtml(u, q, pt){
-  const L = q.bank || (pt === "1N" ? q.rows[2].pay : 0);
-  if (!L) return `<p class="small muted">${PLANS[pt].short}: khách tự thanh toán, không có khoản vay theo phương thức. Khách vẫn tự vay ngân hàng được theo chính sách riêng của ngân hàng.</p>`;
-  const r = parseNum(LOAN.r), y = parseNum(LOAN.y);
-  const ok = r > 0 && r < 30 && y >= 1 && y <= 35;
-  const n = Math.round(y * 12), goc = ok ? L / n : 0, lai = ok ? L * r / 100 / 12 : 0;
-  const last = ok ? goc + (L / n) * r / 100 / 12 : 0;
-  const rent = S.cs === "thue" ? TYPES[u.type].rent * 1e6 : 0;
-  return `<div class="card" style="padding:12px;display:grid;gap:10px;background:#fbfdfc"><div class="small" style="font-weight:700">Trả nợ hằng tháng sau ưu đãi · khoản vay ${ty(L)}${pt === "1N" ? " (tự vay 50%)" : ""}</div>`+
-    `<div class="fsel"><label>Lãi suất sau ưu đãi (%/năm)<input type="text" inputmode="decimal" data-loan="r" value="${LOAN.r}"></label><label>Thời hạn còn lại (năm)<input type="text" inputmode="decimal" data-loan="y" value="${LOAN.y}"></label></div>`+
-    (ok ? `<div class="sched num"><div><span></span><span>Tháng đầu trả gốc<small>gốc chia đều ${n} tháng</small></span><b>${vnd(goc)}</b></div>`+
-      `<div><span></span><span>Lãi tháng đầu<small>giảm dần theo dư nợ</small></span><b>${vnd(lai)}</b></div>`+
-      `<div><span></span><span><b>Tổng tháng đầu (cao nhất)</b><small>tháng cuối còn khoảng ${vnd(last)}</small></span><b>${vnd(goc + lai)}</b></div>`+
-      (rent ? `<div><span></span><span>Tiền thuê Chủ đầu tư cam kết<small>trong 24 tháng đầu sau bàn giao</small></span><b>${vnd(rent)}</b></div>` : "")+`</div>` : `<p class="small" style="color:#a3321f">Nhập lãi suất 0–30% và thời hạn 1–35 năm.</p>`)+
-    `<p class="small muted">Lãi suất là giả định để minh họa, lãi thực tế theo ngân hàng tại thời điểm đó. ${pt==="02"||pt==="05" ? "Trước bàn giao: Chủ đầu tư hỗ trợ lãi và ân hạn gốc tối đa 24 tháng." : pt==="03"||pt==="04" ? "Trước bàn giao: khách trả lãi, Chủ đầu tư cam kết trần 6,9%/năm." : ""}</p></div>`;
+/* ---------- KẾ HOẠCH VAY (dùng loanPlan/loanHtml chung trong engine.js) ---------- */
+const LOAN = { r1:"11", y:"30", mt:"goc", M:"24", r0:"10,7", n0:"18" };
+function loanOpts(u, pt){ return { M:parseNum(LOAN.M), years:parseNum(LOAN.y), r1:parseNum(LOAN.r1), r0:parseNum(LOAN.r0), n0:parseNum(LOAN.n0), method:LOAN.mt, selfLoan: pt === "1N", rent: S.cs === "thue" ? TYPES[u.type].rent * 1e6 : 0 }; }
+function loanBox(u, q, pt){
+  const p = loanPlan(q, loanOpts(u, pt));
+  if (!p) return `<p class="small muted">${PLANS[pt].short}: khách tự thanh toán theo tiến độ, không có khoản vay theo phương thức. Khách vẫn tự vay ngân hàng được theo chính sách riêng của ngân hàng.</p>`;
+  const f = (k, lab, mode="decimal") => `<label>${lab}<input type="text" inputmode="${mode}" data-loan="${k}" value="${esc(LOAN[k])}"></label>`;
+  return `<div class="card" style="padding:12px;display:grid;gap:10px;background:#fbfdfc"><div class="small" style="font-weight:700">Kế hoạch vay${pt === "1N" ? " · khách tự vay 50%" : ""}</div>`+
+    `<div class="lp-in">${f("r1","Lãi sau ưu đãi %/năm")}${f("y","Thời hạn vay (năm)","numeric")}${f("M","Tháng HĐMB → bàn giao","numeric")}${pt === "1N" ? f("r0","Ưu đãi ngân hàng %/năm") + f("n0","Số tháng ưu đãi","numeric") : ""}</div>`+
+    `<div class="lp-seg" role="group" aria-label="Cách trả"><button type="button" data-lm="goc" aria-pressed="${LOAN.mt !== "deu"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${LOAN.mt === "deu"}">Trả đều hằng tháng</button></div>`+
+    loanHtml(p) + `</div>`;
 }
-document.addEventListener("change", e=>{ const k = e.target.dataset && e.target.dataset.loan; if (k) { LOAN[k] = e.target.value; drawUnit(); } });
+document.addEventListener("change", e=>{ const k = e.target.dataset && e.target.dataset.loan; if (k) { LOAN[k] = e.target.value.trim(); drawUnit(); } });
 
 /* ---------- SO SÁNH ---------- */
 function renderCompare(){
@@ -900,6 +923,7 @@ document.addEventListener("click", async e=>{
   if (el.dataset.tab) { S.tab = el.dataset.tab; render(); return; }
   if (el.dataset.rm) { S.cmp = S.cmp.filter(c=>c!==el.dataset.rm); render(); return; }
   if (el.dataset.pt && el.closest("#dlg")) { S.dpt = el.dataset.pt; drawUnit(); return; }
+  if (el.dataset.lm && el.closest("#dlg")) { LOAN.mt = el.dataset.lm; drawUnit(); return; }
   if (el.dataset.cs !== undefined && el.closest("#dlg")) { S.cs = el.dataset.cs; drawUnit(); render(); return; }
   const act = el.dataset.act;
   if (act === "close") closeUnit();
