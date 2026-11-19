@@ -383,11 +383,12 @@ body.cust .cust-bar button{margin-left:auto}
       <div class="find">
         <label>Tiền có sẵn đến khi ký HĐMB (tỷ)<input type="text" inputmode="decimal" id="vHD" placeholder="0,5"></label>
         <label>Lũy kế tự có đến trước bàn giao (tỷ)<input type="text" inputmode="decimal" id="vBG" placeholder="Không bắt buộc"></label>
+        <label>Khách vay tối đa (tỷ)<input type="text" inputmode="decimal" id="vLoan" placeholder="Đủ 50%"></label>
         <label>Phương thức<select id="vPt"><option value="all">Mọi phương thức trừ 02</option></select></label>
         <label>Loại căn<select id="vType"><option value="all">Tất cả loại</option></select></label>
       </div>
       <label class="chk"><input type="checkbox" id="v1nLoan" checked>Khách 1N tự vay ngân hàng khoản 50%</label>
-      <p class="small muted">Ô thứ hai là số lũy kế: tổng tiền khách tự đóng từ lúc ký đến trước đợt bàn giao, đã gồm tiền đến HĐMB, không tính phần ngân hàng cho vay. Ví dụ có 0,8 tỷ lúc ký, gom thêm 0,7 tỷ sau đó thì nhập 1,5. Chưa biết thì bỏ trống, khi đó chỉ lọc theo tiền đến HĐMB.</p><p class="small muted">Chỉ xét căn còn trống. Mỗi căn hiện phương thức có tổng giá thấp nhất mà khách đáp ứng được cả hai mức vốn. Theo chính sách đang chọn ở bộ lọc.</p>
+      <p class="small muted">Ô thứ hai là số lũy kế: tổng tiền khách tự đóng từ lúc ký đến trước đợt bàn giao, đã gồm tiền đến HĐMB, không tính phần ngân hàng cho vay. Ví dụ có 0,8 tỷ lúc ký, gom thêm 0,7 tỷ sau đó thì nhập 1,5. Chưa biết thì bỏ trống, khi đó chỉ lọc theo tiền đến HĐMB.</p><p class="small muted">Ô vay tối đa: để trống là vay đủ khoản của phương thức (50%). Khách muốn vay ít hơn thì nhập số tiền, phần không vay được cộng vào tiền tự có trước bàn giao. Khoản vay riêng của khách ngoài phương thức thì cộng vào hai ô tự có. Đợt bàn giao 25% không tính vào các ô này; khách tự trả hoặc vay thêm, xem Kế hoạch vay trong chi tiết căn.</p><p class="small muted">Chỉ xét căn còn trống. Mỗi căn hiện phương thức có tổng giá thấp nhất mà khách đáp ứng được cả hai mức vốn. Theo chính sách đang chọn ở bộ lọc.</p>
     </div>
     <div id="findView"></div>
   </section>
@@ -617,6 +618,8 @@ function shareLink(u, pt, cs){
   const p = new URLSearchParams({ ma:u.code, loai:u.type, dt:String(u.dt).replace(".", ","), gia:g.toLocaleString("vi-VN"), theo:"02", pt, cs, dg:u.dg, tt:String(u.tt).replace(".", ",") });
   const L = { r1:LOAN.r1, yr:LOAN.y, mt:LOAN.mt, th:LOAN.M, ls:LOAN.r0, n0:LOAN.n0 }, DEF = { r1:"11", yr:"30", mt:"goc", th:"24", ls:"10,7", n0:"18" };
   for (const [k,v] of Object.entries(L)) if (v && v !== DEF[k]) p.set(k, v);
+  if (LOAN.amt && LOAN.amtFor === u.code) p.set("vt", LOAN.amt);
+  if (LOAN.bg) p.set("vbg", "1");
   if (cs === "0") p.delete("cs");
   return PHIEU_URL + "?" + p.toString();
 }
@@ -679,18 +682,29 @@ function drawUnit(){
 }
 
 /* ---------- KẾ HOẠCH VAY (dùng loanPlan/loanHtml chung trong engine.js) ---------- */
-const LOAN = { r1:"11", y:"30", mt:"goc", M:"24", r0:"10,7", n0:"18" };
-function loanOpts(u, pt){ return { M:parseNum(LOAN.M), years:parseNum(LOAN.y), r1:parseNum(LOAN.r1), r0:parseNum(LOAN.r0), n0:parseNum(LOAN.n0), method:LOAN.mt, selfLoan: pt === "1N", rent: S.cs === "thue" ? TYPES[u.type].rent * 1e6 : 0 }; }
+const LOAN = { r1:"11", y:"30", mt:"goc", M:"24", r0:"10,7", n0:"18", amt:"", amtFor:"", bg:false };
+/* Số tiền vay chỉ áp dụng cho căn đang nhập; mở căn khác thì về mức tối đa của phương thức */
+const loanAmt = u => LOAN.amt && LOAN.amtFor === u.code ? parseMoney(LOAN.amt) : NaN;
+function loanOpts(u, pt){ return { M:parseNum(LOAN.M), years:parseNum(LOAN.y), r1:parseNum(LOAN.r1), r0:parseNum(LOAN.r0), n0:parseNum(LOAN.n0), method:LOAN.mt, selfLoan: pt === "1N", rent: S.cs === "thue" ? TYPES[u.type].rent * 1e6 : 0, amt: loanAmt(u), addBG: LOAN.bg }; }
 function loanBox(u, q, pt){
   const p = loanPlan(q, loanOpts(u, pt));
-  if (!p) return `<p class="small muted">${PLANS[pt].short}: khách tự thanh toán theo tiến độ, không có khoản vay theo phương thức. Khách vẫn tự vay ngân hàng được theo chính sách riêng của ngân hàng.</p>`;
-  const f = (k, lab, mode="decimal") => `<label>${lab}<input type="text" inputmode="${mode}" data-loan="${k}" value="${esc(LOAN[k])}"></label>`;
-  return `<div class="card" style="padding:12px;display:grid;gap:10px;background:#fbfdfc"><div class="small" style="font-weight:700">Kế hoạch vay${pt === "1N" ? " · khách tự vay 50%" : ""}</div>`+
-    `<div class="lp-in">${f("r1","Lãi sau ưu đãi %/năm")}${f("y","Thời hạn vay (năm)","numeric")}${f("M","Tháng HĐMB → bàn giao","numeric")}${pt === "1N" ? f("r0","Ưu đãi ngân hàng %/năm") + f("n0","Số tháng ưu đãi","numeric") : ""}</div>`+
-    `<div class="lp-seg" role="group" aria-label="Cách trả"><button type="button" data-lm="goc" aria-pressed="${LOAN.mt !== "deu"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${LOAN.mt === "deu"}">Trả đều hằng tháng</button></div>`+
-    loanHtml(p) + `</div>`;
+  const full = pt === "1N" ? q.rows[2].pay : q.bank;
+  const f = (k, lab, mode="decimal", ph="") => `<label>${lab}<input type="text" inputmode="${mode}" data-loan="${k}" value="${esc(k === "amt" && LOAN.amtFor !== u.code ? "" : LOAN[k])}"${ph ? ` placeholder="${ph}"` : ""}></label>`;
+  const head = full ? `Kế hoạch vay · tối đa ${ty(full)} theo ${PLANS[pt].short}` : "Kế hoạch vay";
+  const intro = full ? `<p class="small muted" style="margin:0">Để trống ô số tiền vay là vay đủ mức tối đa. Nhập số nhỏ hơn nếu khách muốn vay ít, phần còn lại khách tự đóng.</p>`
+    : `<p class="small muted" style="margin:0">${PLANS[pt].short}: không có khoản vay theo phương thức, khách tự đóng theo tiến độ. Khách vẫn tự vay ngân hàng được theo chính sách riêng của ngân hàng.</p>`;
+  const bg = `<label class="chk"><input type="checkbox" data-loan-bg${LOAN.bg ? " checked" : ""}>Vay thêm đợt bàn giao 25% (${ty(q.atBG - q.fee)}, ngoài chính sách CĐT)</label>`;
+  const ins = (full ? f("amt","Số tiền vay (tỷ)","decimal",tyS(full)) : "") + (p ? f("r1","Lãi sau ưu đãi %/năm") + f("y","Thời hạn vay (năm)","numeric") + f("M","Tháng HĐMB → bàn giao","numeric") + (pt === "1N" && p.base ? f("r0","Ưu đãi ngân hàng %/năm") + f("n0","Số tháng ưu đãi","numeric") : "") : "");
+  return `<div class="card" style="padding:12px;display:grid;gap:10px;background:#fbfdfc"><div class="small" style="font-weight:700">${head}</div>${intro}`+
+    (ins ? `<div class="lp-in">${ins}</div>` : "") + bg +
+    (p ? `<div class="lp-seg" role="group" aria-label="Cách trả"><button type="button" data-lm="goc" aria-pressed="${LOAN.mt !== "deu"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${LOAN.mt === "deu"}">Trả đều hằng tháng</button></div>` + loanHtml(p)
+       : (full ? `<p class="small muted" style="margin:0">Khách không vay, tự đóng toàn bộ theo tiến độ.</p>` : "")) + `</div>`;
 }
-document.addEventListener("change", e=>{ const k = e.target.dataset && e.target.dataset.loan; if (k) { LOAN[k] = e.target.value.trim(); drawUnit(); } });
+document.addEventListener("change", e=>{
+  if (e.target.matches && e.target.matches("#dlg [data-loan-bg]")) { LOAN.bg = e.target.checked; drawUnit(); return; }
+  const k = e.target.dataset && e.target.dataset.loan;
+  if (k) { LOAN[k] = e.target.value.trim(); if (k === "amt") LOAN.amtFor = S.open; drawUnit(); }
+});
 
 /* ---------- SO SÁNH ---------- */
 function renderCompare(){
@@ -722,6 +736,7 @@ function renderFind(){
   if (!(hd > 0)) { $("#findView").innerHTML = `<div class="empty">Nhập số tiền khách có sẵn đến khi ký HĐMB để tìm căn.</div>`; return; }
   const plans = $("#vPt").value === "all" ? PLAN_ORDER.filter(c=>c!=="02") : [$("#vPt").value];
   const ty1 = $("#vType").value, loan1N = $("#v1nLoan").checked;
+  const capIn = $("#vLoan").value.trim(), cap = capIn ? parseMoney(capIn) : -1;
   if (bg > 0 && bg < hd) { $("#findView").innerHTML = `<div class="empty">Ô thứ hai là số lũy kế nên phải lớn hơn hoặc bằng tiền đến HĐMB. Khách có ${String(hd).replace(".",",")} tỷ lúc ký, gom thêm ${String(bg).replace(".",",")} tỷ sau đó thì nhập ${String(+(hd+bg).toFixed(3)).replace(".",",")}.</div>`; return; }
   const out = [];
   for (const u of U) {
@@ -729,16 +744,18 @@ function renderFind(){
     let best = null;
     for (const c of plans) {
       const q = quoteOf(u, c, S.cs);
-      const before = c === "1N" && loan1N ? q.selfBefore - q.rows[2].pay : q.selfBefore;
-      if (q.toHD <= hd*1e9 && (!(bg > 0) || before <= bg*1e9) && (!best || q.T < best.q.T)) best = { c, q, before };
+      const fullL = c === "1N" ? (loan1N ? q.rows[2].pay : 0) : q.bank;
+      const loan = cap >= 0 ? Math.min(fullL, cap) : fullL;
+      const before = q.selfBefore + q.bank - loan;
+      if (q.toHD <= hd*1e9 && (!(bg > 0) || before <= bg*1e9) && (!best || q.T < best.q.T)) best = { c, q, before, loan, short: fullL - loan };
     }
     if (best) out.push({ u, ...best });
   }
   out.sort((a,b)=>a.q.T - b.q.T);
   $("#findView").innerHTML = out.length ?
-    `<p class="summary"><b>${out.length}</b> căn ${HAS_ST ? "trống " : ""}phù hợp${bg>0 ? "" : " (chưa nhập vốn trước bàn giao nên chỉ lọc theo tiền đến HĐMB)"}</p><div class="list">`+
+    `<p class="summary"><b>${out.length}</b> căn ${HAS_ST ? "trống " : ""}phù hợp${bg>0 ? "" : " (chưa nhập vốn trước bàn giao nên chỉ lọc theo tiền đến HĐMB)"}${cap >= 0 ? ` · vay tối đa ${ty(cap)}` : ""}</p><div class="list">`+
     out.slice(0,80).map(x=>`<button class="row" type="button" data-u="${x.u.code}" data-fpt="${x.c}"><div><div class="code">${x.u.code}</div><span class="st st0">${PLANS[x.c].short}</span></div>`+
-      `<div class="meta">${TYPES[x.u.type].name} · ${x.u.dt.toLocaleString("vi-VN")} m² · tầng ${x.u.floor}<br>Đến HĐMB ${ty(x.q.toHD)} · trước bàn giao ${ty(x.before)}${x.c==="1N" && loan1N ? " (vay 50%)" : ""}</div>`+
+      `<div class="meta">${TYPES[x.u.type].name} · ${x.u.dt.toLocaleString("vi-VN")} m² · tầng ${x.u.floor}<br>Đến HĐMB ${ty(x.q.toHD)} · trước bàn giao ${ty(x.before)}<br>${x.loan ? `Vay ${ty(x.loan)}` : "Không vay"}${x.short > 0.5 ? ` · tự bù ${ty(x.short)} phần không vay` : ""}</div>`+
       `<div class="price num">${tyS(x.q.T)} tỷ<small>tổng gồm VAT</small></div></button>`).join("")+`</div>`
     : `<div class="empty">Chưa có căn trống phù hợp với mức vốn này. Thử tăng tiền đến HĐMB hoặc chọn phương thức vay.</div>`;
 }
@@ -923,7 +940,15 @@ async function copy(text, msg){
 }
 document.addEventListener("click", async e=>{
   const el = e.target.closest("button, a, tr[data-pt]"); if (!el) return;
-  if (el.dataset.u) { if (el.dataset.fpt) S.dpt = el.dataset.fpt; openUnit(el.dataset.u); return; }
+  if (el.dataset.u) {
+    if (el.dataset.fpt) {
+      S.dpt = el.dataset.fpt;
+      /* Mang mức vay tối đa từ tab Tính vốn sang Kế hoạch vay của căn, nếu thấp hơn mức của phương thức */
+      const v = $("#vLoan").value.trim(), q = quoteOf(BY.get(el.dataset.u), el.dataset.fpt, S.cs), fullL = el.dataset.fpt === "1N" ? q.rows[2].pay : q.bank;
+      if (v && parseMoney(v) < fullL) { LOAN.amt = v; LOAN.amtFor = el.dataset.u; }
+    }
+    openUnit(el.dataset.u); return;
+  }
   if (el.dataset.tw) { S.tower = el.dataset.tw; render(); return; }
   if (el.dataset.t !== undefined && el.closest("#fType")) { const k = el.dataset.t; if (!k) S.types.clear(); else S.types.has(k) ? S.types.delete(k) : S.types.add(k); S.preset = ""; S.od = false; render(); return; }
   if (el.dataset.m !== undefined) { S.max = +el.dataset.m; S.preset = ""; S.od = false; render(); return; }
@@ -970,7 +995,7 @@ $("#fCs").addEventListener("change", e=>{ S.cs = e.target.value; S.preset = ""; 
 $("#fFrom").addEventListener("change", e=>{ S.from = +e.target.value; if (S.from > S.to) S.to = S.from; render(); });
 $("#fTo").addEventListener("change", e=>{ S.to = +e.target.value; if (S.to < S.from) S.from = S.to; render(); });
 $("#fSort").addEventListener("change", e=>{ S.sort = e.target.value; if (S.view !== "list") S.view = "list"; render(); });
-["#vHD","#vBG"].forEach(s=>$(s).addEventListener("input", renderFind));
+["#vHD","#vBG","#vLoan"].forEach(s=>$(s).addEventListener("input", renderFind));
 ["#vPt","#vType","#v1nLoan"].forEach(s=>$(s).addEventListener("change", renderFind));
 $("#searchForm").addEventListener("submit", e=>{
   e.preventDefault();

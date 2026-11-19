@@ -147,6 +147,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
 .lp-in{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .lp-in label{display:grid;gap:3px;font-size:.72rem;font-weight:600;color:var(--muted)}
 .lp-in input{padding:8px 10px;font-size:.95rem;width:100%}
+#shLoan .chk{display:flex;gap:8px;align-items:center;font-size:.86rem;margin:8px 0;cursor:pointer}
+#shLoan .chk input{accent-color:var(--river);width:18px;height:18px;flex:none}
 .lp-seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .lp-seg button{border:0;background:var(--surface);padding:7px 12px;font:600 .82rem var(--body);color:var(--ink);cursor:pointer}
 .lp-seg button[aria-pressed=true]{background:var(--ink);color:#fff}
@@ -693,7 +695,7 @@ const PAGE_URL = "https://hoangbachdang.com/baogia-bpth/phieu";
 /* ---------- GIAO DIỆN ---------- */
 if (typeof document !== "undefined") {
   const $ = s => document.querySelector(s);
-  const state = { ma:"", loai:"2pn2", dt:"", gia:"3,37", theo:"02", pt:"1N", cs:"0", kh:"", th:"24", ls:"10,7", vay:"1", dg:"", tt:"", r1:"11", yr:"30", mt:"goc", n0:"18" };
+  const state = { ma:"", loai:"2pn2", dt:"", gia:"3,37", theo:"02", pt:"1N", cs:"0", kh:"", th:"24", ls:"10,7", vay:"1", dg:"", tt:"", r1:"11", yr:"30", mt:"goc", n0:"18", vt:"", vbg:"0" };
 
   /* Đọc tham số trên đường dẫn để mở đúng phiếu đã gửi */
   const qs = new URLSearchParams(location.search);
@@ -734,7 +736,7 @@ if (typeof document !== "undefined") {
     document.querySelectorAll("input[name=cs]").forEach(r=>r.checked = r.value===state.cs);
   }
 
-  $("#ma").addEventListener("input", ()=>{ state.dg = ""; state.tt = ""; $("#lookMsg").textContent = ""; });
+  $("#ma").addEventListener("input", ()=>{ state.dg = ""; state.tt = ""; state.vt = ""; $("#lookMsg").textContent = ""; });
   const bind = (sel, key, ev="input") => $(sel).addEventListener(ev, e=>{ state[key] = e.target.value.trim(); render(); });
   bind("#ma","ma"); bind("#dt","dt"); bind("#gia","gia"); bind("#theo","theo","change"); bind("#kh","kh"); bind("#th","th"); bind("#ls","ls");
   $("#vay1n").addEventListener("change", e=>{ state.vay = e.target.checked ? "1" : "0"; render(); });
@@ -743,7 +745,7 @@ if (typeof document !== "undefined") {
 
   function shareUrl(){
     const p = new URLSearchParams();
-    const def = { loai:"2pn2", theo:"02", pt:"1N", cs:"0", th:"24", ls:"10,7", vay:"1", r1:"11", yr:"30", mt:"goc", n0:"18" };
+    const def = { loai:"2pn2", theo:"02", pt:"1N", cs:"0", th:"24", ls:"10,7", vay:"1", r1:"11", yr:"30", mt:"goc", n0:"18", vbg:"0" };
     for (const [k,v] of Object.entries(state)) if (v && v !== def[k] && !((k === "dg" || k === "tt") && !last_ux)) p.set(k, k === "ma" && parseUnit(v) ? parseUnit(v).code : v);
     const s = p.toString();
     return PAGE_URL + (s ? "?" + s : "");
@@ -861,14 +863,21 @@ if (typeof document !== "undefined") {
     } else rent.hidden = true;
 
     /* Kế hoạch vay chi tiết */
-    const lopt = { M:parseNum(state.th), years:parseNum(state.yr), r1:parseNum(state.r1), r0:parseNum(state.ls), n0:parseNum(state.n0), method:state.mt, selfLoan: state.vay === "1", rent: state.cs === "thue" ? t.rent * 1e6 : 0 };
+    const fullL = state.pt === "1N" ? (state.vay === "1" ? q.rows[2].pay : 0) : q.bank;
+    const lopt = { M:parseNum(state.th), years:parseNum(state.yr), r1:parseNum(state.r1), r0:parseNum(state.ls), n0:parseNum(state.n0), method:state.mt, selfLoan: state.vay === "1", rent: state.cs === "thue" ? t.rent * 1e6 : 0,
+      amt: state.vt ? parseMoney(state.vt) : NaN, addBG: state.vbg === "1" };
     const lp = loanPlan(q, lopt); last_lp = lp;
-    const lf = (k, lab, mode="decimal") => `<label>${lab}<input type="text" inputmode="${mode}" data-k="${k}" value="${esc(state[k])}"></label>`;
-    $("#shLoan").innerHTML = lp ? `<div class="sh-title">Kế hoạch vay${state.pt === "1N" ? " · khách tự vay 50%" : ""}</div>`+
-      `<div class="lp-in no-print">${lf("r1","Lãi sau ưu đãi %/năm")}${lf("yr","Thời hạn vay (năm)","numeric")}${lf("th","Tháng HĐMB → bàn giao","numeric")}${state.pt === "1N" ? lf("ls","Ưu đãi ngân hàng %/năm") + lf("n0","Số tháng ưu đãi","numeric") : ""}</div>`+
-      `<div class="lp-seg no-print" role="group" aria-label="Cách trả" style="margin:8px 0"><button type="button" data-lm="goc" aria-pressed="${state.mt !== "deu"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${state.mt === "deu"}">Trả đều hằng tháng</button></div>`+
-      loanHtml(lp)
-      : (state.pt === "1N" ? `<p class="note">Khách tự có 50% trong 20 ngày sau ký HĐMB. Nếu cần vay, đánh dấu "Tính 1N có vay ngân hàng khoản 50%" ở mục So sánh để xem kế hoạch vay.</p>` : "");
+    const lf = (k, lab, mode="decimal", ph="") => `<label>${lab}<input type="text" inputmode="${mode}" data-k="${k}" value="${esc(state[k])}"${ph ? ` placeholder="${ph}"` : ""}></label>`;
+    const tyS2 = v => (v/1e9).toLocaleString("vi-VN",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const ins = (fullL ? lf("vt","Số tiền vay (tỷ)","decimal",tyS2(fullL)) : "") + (lp ? lf("r1","Lãi sau ưu đãi %/năm") + lf("yr","Thời hạn vay (năm)","numeric") + lf("th","Tháng HĐMB → bàn giao","numeric") + (state.pt === "1N" && lp.base ? lf("ls","Ưu đãi ngân hàng %/năm") + lf("n0","Số tháng ưu đãi","numeric") : "") : "");
+    const intro = fullL ? `<p class="note no-print">Để trống ô số tiền vay là vay đủ mức tối đa ${ty(fullL)}. Nhập số nhỏ hơn nếu muốn vay ít, phần còn lại tự đóng.</p>`
+      : state.pt === "1N" ? `<p class="note">Khách tự có 50% trong 20 ngày sau ký HĐMB. Nếu cần vay khoản này, đánh dấu "Tính 1N có vay ngân hàng khoản 50%" ở mục So sánh.</p>`
+      : `<p class="note">${pl.short} không có khoản vay theo phương thức; khách tự đóng theo tiến độ hoặc tự vay ngân hàng theo chính sách riêng của ngân hàng.</p>`;
+    const bgChk = `<label class="chk no-print"><input type="checkbox" data-k="vbg"${state.vbg === "1" ? " checked" : ""}>Vay thêm đợt bàn giao 25% (${ty(q.atBG - q.fee)}, ngoài chính sách Chủ đầu tư)</label>`;
+    $("#shLoan").innerHTML = `<div class="sh-title">Kế hoạch vay${fullL ? ` · tối đa ${ty(fullL)} theo ${pl.short}` : ""}</div>${intro}`+
+      (ins ? `<div class="lp-in no-print">${ins}</div>` : "") + bgChk +
+      (lp ? `<div class="lp-seg no-print" role="group" aria-label="Cách trả" style="margin:8px 0"><button type="button" data-lm="goc" aria-pressed="${state.mt !== "deu"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${state.mt === "deu"}">Trả đều hằng tháng</button></div>` + loanHtml(lp)
+          : (fullL ? `<p class="note">Khách không vay, tự đóng toàn bộ theo tiến độ.</p>` : ""));
     const mg = area ? `<p>Phí quản lý ước tính ${vnd(area*MGMT_FEE)}/tháng chưa VAT (11.000 đ/m²; thực tế tính trên diện tích thông thủy ghi trong HĐMB).</p>` : "";
     $("#shFine").innerHTML =
       `<p>Báo giá tham khảo lập theo bảng giá áp dụng từ 07/11/2026, file check giá 14/11/2026, Thông báo 11/TB-ĐTTH ngày 05/11/2026 và 12/TB-ĐTTH ngày 12/11/2026. Giá trị ràng buộc theo báo giá mã căn do Chủ đầu tư phát hành và HĐMB.</p>`+
@@ -951,7 +960,7 @@ if (typeof document !== "undefined") {
     }
     clearTimeout(copy.t); copy.t = setTimeout(()=>toast.textContent = "", 5000);
   }
-  $("#shLoan").addEventListener("change", e=>{ const k = e.target.dataset && e.target.dataset.k; if (k) { state[k] = e.target.value.trim(); syncInputs(); render(); } });
+  $("#shLoan").addEventListener("change", e=>{ const k = e.target.dataset && e.target.dataset.k; if (k) { state[k] = e.target.type === "checkbox" ? (e.target.checked ? "1" : "0") : e.target.value.trim(); syncInputs(); render(); } });
   $("#shLoan").addEventListener("click", e=>{ const b = e.target.closest("button[data-lm]"); if (b) { state.mt = b.dataset.lm; render(); } });
   $("#btnZalo").addEventListener("click", ()=>copy(zaloText(), "Đã chép báo giá. Mở Zalo và dán vào khung chat."));
   $("#btnLink").addEventListener("click", async ()=>{
