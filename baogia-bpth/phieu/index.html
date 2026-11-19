@@ -750,7 +750,12 @@ if (typeof document !== "undefined") {
     const q = computeQuote(b02, state.pt, state.cs, ux);
     const pl = PLANS[state.pt];
     last_ux = ux;
-    last = { q, t, unit, area, pl, today };
+    const manual = !!state.ma && !ux;
+    last = { q, t, unit, area, pl, today, manual };
+    if (manual) {
+      gh.className = "hint warn";
+      gh.textContent += ` · Đây là số anh chị nhập, chưa phải giá riêng của căn ${unit ? unit.code : state.ma.toUpperCase()}. Gửi mã căn ở cuối trang để nhận giá đúng căn.`;
+    }
 
     /* Đầu phiếu */
     $("#shDate").textContent = today;
@@ -763,7 +768,8 @@ if (typeof document !== "undefined") {
       `<div><span>Diện tích tim tường</span><b>${area ? area.toLocaleString("vi-VN") + " m²" : "Theo mặt bằng"}</b>${last_ux ? `<small style="display:block;font-size:.74rem;color:var(--muted)">thông thủy ${last_ux.tt.toLocaleString("vi-VN")} m²</small>` : ""}</div>`;
 
     /* Bảng giá trị */
-    let br = `<tr><td>Giá gốc PTTT 02, chưa VAT<small>quy từ tổng giá ${vnd(q.b02)} đã gồm VAT</small></td><td class="r">${vnd(q.n02)}</td></tr>`;
+    let br = (manual ? `<tr><td colspan="2" style="color:#9a4a12;font-size:.82rem;padding-bottom:10px">Giá tính theo số nhập tay, chưa phải giá riêng của căn ${unit ? unit.code : esc(state.ma.toUpperCase())}. Giá đúng căn theo báo giá mã căn.</td></tr>` : "") +
+      `<tr><td>Giá gốc PTTT 02, chưa VAT<small>quy từ tổng giá ${vnd(q.b02)} đã gồm VAT</small></td><td class="r">${vnd(q.n02)}</td></tr>`;
     if (q.discPlan) br += `<tr class="minus"><td>${pl.discLabel}<small>${pl.discNote}</small></td><td class="r">−${vnd(q.discPlan)}</td></tr>`;
     if (q.disc4) br += `<tr class="minus"><td>Chiết khấu thêm 4% · Lựa chọn 2, TB 12/TB-ĐTTH<small>4% trên giá sau chiết khấu ${pl.short}, chưa VAT và phí bảo trì</small></td><td class="r">−${vnd(q.disc4)}</td></tr>`;
     br += `<tr class="sub"><td>Giá trị căn hộ chưa VAT</td><td class="r">${vnd(q.N)}</td></tr>`;
@@ -818,7 +824,7 @@ if (typeof document !== "undefined") {
       `<p>Lệ phí trước bạ, phí cấp sổ, phí quản lý, gửi xe không nằm trong giá căn.</p>` + mg;
 
     renderCompare(b02, ux);
-    $("#f-plan").textContent = `Kèm theo yêu cầu: ${t.name}${unit ? ", căn " + unit.code : ""}, ${pl.short}${state.cs==="thue" ? ", chọn thuê lại 24 tháng" : state.cs==="ck4" ? ", chọn chiết khấu thêm 4%" : ""}, tổng giá tham khảo ${ty(q.T)}.`;
+    $("#f-plan").textContent = `Kèm theo yêu cầu: ${t.name}${unit ? ", căn " + unit.code : ""}, ${pl.short}${state.cs==="thue" ? ", chọn thuê lại 24 tháng" : state.cs==="ck4" ? ", chọn chiết khấu thêm 4%" : ""}, ${manual ? `giá tự nhập ${ty(q.T)}, cần báo giá đúng căn` : `tổng giá theo bảng giá ${ty(q.T)}`}.`;
     if (!$("#f-unit").dataset.touched) $("#f-unit").value = unit ? `${unit.code} · ${t.name}` : t.name;
     history.replaceState(null, "", location.pathname + (shareUrl().split("?")[1] ? "?" + shareUrl().split("?")[1] : "") + location.hash);
   }
@@ -863,6 +869,7 @@ if (typeof document !== "undefined") {
       state.cs === "thue" ? `Chính sách 12/TB-ĐTTH: chọn CĐT thuê lại ${t.rent} triệu/tháng x 24 tháng = ${(t.rent*24).toLocaleString("vi-VN")} triệu, giá căn không đổi` :
       state.cs === "ck4" ? (q.disc4 ? `Chính sách 12/TB-ĐTTH: chọn chiết khấu thêm 4%, giảm ${vnd(q.disc4)}` : `Chiết khấu thêm 4% không áp dụng cho ${pl.short}`) : "",
       "",
+      last.manual ? "Lưu ý: giá tính theo số nhập tay, chưa phải giá riêng của căn này" : "",
       `Tổng giá trị gồm VAT: ${vnd(q.T)}`,
       `Phí bảo trì 2%: ${vnd(q.fee)}`,
       `Tổng thanh toán: ${vnd(q.T + q.fee)}`,
@@ -912,7 +919,7 @@ if (typeof document !== "undefined") {
     const data = {
       name, phone, need:"Nhận báo giá chính thức theo mã căn",
       type: f.unit.value.trim(), goal: last ? `${last.pl.short}${state.cs==="thue" ? " · thuê lại 24 tháng" : state.cs==="ck4" ? " · chiết khấu thêm 4%" : ""}` : "",
-      budget: q ? `Tham khảo ${ty(q.T)} gồm VAT` : "", time:"", note: [f.note.value.trim(), "Phiếu: " + shareUrl()].filter(Boolean).join(" | "),
+      budget: q ? (last.manual ? `Khách tự nhập giá ${ty(q.T)} (chưa phải giá căn)` : `Theo bảng giá ${ty(q.T)} gồm VAT`) : "", time:"", note: [f.note.value.trim(), "Phiếu: " + shareUrl()].filter(Boolean).join(" | "),
       website: f.website.value, source: location.host + location.pathname
     };
     $("#done").hidden = false;
