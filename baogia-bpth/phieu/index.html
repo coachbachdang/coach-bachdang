@@ -125,6 +125,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
 .input-unit span{padding:0 12px;color:var(--muted);font-size:.88rem;white-space:nowrap}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .hint{font-size:.8rem;color:var(--muted);min-height:1.2em}
+.gate-box{border:1px solid #e3d2ad;background:#fcf8ef;border-radius:10px;padding:12px;display:grid;gap:10px}
+.gate-box .chk{display:flex;gap:8px;align-items:flex-start;font-size:.82rem;color:var(--muted)}
+.gate-box .chk input{margin-top:3px;accent-color:var(--river)}
 .hint.ok{color:var(--river)}
 .hint.warn{color:var(--warn)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
@@ -332,9 +335,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
     <div>
       <div class="eyebrow">Báo giá tham khảo · Bảng giá áp dụng từ 07/11/2026</div>
       <h1 style="margin-top:10px">Lập báo giá căn hộ Bcons Central Park</h1>
-      <p class="lead">Nhập mã căn và giá trên bảng giá, chọn phương thức thanh toán. Trang tính đủ từng đợt tiền theo cách báo giá của Chủ đầu tư: VAT từng đợt, phí bảo trì 2%, phần ngân hàng giải ngân, rồi đặt 6 phương thức cạnh nhau trên cùng một căn để anh chị tự so.</p>
+      <p class="lead">Nhập mã căn để xem đúng giá căn đó theo bảng giá, chọn phương thức thanh toán. Trang tính đủ từng đợt tiền theo cách báo giá của Chủ đầu tư: VAT từng đợt, phí bảo trì 2%, phần ngân hàng giải ngân, rồi đặt 6 phương thức cạnh nhau trên cùng một căn để anh chị tự so.</p>
       <div class="hero-cta">
-        <a class="btn btn-brass" href="#lap-bao-gia">Bắt đầu lập báo giá</a>
+        <a class="btn btn-brass" href="#lap-bao-gia" id="heroLook">Tra giá theo mã căn</a>
         <a class="btn btn-ghost" href="#bang-gia">Xem khoảng giá theo loại căn</a>
       </div>
     </div>
@@ -367,7 +370,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
         <tbody id="priceRows"></tbody>
       </table>
     </div>
-    <p class="note" style="margin-top:10px">Giai đoạn 1 mở bán 3 tháp Orchid, Bamboo, Tamarind; Palm và Lotus mở sau. Chiết khấu tính trên giá PTTT 02 chưa VAT, chưa phí bảo trì, áp dụng đến khi có thông báo mới. Các PTTT không cộng dồn. PTTT 02–05 chỉ áp dụng khách cá nhân. Giá từng căn theo báo giá mã căn và có thể điều chỉnh theo đợt mở bán.</p>
+    <p class="note" style="margin-top:10px">Giai đoạn 1 mở bán 3 tháp Orchid, Bamboo, Tamarind; Palm và Lotus mở sau. Chiết khấu tính trên giá PTTT 02 chưa VAT, chưa phí bảo trì, áp dụng đến khi có thông báo mới. Các PTTT không cộng dồn. PTTT 02–05 chỉ áp dụng khách cá nhân. Tra giá đúng từng căn ở mục Lập báo giá bằng mã căn; giá có thể điều chỉnh theo đợt mở bán.</p>
   </div>
 </section>
 
@@ -385,9 +388,21 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
         <div class="step">
           <div class="step-h"><i>1</i>Căn hộ</div>
           <div class="field">
-            <label class="lbl" for="ma">Mã căn (không bắt buộc)</label>
-            <input id="ma" type="text" placeholder="Ví dụ: A14-23" maxlength="12" spellcheck="false">
+            <label class="lbl" for="ma">Mã căn</label>
+            <div style="display:flex;gap:8px"><input id="ma" type="text" placeholder="Ví dụ: A14-23" maxlength="12" spellcheck="false" enterkeyhint="search"><button type="button" class="btn btn-brass btn-sm" id="lookBtn">Tra giá</button></div>
             <div class="hint" id="maHint">Tháp A Orchid, B Bamboo, E Tamarind · tầng 3–22</div>
+            <div class="gate-box" id="gateBox" hidden>
+              <p class="note">Để lại tên và số điện thoại một lần để xem đúng giá từng căn. Bạch Đằng có thể liên hệ để xác nhận căn còn trống.</p>
+              <div class="two">
+                <div class="field"><label class="lbl" for="g-name">Họ tên</label><input id="g-name" type="text" autocomplete="name"></div>
+                <div class="field"><label class="lbl" for="g-phone">Số điện thoại</label><input id="g-phone" type="tel" inputmode="tel" autocomplete="tel"></div>
+              </div>
+              <div class="hp" aria-hidden="true"><label>Website<input id="g-web" type="text" tabindex="-1" autocomplete="off"></label></div>
+              <label class="chk"><input type="checkbox" id="g-consent">Tôi đồng ý để Bạch Đằng liên hệ qua điện thoại hoặc Zalo</label>
+              <div class="err" id="gErr" role="alert"></div>
+              <button type="button" class="btn btn-primary" id="gBtn">Xem giá căn này</button>
+            </div>
+            <div class="hint" id="lookMsg" role="status"></div>
           </div>
           <div class="field">
             <span class="lbl" id="typeLbl">Loại căn</span>
@@ -691,6 +706,7 @@ if (typeof document !== "undefined") {
     document.querySelectorAll("input[name=cs]").forEach(r=>r.checked = r.value===state.cs);
   }
 
+  $("#ma").addEventListener("input", ()=>{ state.dg = ""; state.tt = ""; $("#lookMsg").textContent = ""; });
   const bind = (sel, key, ev="input") => $(sel).addEventListener(ev, e=>{ state[key] = e.target.value.trim(); render(); });
   bind("#ma","ma"); bind("#dt","dt"); bind("#gia","gia"); bind("#theo","theo","change"); bind("#kh","kh"); bind("#th","th"); bind("#ls","ls");
   $("#vay1n").addEventListener("change", e=>{ state.vay = e.target.checked ? "1" : "0"; render(); });
@@ -904,6 +920,53 @@ if (typeof document !== "undefined") {
     copy(url, "Đã chép đường dẫn. Người nhận mở ra sẽ thấy đúng phiếu này.");
   });
   $("#btnPrint").addEventListener("click", ()=>window.print());
+
+  /* Tra giá đúng căn: khách để lại tên + số điện thoại một lần, sau đó tra căn nào ra đúng giá căn đó.
+     Mỗi lượt tra ghi vào Google Sheet khách đăng ký. Không hiện trạng thái cọc. */
+  const PRICE_URL = "/baogia-bpth/gia-can.json", KH_KEY = "bpth-kh-v1";
+  let PRICES = null; const looked = new Set();
+  const khStore = { get(){ try { return JSON.parse(localStorage.getItem(KH_KEY) || "null"); } catch(_) { return null; } }, set(v){ try { localStorage.setItem(KH_KEY, JSON.stringify(v)); } catch(_){} } };
+  async function loadPrices(){ if (PRICES) return PRICES; const r = await fetch(PRICE_URL, { cache:"no-cache" }); if (!r.ok) throw new Error("price"); PRICES = await r.json(); return PRICES; }
+  function sendLead(data){ if (!LEAD_ENDPOINT) return Promise.resolve(); return fetch(LEAD_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(data)}).catch(()=>{}); }
+  async function doLookup(){
+    const msg = $("#lookMsg"); const p = parseUnit($("#ma").value);
+    if (!p) { msg.className = "hint warn"; msg.textContent = "Nhập mã căn dạng A14-23 rồi bấm Tra giá."; $("#ma").focus(); return; }
+    if (!p.open) { msg.className = "hint warn"; msg.textContent = `Tháp ${p.tower} chưa mở bán trong giai đoạn 1.`; return; }
+    const who = khStore.get();
+    if (!who) { $("#gateBox").hidden = false; msg.textContent = ""; setTimeout(()=>$("#g-name").focus(), 30); return; }
+    try { await loadPrices(); } catch(_) { msg.className = "hint warn"; msg.textContent = "Chưa tải được bảng giá, anh chị thử lại sau ít phút."; return; }
+    const row = PRICES.u[p.code];
+    if (!row) { msg.className = "hint warn"; msg.textContent = `Căn ${p.code} chưa có trong bảng giá đợt này. Gửi mã căn ở cuối trang để Bạch Đằng kiểm tra.`; return; }
+    const [type, dt, tt, dg] = row; const n = Math.round(dg * tt), g = n + Math.round(n * VAT_RATE);
+    Object.assign(state, { ma:p.code, loai:type, dt:String(dt).replace(".", ","), gia:g.toLocaleString("vi-VN"), theo:"02", dg:String(dg), tt:String(tt).replace(".", ",") });
+    if (!state.kh && who.name) state.kh = who.name;
+    syncInputs(); render();
+    $("#gateBox").hidden = true;
+    msg.className = "hint ok"; msg.textContent = `Đã tra đúng giá căn ${p.code} (${TYPES[type].name}) theo bảng giá. Căn còn trống hay không: Bạch Đằng xác nhận khi anh chị liên hệ.`;
+    if (!$("#f-unit").dataset.touched) $("#f-unit").value = `${p.code} · ${TYPES[type].name}`;
+    if (!looked.has(p.code)) {
+      looked.add(p.code); const q = last && last.q;
+      sendLead({ name:who.name, phone:who.phone, need:"Tra giá theo mã căn", type:`${p.code} · ${TYPES[type].name}`,
+        goal:`${PLANS[state.pt].short}${state.cs==="thue" ? " · thuê lại 24 tháng" : state.cs==="ck4" ? " · chiết khấu thêm 4%" : ""}`,
+        budget: q ? `Theo bảng giá ${ty(q.T)} gồm VAT` : "", time:"", note:"Phiếu: " + shareUrl(), website:"", source: location.host + location.pathname });
+    }
+    $("#sheet").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start" });
+  }
+  $("#lookBtn").addEventListener("click", doLookup);
+  $("#ma").addEventListener("keydown", e=>{ if (e.key === "Enter") { e.preventDefault(); doLookup(); } });
+  $("#heroLook").addEventListener("click", ()=>setTimeout(()=>$("#ma").focus(), 400));
+  $("#gBtn").addEventListener("click", async ()=>{
+    const err = $("#gErr"); if ($("#g-web").value) return;
+    const name = $("#g-name").value.trim(), phone = $("#g-phone").value.replace(/[\s.\-]/g, "");
+    if (!name) { err.textContent = "Anh chị nhập họ tên giúp nhé."; $("#g-name").focus(); return; }
+    if (!/^(0|\+84)\d{9}$/.test(phone)) { err.textContent = "Số điện thoại cần 10 số, bắt đầu bằng 0."; $("#g-phone").focus(); return; }
+    if (!$("#g-consent").checked) { err.textContent = "Anh chị đánh dấu đồng ý để Bạch Đằng liên hệ."; return; }
+    err.textContent = ""; khStore.set({ name, phone });
+    if (!$("#f-name").value) $("#f-name").value = name;
+    if (!$("#f-phone").value) $("#f-phone").value = phone;
+    await doLookup();
+  });
+  { const w = khStore.get(); if (w) { if (!$("#f-name").value) $("#f-name").value = w.name; if (!$("#f-phone").value) $("#f-phone").value = w.phone; } }
 
   /* Form nhận báo giá chính thức */
   $("#f-unit").addEventListener("input", e=>{ e.target.dataset.touched = "1"; });

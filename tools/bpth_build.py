@@ -69,6 +69,7 @@ def main():
     ap.add_argument("--live-gviz", help="ID Google Sheet rổ hàng chung (chia sẻ ai có link đều xem được); trang đọc thẳng tab DATA")
     ap.add_argument("--live-sheet", default="DATA")
     ap.add_argument("--live-base", help="Chỉ dùng khi chạy thử với máy chủ giả lập")
+    ap.add_argument("--public-out", help="Ghi bảng giá từng căn (không trạng thái) cho trang phiếu khách tra sau khi để lại số điện thoại")
     a = ap.parse_args()
     pw = os.environ.get("BPTH_PASS")
     if not pw or len(pw) < 12: sys.exit("Thiếu BPTH_PASS (ít nhất 12 ký tự)")
@@ -97,11 +98,22 @@ def main():
         k = os.environ.get("BPTH_LIVE_KEY")
         if not k: sys.exit("Thiếu BPTH_LIVE_KEY cho rổ hàng trực tiếp")
         data["live"] = {"url": a.live_url, "k": k}
-    salt, iv = os.urandom(16), os.urandom(12)
+    # Giữ nguyên salt khi mật khẩu không đổi: máy đã "ghi nhớ" không phải nhập lại mật khẩu
+    salt = os.urandom(16)
+    if os.path.exists(a.out):
+        try:
+            old_enc = json.load(open(a.out)); decrypt(old_enc, pw); salt = base64.b64decode(old_enc["salt"])
+        except Exception:
+            pass
+    iv = os.urandom(12)
     ct = AESGCM(kdf(pw, salt)).encrypt(iv, json.dumps(data, ensure_ascii=False, separators=(",", ":")).encode(), None)
     out = {"v": 1, "alg": "AES-GCM", "kdf": "PBKDF2-SHA256", "iter": ITER,
            "salt": base64.b64encode(salt).decode(), "iv": base64.b64encode(iv).decode(), "ct": base64.b64encode(ct).decode()}
     json.dump(out, open(a.out, "w"))
+    if a.public_out:
+        pub = {"v": 1, "src": a.price_src, "u": {u[0]: [u[4], u[5], u[6], u[9]] for u in units}}
+        json.dump(pub, open(a.public_out, "w"), ensure_ascii=False, separators=(",", ":"))
+        print(f"Bảng giá công khai: {len(units)} căn · {os.path.getsize(a.public_out)//1024} KB")
     print(f"{len(units)} căn · {len(towers)} tòa · rổ hàng: {'trực tiếp' if (a.live_url or a.live_gviz) else (stock_at or 'chưa có')} · {os.path.getsize(a.out)//1024} KB")
 
 if __name__ == "__main__":

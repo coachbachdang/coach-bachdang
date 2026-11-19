@@ -17,5 +17,20 @@
       "source": "/baogia-BPTH/",
       "destination": "/baogia-bpth/index.html"
     }
+  ],
+  "headers": [
+    {
+      "source": "/baogia-bpth/gia-can.json",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300"
+        }
+      ]
+    }
   ]
 }
