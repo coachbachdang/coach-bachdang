@@ -733,7 +733,7 @@ const PRESETS = {
 };
 function applyPreset(k){
   if (S.preset === k) { S.preset = ""; $("#presetNote").textContent = ""; render(); return; }
-  const p = PRESETS[k]; S.preset = k; S.types = new Set(p.types); S.max = p.max; S.pt = p.pt; S.cs = p.cs;
+  const p = PRESETS[k]; S.preset = k; S.od = false; S.types = new Set(p.types); S.max = p.max; S.pt = p.pt; S.cs = p.cs;
   S.st = {0:true,1:false,2:false,3:false,"-1":false}; S.view = "list"; S.sort = "price"; listLimit = 60;
   $("#presetNote").textContent = p.note; render();
 }
@@ -771,9 +771,9 @@ const SEEN = "bpth-seen-v1";
 const normTxt = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").replace(/\s+/g, " ").trim().toUpperCase();
 function normSt(raw){
   const t = normTxt(raw);
-  if (!t || t.includes("TRONG")) return 0;
+  if (!t || /^[-–—.]+$/.test(t) || t.includes("TRONG")) return 0;   /* rổ hàng ghi "-" cho căn trống */
   if (t.includes("LOCK") || t.includes("KHOA")) return 3;
-  if (t.startsWith("HT") || t.includes("HOAN TAT") || t.includes("TTDC") || t.includes("D1")) return 2;
+  if (t.startsWith("HT") || t.includes("HOANTHANH") || t.includes("HOAN THANH") || t.includes("HOAN TAT") || t.includes("TTDC") || t.includes("D1")) return 2;
   if (t.includes("COC") || t.includes("BOOK") || t.includes("GIU")) return 1;
   return -1;
 }
@@ -892,10 +892,10 @@ document.addEventListener("click", async e=>{
   const el = e.target.closest("button, a, tr[data-pt]"); if (!el) return;
   if (el.dataset.u) { if (el.dataset.fpt) S.dpt = el.dataset.fpt; openUnit(el.dataset.u); return; }
   if (el.dataset.tw) { S.tower = el.dataset.tw; render(); return; }
-  if (el.dataset.t !== undefined && el.closest("#fType")) { const k = el.dataset.t; if (!k) S.types.clear(); else S.types.has(k) ? S.types.delete(k) : S.types.add(k); S.preset = ""; render(); return; }
-  if (el.dataset.m !== undefined) { S.max = +el.dataset.m; S.preset = ""; render(); return; }
+  if (el.dataset.t !== undefined && el.closest("#fType")) { const k = el.dataset.t; if (!k) S.types.clear(); else S.types.has(k) ? S.types.delete(k) : S.types.add(k); S.preset = ""; S.od = false; render(); return; }
+  if (el.dataset.m !== undefined) { S.max = +el.dataset.m; S.preset = ""; S.od = false; render(); return; }
   if (el.dataset.v) { S.view = el.dataset.v; render(); return; }
-  if (el.dataset.s !== undefined && el.closest("#legend")) { S.st[el.dataset.s] = !S.st[el.dataset.s]; render(); return; }
+  if (el.dataset.s !== undefined && el.closest("#legend")) { S.od = false; S.st[el.dataset.s] = !S.st[el.dataset.s]; render(); return; }
   if (el.dataset.p) { applyPreset(el.dataset.p); return; }
   if (el.dataset.tab) { S.tab = el.dataset.tab; render(); return; }
   if (el.dataset.rm) { S.cmp = S.cmp.filter(c=>c!==el.dataset.rm); render(); return; }
@@ -940,10 +940,18 @@ $("#fSort").addEventListener("change", e=>{ S.sort = e.target.value; if (S.view 
 ["#vPt","#vType","#v1nLoan"].forEach(s=>$(s).addEventListener("change", renderFind));
 $("#searchForm").addEventListener("submit", e=>{
   e.preventDefault();
-  const raw = $("#q").value.trim(); const p = parseUnit(raw); const code = p ? p.code : raw.toUpperCase();
+  const raw = $("#q").value.trim(); const p = parseUnit(raw); const code = p ? p.code : raw.toUpperCase().replace(/\s+/g, "");
   const msg = $("#searchMsg");
-  if (BY.has(code)) { msg.textContent = ""; S.tower = BY.get(code).t; S.view = "grid"; S.tab = "ro"; render(); openUnit(code); }
-  else msg.textContent = p && !p.open ? `Tháp ${p.tower} chưa mở bán trong giai đoạn 1` : `Không có mã căn ${code || "này"} trong bảng giá hiện tại`;
+  const part = code.match(/^([A-E])-?(\d{1,2})?$/);
+  if (BY.has(code)) { msg.textContent = ""; S.tower = BY.get(code).t; S.view = "grid"; S.tab = "ro"; S.od = false; render(); openUnit(code); }
+  else if (part && D.towers[part[1]]) {
+    /* Gõ "A" → cả tòa A; gõ "A14" → tầng 14 tòa A, hiện dạng danh sách */
+    S.tower = part[1]; S.tab = "ro"; S.od = false; S.preset = ""; S.types.clear(); S.max = 0; S.st = {0:true,1:true,2:true,3:true,"-1":true};
+    const fl = U.filter(u=>u.t===part[1]).map(u=>u.floor);
+    if (part[2]) { S.from = S.to = +part[2]; S.view = "list"; S.sort = "code"; } else { S.from = Math.min(...fl); S.to = Math.max(...fl); S.view = "grid"; }
+    msg.textContent = ""; render(); $("#summary").scrollIntoView({ block:"start" });
+  }
+  else msg.textContent = p && !p.open ? `Tháp ${p.tower} chưa mở bán trong giai đoạn 1` : `Không có mã căn ${code || "này"}. Gõ đủ mã như A14-23, hoặc "A14" để xem cả tầng 14 tòa A`;
 });
 
 /* Khởi động: thử khóa đã ghi nhớ trên máy */
