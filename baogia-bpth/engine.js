@@ -302,6 +302,17 @@ function loanNotes(p){
   return out.map(t=>`<p class="lp-note">${t}</p>`).join("");
 }
 
+/* So sánh các phương thức trên cùng mức vay 50%: tổng giá trị gồm VAT + phí bảo trì + lãi khách trả đến tháng H sau ký HĐMB.
+   Mặc định H = 48: lúc mọi ưu đãi lãi (CĐT hỗ trợ 24 tháng, trần 6,9%, ưu đãi tự vay) đều đã hết. o: như loanPlan; selfLoan áp dụng cho 1N, 01 */
+function costTo(q, o, H = 48){
+  const p = loanPlan(q, { ...o, amt:NaN, addBG:false });
+  const M = p ? p.M : Math.min(48, Math.max(1, Math.round(o.M || 24)));
+  const h = Math.max(H, M);
+  const sum = to => p ? p.months.filter(m=>m.t <= to).reduce((a,m)=>a + m.interest, 0) : 0;
+  const iM = sum(M), iH = sum(h);
+  return { M, H:h, iM, iH, loan: p ? p.L : 0, totalM: q.T + q.fee + iM, total: q.T + q.fee + iH, over24: (q.code === "02" || q.code === "05") && M > 24 };
+}
+
 /* Tóm tắt kế hoạch vay thành vài dòng cho tin nhắn Zalo (không dấu chấm cuối câu) */
 function loanBrief(p){
   if (!p) return [];
@@ -322,4 +333,4 @@ function loanBrief(p){
   return out;
 }
 
-if (typeof module !== "undefined") module.exports = { loanPlan, loanHtml, loanBrief, loanNotes, selfLoanMax, SELF_ROWS, computeQuote, estimateInterest, parseMoney, parseUnit, PLANS, PLAN_ORDER, TYPES, TOWERS, THEO_DISC, NO_CK4, vnd, ty, pctTxt, esc, parseNum, DEPOSIT, MGMT_FEE };
+if (typeof module !== "undefined") module.exports = { costTo, loanPlan, loanHtml, loanBrief, loanNotes, selfLoanMax, SELF_ROWS, computeQuote, estimateInterest, parseMoney, parseUnit, PLANS, PLAN_ORDER, TYPES, TOWERS, THEO_DISC, NO_CK4, vnd, ty, pctTxt, esc, parseNum, DEPOSIT, MGMT_FEE };

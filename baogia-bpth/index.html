@@ -224,6 +224,9 @@ body.cust .cell.od{box-shadow:none}body.cust .cell.od::after{display:none}
 .facts span{display:block;font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .facts b{font-size:.92rem}
 .pt-t{width:100%;border-collapse:collapse;font-size:.88rem}
+.c48{border:1px solid var(--line);border-radius:12px;padding:4px 12px 10px;background:#fbfdfc}
+.c48 summary{cursor:pointer;font-size:.86rem;padding:8px 0;list-style-position:inside}
+.c48 small{display:block;font-size:.72rem;color:var(--muted);font-weight:400}
 .pt-t th{font-size:.72rem;color:var(--muted);font-weight:600;text-align:right;padding:6px 6px;border-bottom:1px solid var(--line)}
 .pt-t th:first-child{text-align:left}
 .pt-t td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
@@ -668,6 +671,7 @@ function drawUnit(){
     `<table class="pt-t num"><thead><tr><th>Phương thức</th><th>Tổng gồm VAT</th><th>Đến HĐMB</th><th>Ngân hàng</th></tr></thead><tbody>`+
       PLAN_ORDER.map(c=>{ const x = quoteOf(u, c, S.cs); return `<tr data-pt="${c}" class="${c===pt ? "on" : ""}" tabindex="0" aria-selected="${c===pt}"><td><b>${PLANS[c].short}</b><small>${PLANS[c].title}</small></td><td><b>${tyS(x.T)}</b></td><td>${ty(x.toHD)}</td><td>${x.bank ? ty(x.bank) : "—"}</td></tr>`; }).join("")+
     `</tbody></table>`+
+    c48Box(u)+
     (S.cs === "thue" ? `<div class="note-box">Chủ đầu tư thuê lại <b>${t.rent} triệu/tháng × 24 tháng = ${(t.rent*24).toLocaleString("vi-VN")} triệu</b>, trong 24 tháng kể từ thông báo bàn giao. Giá căn không đổi. Điều kiện: thanh toán đủ, đúng hạn, không vi phạm Thỏa thuận đăng ký hoặc HĐMB, nhận bàn giao trong 45 ngày kể từ thông báo bàn giao.</div>` : "")+
     (S.cs === "ck4" ? `<div class="note-box">${q.disc4 ? `Đã trừ chiết khấu thêm 4%: <b>${vnd(q.disc4)}</b> (4% trên giá sau chiết khấu ${pl.short}, chưa VAT).` : `Chiết khấu thêm 4% không áp dụng cho ${pl.short} (file check giá 14/11/2026).`}</div>` : "")+
     `<div><div class="small muted" style="font-weight:600;margin-bottom:4px">Tiến độ ${pl.short} · tổng ${vnd(q.T)} + phí bảo trì ${vnd(q.fee)}</div><div class="sched num">`+
@@ -686,6 +690,15 @@ const LOAN = { r1:"11", y:"30", mt:"goc", M:"24", r0:"10,7", n0:"18", amt:"", am
 /* Số tiền vay chỉ áp dụng cho căn đang nhập; mở căn khác thì về mức tối đa của phương thức */
 const loanAmt = u => LOAN.amt && LOAN.amtFor === u.code ? parseMoney(LOAN.amt) : NaN;
 function loanOpts(u, pt){ return { M:parseNum(LOAN.M), years:parseNum(LOAN.y), r1:parseNum(LOAN.r1), r0:parseNum(LOAN.r0), n0:parseNum(LOAN.n0), method:LOAN.mt, selfLoan: pt === "1N" || pt === "01", rent: S.cs === "thue" ? TYPES[u.type].rent * 1e6 : 0, amt: loanAmt(u), addBG: LOAN.bg, r2: parseNum(LOAN.r2) }; }
+/* So sánh cùng vay 50% đến tháng 48, theo giả định ở ô Kế hoạch vay */
+function c48Box(u){
+  const r = PLAN_ORDER.map(c=>({ c, k: costTo(quoteOf(u, c, S.cs), { ...loanOpts(u, c), selfLoan: c === "1N" || c === "01" }) })).sort((a,b)=>a.k.total - b.k.total);
+  const best = r[0];
+  return `<details class="c48"><summary>Cùng vay 50%, tính đến tháng ${best.k.H}: thấp nhất <b>${PLANS[best.c].short}</b> · ${tyS(best.k.total)} tỷ</summary>`+
+    `<table class="pt-t num"><thead><tr><th>Phương thức</th><th>Lãi đến T${best.k.H}</th><th>Tổng chi phí</th></tr></thead><tbody>`+
+    r.map(x=>`<tr data-pt="${x.c}"><td><b>${PLANS[x.c].short}</b><small>${PLANS[x.c].title}</small></td><td>${x.k.iH >= 1 ? ty(x.k.iH) : "0"}</td><td><b>${tyS(x.k.total)}</b><small>${x === best ? "thấp nhất" : "+" + ty(x.k.total - best.k.total)}</small></td></tr>`).join("")+
+    `</tbody></table><p class="small muted" style="margin:6px 0 0">Tổng = giá gồm VAT + phí bảo trì 2% + lãi khách trả đến tháng ${best.k.H} sau ký HĐMB, lúc mọi ưu đãi lãi đã hết. 1N, 01 tính tự vay 50%. Giả định lãi, thời hạn, tháng bàn giao, cách trả theo ô Kế hoạch vay bên dưới.${best.k.over24 ? " Bàn giao quá 24 tháng: phần lãi vượt của 02, 05 cần xác nhận với CĐT." : ""}</p></details>`;
+}
 function loanBox(u, q, pt){
   const p = loanPlan(q, loanOpts(u, pt));
   const self1N = pt === "1N" || pt === "01";

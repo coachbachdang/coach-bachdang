@@ -547,7 +547,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
     <div class="sec-head">
       <div class="eyebrow">So sánh trên cùng một căn</div>
       <h2>Sáu phương thức, cùng một giá gốc</h2>
-      <p class="lead">Dùng đúng căn và chính sách đang chọn ở trên. Cột lãi vay là ước tính đến khi bàn giao theo giả định bên dưới, để thấy tổng chi phí thật của mỗi cách trả. Bấm một dòng để chuyển phiếu báo giá sang phương thức đó.</p>
+      <p class="lead">Dùng đúng căn và chính sách đang chọn ở trên, các phương thức cùng vay 50%. Tiền lãi tính đến khi bàn giao và đến tháng 48 sau ký HĐMB, lúc mọi ưu đãi lãi đều đã hết, để thấy tổng chi phí thật của mỗi cách trả. Bấm một dòng để chuyển phiếu báo giá sang phương thức đó.</p>
     </div>
     <div class="assume">
       <div class="field">
@@ -555,8 +555,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
         <input id="th" type="number" min="6" max="40" step="1" value="24" inputmode="numeric">
       </div>
       <div class="field">
-        <label class="lbl" for="ls">Lãi tự vay khi chọn 1N, 01 (%/năm, giả định)</label>
+        <label class="lbl" for="ls">Ưu đãi tự vay 1N, 01 (%/năm, giả định)</label>
         <input id="ls" type="text" inputmode="decimal" value="10,7">
+      </div>
+      <div class="field">
+        <label class="lbl" for="n0c">Số tháng ưu đãi tự vay</label>
+        <input id="n0c" type="text" inputmode="numeric" value="18">
+      </div>
+      <div class="field">
+        <label class="lbl" for="r1c">Lãi sau ưu đãi, mọi phương thức (%/năm, giả định)</label>
+        <input id="r1c" type="text" inputmode="decimal" value="11">
       </div>
       <div class="field" style="align-content:end">
         <label class="chk"><input type="checkbox" id="vay1n" checked>Tính 1N và 01 có tự vay ngân hàng 50%</label>
@@ -573,6 +581,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
           <th class="r">Ngân hàng giải ngân</th>
           <th class="r">Lãi khách trả<br>đến bàn giao</th>
           <th class="r">Tổng chi phí<br>đến bàn giao</th>
+          <th class="r">Lãi khách trả<br>đến tháng 48</th>
+          <th class="r">Tổng chi phí<br>đến tháng 48</th>
         </tr></thead>
         <tbody id="cmpRows"></tbody>
       </table>
@@ -730,7 +740,7 @@ if (typeof document !== "undefined") {
 
   function syncInputs(){
     $("#ma").value = state.ma; $("#dt").value = state.dt; $("#gia").value = state.gia; $("#theo").value = state.theo;
-    $("#kh").value = state.kh; $("#th").value = state.th; $("#ls").value = state.ls; $("#vay1n").checked = state.vay === "1";
+    $("#kh").value = state.kh; $("#th").value = state.th; $("#ls").value = state.ls; $("#vay1n").checked = state.vay === "1"; $("#n0c").value = state.n0; $("#r1c").value = state.r1;
     document.querySelectorAll("#types button").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.k===state.loai)));
     document.querySelectorAll("input[name=pt]").forEach(r=>r.checked = r.value===state.pt);
     document.querySelectorAll("input[name=cs]").forEach(r=>r.checked = r.value===state.cs);
@@ -738,7 +748,7 @@ if (typeof document !== "undefined") {
 
   $("#ma").addEventListener("input", ()=>{ state.dg = ""; state.tt = ""; state.vt = ""; $("#lookMsg").textContent = ""; });
   const bind = (sel, key, ev="input") => $(sel).addEventListener(ev, e=>{ state[key] = e.target.value.trim(); render(); });
-  bind("#ma","ma"); bind("#dt","dt"); bind("#gia","gia"); bind("#theo","theo","change"); bind("#kh","kh"); bind("#th","th"); bind("#ls","ls");
+  bind("#ma","ma"); bind("#dt","dt"); bind("#gia","gia"); bind("#theo","theo","change"); bind("#kh","kh"); bind("#th","th"); bind("#ls","ls"); bind("#n0c","n0","change"); bind("#r1c","r1","change");
   $("#vay1n").addEventListener("change", e=>{ state.vay = e.target.checked ? "1" : "0"; render(); });
   document.querySelectorAll("input[name=pt]").forEach(r=>r.addEventListener("change", ()=>{ state.pt = r.value; render(); }));
   document.querySelectorAll("input[name=cs]").forEach(r=>r.addEventListener("change", ()=>{ state.cs = r.value; render(); }));
@@ -898,25 +908,30 @@ if (typeof document !== "undefined") {
   }
 
   function renderCompare(b02, ux){
-    const months = Math.min(40, Math.max(6, parseInt(state.th,10) || 24));
-    const rate = parseNum(state.ls); const selfRate = rate > 0 && rate < 30 ? rate : 10.7;
     const loan1N = state.vay === "1";
-    const rows = PLAN_ORDER.map(c=>{ const q = computeQuote(b02, c, state.cs, ux); return { c, q, i: estimateInterest(q, months, selfRate, loan1N) }; });
-    $("#cmpRows").innerHTML = rows.map(({c,q,i})=>{
-      const p = PLANS[c];
-      const cost = q.T + q.fee + i.v;
-      const bankTxt = q.bank ? `${ty(q.bank)}` : ((c==="1N" || c==="01") && loan1N ? `${ty(selfLoanMax(q))} <small style="display:block;color:var(--muted);font-size:.72rem">tự vay</small>` : "Không vay");
-      const intTxt = i.over ? `0 <span class="flag">quá 24 tháng: cần xác nhận</span>` : i.v ? ty(i.v) : "0";
+    const o = { M:parseNum(state.th), years:parseNum(state.yr), r1:parseNum(state.r1), r0:parseNum(state.ls), n0:parseNum(state.n0), method:state.mt, selfLoan: loan1N };
+    const rows = PLAN_ORDER.map(c=>{ const q = computeQuote(b02, c, state.cs, ux); return { c, q, k: costTo(q, o) }; });
+    const best = Math.min(...rows.map(r=>r.k.total)), M = rows[0].k.M;
+    const sm = t => `<small style="display:block;color:var(--muted);font-size:.72rem">${t}</small>`;
+    $("#cmpRows").innerHTML = rows.map(({c,q,k})=>{
+      const p = PLANS[c], self = c==="1N" || c==="01";
+      const bankTxt = q.bank ? `${ty(q.bank)}` : (self && loan1N ? `${ty(selfLoanMax(q))} ${sm("tự vay")}` : "Không vay");
+      const how = self ? (loan1N ? "tự vay" : "không vay") : (c==="03" || c==="04") ? "tính ở trần 6,9%" : "CĐT hỗ trợ";
+      const intTxt = (k.iM >= 1 ? ty(k.iM) : "0") + (k.over24 ? ` <span class="flag">quá 24 tháng: cần xác nhận</span>` : "") + sm(how);
+      const d = k.total - best;
       return `<tr data-c="${c}" class="${c===state.pt ? "on" : ""}"><td><b>${p.short}</b><small>${p.title} · ${p.loan}</small></td>`+
         `<td class="r" data-l="Giá trị gồm VAT">${ty(q.T)}</td><td class="r" data-l="Ít hơn giá gốc">${q.saving>0 ? "−"+ty(q.saving) : "0"}</td>`+
-        `<td class="r" data-l="Tự có đến HĐMB">${ty(q.toHD)}</td><td class="r" data-l="Tự có trước bàn giao">${ty(q.selfBefore - ((c==="1N" || c==="01") && loan1N ? selfLoanMax(q) : 0))}</td><td class="r" data-l="Ngân hàng giải ngân">${bankTxt}</td>`+
-        `<td class="r" data-l="Lãi khách trả đến bàn giao">${intTxt}<small style="display:block;color:var(--muted);font-size:.72rem">${i.how}</small></td>`+
-        `<td class="r tot" data-l="Tổng chi phí đến bàn giao"><b>${ty(cost)}</b></td></tr>`;
+        `<td class="r" data-l="Tự có đến HĐMB">${ty(q.toHD)}</td><td class="r" data-l="Tự có trước bàn giao">${ty(q.selfBefore - (self && loan1N ? selfLoanMax(q) : 0))}</td><td class="r" data-l="Ngân hàng giải ngân">${bankTxt}</td>`+
+        `<td class="r" data-l="Lãi khách trả đến bàn giao">${intTxt}</td>`+
+        `<td class="r" data-l="Tổng chi phí đến bàn giao">${ty(k.totalM)}</td>`+
+        `<td class="r" data-l="Lãi khách trả đến tháng ${k.H}">${k.iH >= 1 ? ty(k.iH) : "0"}</td>`+
+        `<td class="r tot" data-l="Tổng chi phí đến tháng ${k.H}"><b>${ty(k.total)}</b>${sm(d < 0.5 ? "thấp nhất" : "+" + ty(d))}</td></tr>`;
     }).join("");
+    const pct = v => (parseNum(v) > 0 ? parseNum(v) : 0).toLocaleString("vi-VN");
     $("#cmpNote").innerHTML =
-      `<span>Tổng chi phí đến bàn giao = giá trị gồm VAT + phí bảo trì 2% + lãi khách tự trả từ khi giải ngân đến bàn giao, giả định ${months} tháng, chỉ trả lãi chưa trả gốc. Ngày ký HĐMB chưa có thông báo nên số tháng là giả định, anh chị chỉnh theo kịch bản của mình.</span>`+
-      `<span>PTTT 03, 04 tính ở mức trần 6,9%/năm, lãi thực tế thấp hơn thì khách trả ít hơn. PTTT 02, 05: Chủ đầu tư hỗ trợ lãi tối đa 24 tháng; nếu từ giải ngân đến bàn giao quá 24 tháng, phần lãi vượt cần xác nhận với Chủ đầu tư. 1N tự vay: lãi suất ${selfRate.toLocaleString("vi-VN")}%/năm là giả định (ví dụ mức OCB chào cho dự án Bcons ngày 11/09/2026, cố định 18 tháng), lãi thực tế theo ngân hàng anh chị chọn.</span>`+
-      `<span>Sau bàn giao, khoản vay còn lại của mọi phương thức chịu lãi thả nổi theo ngân hàng; bảng này không tính phần đó.</span>`;
+      `<span>Tổng chi phí = giá trị gồm VAT + phí bảo trì 2% + tiền lãi khách trả. Mọi phương thức tính cùng mức vay 50% giá trị gồm VAT, cùng cách trả gốc đang chọn ở mục Kế hoạch vay, giả định bàn giao ở tháng ${M} sau ký HĐMB. Ngày ký HĐMB chưa có thông báo nên số tháng là giả định, anh chị chỉnh theo kịch bản của mình.</span>`+
+      `<span>Đến tháng 48, mọi ưu đãi lãi đều đã hết: PTTT 02, 05 Chủ đầu tư hỗ trợ lãi tối đa 24 tháng; PTTT 03, 04 trần 6,9% tối đa 48 tháng (tính ở mức trần, lãi thực tế thấp hơn thì khách trả ít hơn); 1N, 01 tự vay ưu đãi ${pct(state.ls)}%/năm trong ${pct(state.n0)} tháng (giả định, ví dụ mức OCB chào cho dự án Bcons ngày 11/09/2026). Hết ưu đãi tính lãi ${pct(state.r1)}%/năm (giả định), lãi thực tế theo ngân hàng tại thời điểm đó.</span>`+
+      `<span>Nếu từ giải ngân đến bàn giao quá 24 tháng, phần lãi vượt của PTTT 02, 05 cần xác nhận với Chủ đầu tư; bảng tạm tính theo lãi sau ưu đãi. Sau tháng 48 mọi phương thức chịu lãi thả nổi như nhau, phương thức có giá thấp hơn thì dư nợ thấp hơn.</span>`;
   }
   $("#cmpRows").addEventListener("click", e=>{
     const tr = e.target.closest("tr"); if (!tr) return;
