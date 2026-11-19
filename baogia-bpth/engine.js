@@ -167,11 +167,12 @@ function loanPlan(q, o){
   const r1 = (o.r1 > 0 ? o.r1 : 11) / 100;
   const r0 = (o.r0 > 0 ? o.r0 : (o.r1 || 11)) / 100, n0 = Math.max(0, Math.round(o.n0 || 0));
   const cap = CAP_RATE / 100, capEnd = Math.min(48, M + 24);
-  /* Khoản vay theo phương thức (1N: khách tự vay khoản 50%). o.amt: số tiền khách muốn vay, nhỏ hơn mức tối đa thì các lần giải ngân giảm theo tỷ lệ */
+  /* Khoản vay theo phương thức. PTTT 02–05 luôn vay đủ 50% (khách muốn vay ít hơn thì tư vấn PTTT 01 hoặc 1N).
+     1N: khách tự vay khoản 50%; o.amt là số tiền khách muốn vay, tối đa bằng khoản 50% */
   const base = code === "1N" ? (o.selfLoan ? [{ off:0, amt:q.rows[2].pay }] : [])
     : q.rows.filter(r=>r.src === "bank").map(r=>({ off:Math.round(r.month || 0), amt:r.pay }));
   const full = base.reduce((a,x)=>a + x.amt, 0);
-  const want = isFinite(o.amt) && o.amt >= 0 ? Math.min(Math.round(o.amt), full) : full;
+  const want = code === "1N" && isFinite(o.amt) && o.amt >= 0 ? Math.min(Math.round(o.amt), full) : full;
   let acc = 0;
   const tr = base.map((x,i)=>{ const a = i === base.length - 1 ? want - acc : Math.round(x.amt * want / full); acc += a; return { off:x.off, amt:a }; }).filter(x=>x.amt > 0);
   /* Vay thêm đợt bàn giao (25% + VAT, không gồm phí bảo trì): ngoài chính sách Chủ đầu tư, lãi theo ngân hàng */
@@ -276,9 +277,7 @@ function loanHtml(p){
 function loanNotes(p){
   const out = [];
   const head = p.base ? `Khách vay ${vnd(p.base)}, ít hơn mức tối đa ${vnd(p.full)}.` : "Khách không vay khoản này.";
-  if (p.short > 0.5) out.push(p.code === "1N"
-    ? `${head} Phần còn lại ${vnd(p.short)} khách tự đóng trong 20 ngày sau ký HĐMB.`
-    : `${head} Phần còn lại ${vnd(p.short)} khách tự đóng vào các đợt ngân hàng giải ngân của ${PLANS[p.code].short}. Vay thấp hơn mức của phương thức cần xác nhận với Chủ đầu tư và ngân hàng khi làm hồ sơ.`);
+  if (p.short > 0.5) out.push(`${head} Phần còn lại ${vnd(p.short)} khách tự đóng trong 20 ngày sau ký HĐMB.`);
   if (p.ext) out.push(`Vay thêm đợt bàn giao ${vnd(p.ext)} (25% và VAT, không gồm phí bảo trì 2%) nằm ngoài chính sách Chủ đầu tư: lãi theo ngân hàng, bảng tính dùng ${p.r1.toLocaleString("vi-VN",{maximumFractionDigits:2})}%/năm từ tháng ${p.M + 1}. Mức vay tối đa theo thẩm định của ngân hàng.`);
   return out.map(t=>`<p class="lp-note">${t}</p>`).join("");
 }
@@ -296,7 +295,7 @@ function loanBrief(p){
     out.push(`${range}: ${amt}/tháng${why}`);
   }
   if (p.totalRent) out.push("24 tháng đầu sau bàn giao có tiền thuê Chủ đầu tư cam kết để trả nợ");
-  if (p.short > 0.5) out.push(p.code === "1N" ? `Phần không vay ${ty(p.short)} tự đóng trong 20 ngày sau ký HĐMB` : `Phần không vay ${ty(p.short)} tự đóng vào các đợt ngân hàng giải ngân, mức vay này cần xác nhận khi làm hồ sơ`);
+  if (p.short > 0.5) out.push(`Phần không vay ${ty(p.short)} tự đóng trong 20 ngày sau ký HĐMB`);
   if (p.ext) out.push(`Phần vay thêm đợt bàn giao ngoài chính sách Chủ đầu tư, lãi theo ngân hàng`);
   return out;
 }

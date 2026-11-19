@@ -746,7 +746,7 @@ if (typeof document !== "undefined") {
   function shareUrl(){
     const p = new URLSearchParams();
     const def = { loai:"2pn2", theo:"02", pt:"1N", cs:"0", th:"24", ls:"10,7", vay:"1", r1:"11", yr:"30", mt:"goc", n0:"18", vbg:"0" };
-    for (const [k,v] of Object.entries(state)) if (v && v !== def[k] && !((k === "dg" || k === "tt") && !last_ux)) p.set(k, k === "ma" && parseUnit(v) ? parseUnit(v).code : v);
+    for (const [k,v] of Object.entries(state)) if (v && v !== def[k] && !((k === "dg" || k === "tt") && !last_ux) && !(k === "vt" && state.pt !== "1N")) p.set(k, k === "ma" && parseUnit(v) ? parseUnit(v).code : v);
     const s = p.toString();
     return PAGE_URL + (s ? "?" + s : "");
   }
@@ -865,16 +865,18 @@ if (typeof document !== "undefined") {
     /* Kế hoạch vay chi tiết */
     const fullL = state.pt === "1N" ? (state.vay === "1" ? q.rows[2].pay : 0) : q.bank;
     const lopt = { M:parseNum(state.th), years:parseNum(state.yr), r1:parseNum(state.r1), r0:parseNum(state.ls), n0:parseNum(state.n0), method:state.mt, selfLoan: state.vay === "1", rent: state.cs === "thue" ? t.rent * 1e6 : 0,
-      amt: state.vt ? parseMoney(state.vt) : NaN, addBG: state.vbg === "1" };
+      amt: state.pt === "1N" && state.vt ? parseMoney(state.vt) : NaN, addBG: state.vbg === "1" };
     const lp = loanPlan(q, lopt); last_lp = lp;
     const lf = (k, lab, mode="decimal", ph="") => `<label>${lab}<input type="text" inputmode="${mode}" data-k="${k}" value="${esc(state[k])}"${ph ? ` placeholder="${ph}"` : ""}></label>`;
     const tyS2 = v => (v/1e9).toLocaleString("vi-VN",{minimumFractionDigits:2,maximumFractionDigits:2});
-    const ins = (fullL ? lf("vt","Số tiền vay (tỷ)","decimal",tyS2(fullL)) : "") + (lp ? lf("r1","Lãi sau ưu đãi %/năm") + lf("yr","Thời hạn vay (năm)","numeric") + lf("th","Tháng HĐMB → bàn giao","numeric") + (state.pt === "1N" && lp.base ? lf("ls","Ưu đãi ngân hàng %/năm") + lf("n0","Số tháng ưu đãi","numeric") : "") : "");
-    const intro = fullL ? `<p class="note no-print">Để trống ô số tiền vay là vay đủ mức tối đa ${ty(fullL)}. Nhập số nhỏ hơn nếu muốn vay ít, phần còn lại tự đóng.</p>`
+    const self1N = state.pt === "1N";
+    const ins = (self1N && fullL ? lf("vt","Số tiền vay (tỷ)","decimal",tyS2(fullL)) : "") + (lp ? lf("r1","Lãi sau ưu đãi %/năm") + lf("yr","Thời hạn vay (năm)","numeric") + lf("th","Tháng HĐMB → bàn giao","numeric") + (state.pt === "1N" && lp.base ? lf("ls","Ưu đãi ngân hàng %/năm") + lf("n0","Số tháng ưu đãi","numeric") : "") : "");
+    const intro = self1N && fullL ? `<p class="note no-print">Để trống ô số tiền vay là vay đủ khoản 50% (${ty(fullL)}). Vay ít hơn thì nhập số tiền, phần còn lại tự đóng trong 20 ngày sau ký HĐMB.</p>`
+      : fullL ? `<p class="note no-print">${pl.short}: ngân hàng giải ngân đủ 50% để hưởng trọn chính sách vay. Nếu muốn vay ít hơn, PTTT 01 hoặc 1N có chiết khấu cao hơn và tự chọn mức vay.</p>`
       : state.pt === "1N" ? `<p class="note">Khách tự có 50% trong 20 ngày sau ký HĐMB. Nếu cần vay khoản này, đánh dấu "Tính 1N có vay ngân hàng khoản 50%" ở mục So sánh.</p>`
       : `<p class="note">${pl.short} không có khoản vay theo phương thức; khách tự đóng theo tiến độ hoặc tự vay ngân hàng theo chính sách riêng của ngân hàng.</p>`;
     const bgChk = `<label class="chk no-print"><input type="checkbox" data-k="vbg"${state.vbg === "1" ? " checked" : ""}>Vay thêm đợt bàn giao 25% (${ty(q.atBG - q.fee)}, ngoài chính sách Chủ đầu tư)</label>`;
-    $("#shLoan").innerHTML = `<div class="sh-title">Kế hoạch vay${fullL ? ` · tối đa ${ty(fullL)} theo ${pl.short}` : ""}</div>${intro}`+
+    $("#shLoan").innerHTML = `<div class="sh-title">Kế hoạch vay${self1N && fullL ? ` · tự vay tối đa ${ty(fullL)}` : fullL ? ` · ngân hàng giải ngân ${ty(fullL)} theo ${pl.short}` : ""}</div>${intro}`+
       (ins ? `<div class="lp-in no-print">${ins}</div>` : "") + bgChk +
       (lp ? `<div class="lp-seg no-print" role="group" aria-label="Cách trả" style="margin:8px 0"><button type="button" data-lm="goc" aria-pressed="${state.mt !== "deu"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${state.mt === "deu"}">Trả đều hằng tháng</button></div>` + loanHtml(lp)
           : (fullL ? `<p class="note">Khách không vay, tự đóng toàn bộ theo tiến độ.</p>` : ""));
