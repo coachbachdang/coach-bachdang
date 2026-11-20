@@ -5,6 +5,9 @@
    Số căn (trục) giống nhau ở mọi tầng; đã đối chiếu diện tích tim tường từng trục với bảng giá. */
 const PLAN_DATA = {"A":{"img":"orchid","name":"Orchid","u":{"22":{"b":[137,432,258,606],"c":[179,287],"m":"B5"},"23":{"b":[263,432,326,606],"c":[274,287],"m":"D3"},"24":{"b":[331,432,394,606],"c":[370,287],"m":"D3"},"25":{"b":[399,432,463,606],"c":[464,287],"m":"D3"},"26":{"b":[467,432,534,606],"c":[562,286],"m":"D1"},"27":{"b":[540,432,606,606],"c":[661,287],"m":"D1"},"01":{"b":[761,432,855,606],"c":[808,288],"m":"D5"},"02":{"b":[858,432,927,606],"c":[905,287],"m":"D1"},"03":{"b":[930,432,1058,606],"c":[1001,287],"m":"B1"},"04":{"b":[1061,432,1185,606],"c":[1129,287],"m":"B1"},"05":{"b":[1355,432,1492,606],"c":[1416,287],"m":"B4"},"06":{"b":[1495,432,1622,606],"c":[1567,287],"m":"B1"},"07":{"b":[1626,432,1778,606],"c":[1708,287],"m":"A2"},"21":{"b":[137,637,265,797],"c":[200,859],"m":"B8"},"20":{"b":[269,637,410,797],"c":[338,859],"m":"C4"},"19":{"b":[412,637,497,797],"c":[453,858],"m":"D6"},"18":{"b":[500,637,637,797],"c":[568,859],"m":"C4"},"17":{"b":[642,637,727,797],"c":[680,859],"m":"D6"},"16":{"b":[730,637,815,797],"c":[775,859],"m":"D6"},"15":{"b":[818,637,957,797],"c":[887,859],"m":"C4"},"14":{"b":[960,637,1099,797],"c":[1028,859],"m":"C4"},"13":{"b":[1103,637,1187,797],"c":[1140,858],"m":"D6"},"12":{"b":[1191,637,1275,797],"c":[1235,858],"m":"D6"},"11":{"b":[1278,637,1417,797],"c":[1347,859],"m":"C4"},"10":{"b":[1421,637,1505,797],"c":[1462,859],"m":"D6"},"09":{"b":[1509,637,1647,797],"c":[1578,859],"m":"C4"},"08":{"b":[1651,637,1778,797],"c":[1715,859],"m":"B8"}}},"B":{"img":"bamboo","name":"Bamboo","u":{"16":{"b":[922,78,1028,153],"c":[899,71],"m":"B5"},"15":{"b":[922,153,1028,197],"c":[899,125],"m":"D1"},"14":{"b":[922,197,1028,241],"c":[898,177],"m":"D1"},"13":{"b":[922,241,1028,286],"c":[899,228],"m":"D4"},"12":{"b":[922,286,1028,330],"c":[898,281],"m":"D4"},"05":{"b":[922,468,1028,534],"c":[901,537],"m":"C1"},"04":{"b":[922,534,1028,605],"c":[902,589],"m":"C1"},"03":{"b":[922,605,1028,648],"c":[901,642],"m":"D1"},"02":{"b":[922,648,1028,690],"c":[901,698],"m":"D1"},"01":{"b":[922,690,1028,735],"c":[900,751],"m":"D1"},"33":{"b":[922,830,1028,925],"c":[900,876],"m":"B4"},"32":{"b":[922,925,1028,1000],"c":[900,966],"m":"B1"},"31":{"b":[922,1000,1028,1087],"c":[901,1043],"m":"A2"},"17":{"b":[1045,78,1140,155],"c":[1178,113],"m":"B8"},"18":{"b":[1045,155,1140,212],"c":[1178,184],"m":"D6"},"19":{"b":[1045,212,1140,293],"c":[1177,261],"m":"C4"},"20":{"b":[1045,293,1140,375],"c":[1176,324],"m":"C4"},"21":{"b":[1045,375,1140,430],"c":[1176,402],"m":"D6"},"22":{"b":[1045,430,1140,510],"c":[1176,462],"m":"C4"},"23":{"b":[1045,510,1140,565],"c":[1176,540],"m":"D6"},"24":{"b":[1045,565,1140,630],"c":[1176,600],"m":"C4"},"25":{"b":[1045,630,1140,690],"c":[1176,677],"m":"D6"},"26":{"b":[1045,690,1140,750],"c":[1176,737],"m":"D6"},"27":{"b":[1045,750,1140,830],"c":[1176,814],"m":"C4"},"28":{"b":[1045,830,1140,910],"c":[1176,876],"m":"C4"},"29":{"b":[1045,910,1140,970],"c":[1176,955],"m":"D6"},"30":{"b":[1045,970,1140,1087],"c":[1175,1044],"m":"A1"},"09":{"b":[652,308,732,418],"c":[661,215],"m":"B6"},"10":{"b":[732,308,802,418],"c":[719,215],"m":"B1"},"11":{"b":[805,308,882,418],"c":[781,214],"m":"B1"},"08":{"b":[652,432,732,540],"c":[668,560],"m":"B6"},"07":{"b":[732,432,810,540],"c":[731,560],"m":"B1"},"06":{"b":[810,432,905,515],"c":[793,560],"m":"B2"}}},"E":{"img":"tamarind","name":"Tamarind","u":{"13":{"b":[710,252,890,388],"c":[826,192],"m":"B3"},"14":{"b":[893,232,1008,388],"c":[944,192],"m":"C1"},"15":{"b":[1008,232,1128,388],"c":[1062,192],"m":"C1"},"16":{"b":[1128,232,1243,388],"c":[1180,193],"m":"C1"},"17":{"b":[1243,232,1380,388],"c":[1297,192],"m":"B8"},"21":{"b":[905,422,1008,605],"c":[1020,639],"m":"D5"},"20":{"b":[1008,422,1087,605],"c":[1119,640],"m":"D4"},"19":{"b":[1088,422,1220,605],"c":[1216,640],"m":"B1"},"18":{"b":[1220,422,1380,605],"c":[1314,640],"m":"A2"},"12":{"b":[540,390,676,555],"c":[456,504],"m":"C2"},"11":{"b":[518,555,676,665],"c":[456,622],"m":"C3"},"10":{"b":[518,678,676,790],"c":[457,738],"m":"C1"},"09":{"b":[518,848,676,962],"c":[456,903],"m":"C1"},"08":{"b":[518,962,676,1082],"c":[457,1030],"m":"C1"},"07":{"b":[518,1082,676,1220],"c":[456,1156],"m":"B8"},"01":{"b":[708,605,892,680],"c":[955,769],"m":"D1"},"02":{"b":[708,680,892,752],"c":[955,845],"m":"D1"},"03":{"b":[708,752,892,825],"c":[955,920],"m":"D1"},"04":{"b":[708,825,892,955],"c":[955,994],"m":"B1"},"05":{"b":[708,955,892,1085],"c":[955,1073],"m":"B1"},"06":{"b":[708,1085,892,1222],"c":[955,1162],"m":"B5"}}}};
 const PLAN_W = 1920, PLAN_H = 1358, PLAN_CROP_H = 1270;   /* bỏ dải tiêu đề vàng cuối bản vẽ */
+/* Mặt bằng căn hộ điển hình có nội thất (thư mục "4. Thiết Kế Căn Hộ"), cắt phần bản vẽ: /baogia-bpth/plan/mau-{mẫu}.webp.
+   Thêm mẫu mới: cắt ảnh rồi thêm mã mẫu vào danh sách này. */
+const PLAN_LAYOUTS = ["A2", "D5", "D6"];
 
 function planInfo(code){
   const p = typeof parseUnit === "function" ? parseUnit(code) : null;
@@ -54,9 +57,12 @@ function planTowerSvg(floor){
 function planBlockHtml(code, opt){
   const I = planInfo(code); if (!I) return "";
   const o = opt || {};
+  const lay = PLAN_LAYOUTS.includes(I.u.m) ? `/baogia-bpth/plan/mau-${I.u.m}.webp` : "";
   return `<div class="pl-block">`+
+    (lay ? `<figure class="pl-fig"><a class="pl-zoom" href="${lay}" target="_blank" rel="noopener" aria-label="Mở mặt bằng mẫu căn ${I.u.m} cỡ lớn"><img class="pl-lay" src="${lay}" alt="Mặt bằng mẫu căn ${I.u.m} có bố trí nội thất" loading="lazy"></a>`+
+      `<figcaption>Mặt bằng mẫu căn ${I.u.m}, kích thước ghi theo milimét · nội thất minh họa, đồ rời không thuộc bàn giao · căn thực tế có thể đối xứng theo vị trí, xem đúng chiều ở hình bên dưới</figcaption></figure>` : "")+
     `<div class="pl-row"><figure class="pl-fig"><button type="button" class="pl-zoom" data-plan-open="${I.p.code}" aria-label="Phóng to mặt bằng căn">${planUnitSvg(I)}</button>`+
-      `<figcaption>Mặt bằng căn ${I.p.code} · mẫu ${I.u.m}</figcaption></figure>`+
+      `<figcaption>Căn ${I.p.code} trên bản vẽ tầng, đúng chiều thực tế · mẫu ${I.u.m}</figcaption></figure>`+
       `<figure class="pl-fig pl-fig-t">${planTowerSvg(I.p.floor)}<figcaption>Tòa ${I.T.name} · tầng ${I.p.floor}</figcaption></figure></div>`+
     `<figure class="pl-fig"><button type="button" class="pl-zoom" data-plan-open="${I.p.code}" aria-label="Phóng to mặt bằng tầng">${planFloorSvg(I)}</button>`+
       `<figcaption>Vị trí căn số ${I.p.unit} trên ${I.sheet} tòa ${I.T.name}${o.noTap ? "" : `<span class="pl-tap"> · chạm để phóng to</span>`}</figcaption></figure>`+
@@ -88,7 +94,7 @@ const PLAN_CSS = `
 .pl-fig{margin:0;display:grid;gap:4px}
 .pl-fig figcaption{font-size:.74rem;color:#66756f;text-align:center}
 .pl-zoom{display:block;width:100%;padding:0;border:1px solid #d6e0db;border-radius:10px;background:#fff;overflow:hidden;cursor:zoom-in}
-.pl-unit,.pl-floor,.pl-tower{display:block;width:100%;height:auto}
+.pl-unit,.pl-floor,.pl-tower,.pl-lay{display:block;width:100%;height:auto}
 .pl-unit{max-height:300px}
 .pl-fig-t .pl-tower{max-width:92px;margin:0 auto}
 .pl-note{font-size:.72rem;color:#7a8a84;margin:0;line-height:1.45}
@@ -100,7 +106,7 @@ const PLAN_CSS = `
 .pl-ov-in{width:max(2200px,240vw)}
 .pl-ov-unit{background:#fff;border-top:1px solid #d6e0db;padding:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom));display:flex;justify-content:center}
 .pl-unit-big{max-height:30vh;width:auto;max-width:100%}
-@media print{#shPlan{order:99;break-inside:avoid}.pl-row{grid-template-columns:1fr 80px}.pl-unit{max-height:200px}.pl-floor{max-height:260px;width:auto;max-width:100%;margin:0 auto}.pl-zoom{border:0}.pl-tap{display:none}.pl-block{break-inside:avoid}}
+@media print{#shPlan{order:99}.pl-lay{max-height:330px;width:auto;max-width:100%;margin:0 auto}.pl-row{grid-template-columns:1fr 80px}.pl-unit{max-height:200px}.pl-floor{max-height:260px;width:auto;max-width:100%;margin:0 auto}.pl-zoom{border:0}.pl-tap{display:none}.pl-block{break-inside:avoid}}
 `;
 (function(){ const st = document.createElement("style"); st.textContent = PLAN_CSS; document.head.appendChild(st); })();
 if (typeof module !== "undefined") module.exports = { PLAN_DATA, planInfo };
