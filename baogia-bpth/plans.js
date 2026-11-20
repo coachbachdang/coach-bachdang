@@ -7,7 +7,7 @@ const PLAN_DATA = {"A":{"img":"orchid","name":"Orchid","u":{"22":{"b":[137,432,2
 const PLAN_W = 1920, PLAN_H = 1358, PLAN_CROP_H = 1270;   /* bỏ dải tiêu đề vàng cuối bản vẽ */
 /* Mặt bằng căn hộ điển hình có nội thất (thư mục "4. Thiết Kế Căn Hộ"), cắt phần bản vẽ: /baogia-bpth/plan/mau-{mẫu}.webp.
    Thêm mẫu mới: cắt ảnh rồi thêm mã mẫu vào danh sách này. */
-const PLAN_LAYOUTS = ["A2", "D5", "D6"];
+const PLAN_LAYOUTS = ["A1", "A2", "B1", "B2", "B3", "B4", "B5", "B6", "B8", "C1", "C2", "C3", "C4", "D1", "D3", "D4", "D5", "D6"];
 
 function planInfo(code){
   const p = typeof parseUnit === "function" ? parseUnit(code) : null;
