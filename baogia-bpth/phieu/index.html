@@ -505,6 +505,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
           </header>
           <div class="sh-body">
             <div class="unit" id="shUnit"></div>
+            <div id="shPlan"></div>
 
             <div>
               <div class="sh-title">Giá trị căn hộ · <span id="shPlanName"></span></div>
@@ -695,6 +696,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
 </nav>
 
 <script src="/baogia-bpth/engine.js"></script>
+<script src="/baogia-bpth/plans.js"></script>
 <script>
 /* Cùng endpoint Google Apps Script với trang /BPTH: đăng ký lưu vào cùng Google Sheet */
 const LEAD_ENDPOINT = "https://script.google.com/macros/s/AKfycbws3j1_3qA0fsKx9-fDK7eGTipLh3vzBGoEd1lbfDKdc_vlQq3rRvrpJnBqaj34R9PDrA/exec";
@@ -777,6 +779,10 @@ if (typeof document !== "undefined") {
     else if (!unit.open) { mh.className = "hint warn"; mh.textContent = `Tháp ${unit.tower} chưa mở bán, giai đoạn 1 gồm Orchid, Bamboo, Tamarind`; }
     else if (unit.floor < 3 || unit.floor > 22) { mh.className = "hint warn"; mh.textContent = "Căn hộ ở từ tầng 3 đến tầng 22"; }
     else { mh.className = "hint ok"; mh.textContent = `Tháp ${unit.tower} · tầng ${unit.floor} · căn ${unit.unit}`; }
+
+    /* Mặt bằng căn và vị trí trên tầng, theo số căn */
+    const plan = unit && unit.open ? planBlockHtml(unit.code) : "";
+    $("#shPlan").innerHTML = plan ? `<div class="sh-title">Mặt bằng và vị trí căn</div>${plan}` : "";
 
     /* Gợi ý diện tích */
     const dh = $("#dtHint");

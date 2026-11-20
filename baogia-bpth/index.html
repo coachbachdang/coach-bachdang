@@ -437,6 +437,7 @@ body.cust .cust-bar button{margin-left:auto}
 (function(){ var q = new URLSearchParams(location.search); if (q.has("gia") || q.has("pt") || q.has("loai") || q.has("ma")) location.replace("/baogia-bpth/phieu" + location.search + location.hash); })();
 </script>
 <script src="/baogia-bpth/engine.js"></script>
+<script src="/baogia-bpth/plans.js"></script>
 <script>
 "use strict";
 const DATA_URL = "/baogia-bpth/data.enc.json";
@@ -722,6 +723,7 @@ function drawUnit(){
     `<div class="sh-top"><div class="ttl"><div class="row1"><h2 id="dTitle">${u.code}</h2><span class="st ${st[2]} int">${st[0]}</span></div><div class="sub">${t.name} · ${pl.short} · <b>${tyS(q.T)} tỷ</b></div></div><button class="icon-btn x" type="button" data-act="close" aria-label="Đóng">✕</button></div>`+
     `<div class="facts"><div><span>Tòa</span><b>${u.t} · ${D.towers[u.t].name}</b></div><div><span>Tầng</span><b>${u.floor}</b></div><div><span>Loại</span><b>${t.name}</b></div>`+
     `<div><span>Tim tường</span><b>${u.dt.toLocaleString("vi-VN")} m²</b></div><div><span>Thông thủy</span><b>${u.tt.toLocaleString("vi-VN")} m²</b></div><div><span>Giá/m² tim tường, chưa VAT</span><b>${(q.N/u.dt/1e6).toLocaleString("vi-VN",{maximumFractionDigits:1})} tr</b></div></div>`+
+    (planInfo(u.code) ? `<details class="c48"${S.planOpen ? " open" : ""} id="plD"><summary>Mặt bằng căn và vị trí trên tầng · mẫu <b>${planInfo(u.code).u.m}</b></summary>${planBlockHtml(u.code)}</details>` : "")+
     (HAS_ST && (u.coc || u.dl || u.ht) ? `<p class="small int" style="margin:-4px 0 0">${u.coc ? `Cọc ngày ${esc(u.coc)}` : ""}${u.dl ? ` · hạn hoàn tất ${esc(u.dl)}` : ""}${u.ht ? ` · đã vào tiền ${esc(u.ht)}` : ""}${u.od ? ` · <b style="color:#9b2c1f">quá hạn, có thể sắp bung</b>` : ""}</p>` : "")+
     `<div class="seg" role="group" aria-label="Chính sách 12/TB" style="width:100%;display:grid;grid-template-columns:repeat(3,1fr)">`+
       [["0","Chưa áp dụng"],["thue","Thuê lại 24 th"],["ck4","CK thêm 4%"]].map(([v,l])=>`<button type="button" data-cs="${v}" aria-pressed="${S.cs===v}">${l}</button>`).join("")+`</div>`+
@@ -774,6 +776,7 @@ function loanBox(u, q, pt){
     (p ? `<div class="lp-seg" role="group" aria-label="Cách trả"><button type="button" data-lm="goc" aria-pressed="${LOAN.mt !== "deu" && LOAN.mt !== "bac"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${LOAN.mt === "deu"}">Trả đều</button><button type="button" data-lm="bac" aria-pressed="${LOAN.mt === "bac"}">Bậc thang</button></div>` + loanHtml(p)
        : (full ? `<p class="small muted" style="margin:0">Khách không vay, tự đóng toàn bộ theo tiến độ.</p>` : "")) + `</div>`;
 }
+document.addEventListener("toggle", e=>{ if (e.target.id === "plD") S.planOpen = e.target.open; }, true);
 document.addEventListener("change", e=>{
   if (e.target.matches && e.target.matches("#dlg [data-loan-bg]")) { LOAN.bg = e.target.checked; drawUnit(); return; }
   const k = e.target.dataset && e.target.dataset.loan;
