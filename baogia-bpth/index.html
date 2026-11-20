@@ -106,6 +106,10 @@ input:focus,select:focus{outline:none;border-color:var(--river);box-shadow:0 0 0
 .preset{border:1.5px solid var(--river);background:var(--surface);color:var(--river);border-radius:12px;padding:10px;font-weight:600;font-size:.9rem;text-align:center}
 .preset[aria-pressed=true]{background:var(--river);color:#fff}
 @media (min-width:760px){.presets{grid-template-columns:repeat(4,1fr)}}
+.preset.wide{grid-column:1/-1}
+.grp-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:14px 2px 6px}
+.grp-h:first-child{margin-top:2px}
+.grp-h h3{font-size:1rem}
 .towers{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:2px}
 .towers::-webkit-scrollbar{display:none}
 .tw{flex:none;min-width:200px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 14px;display:grid;gap:6px}
@@ -312,7 +316,7 @@ body.cust .cust-bar button{margin-left:auto}
       <span class="pill int">Giá theo <b id="priceSrc"></b></span>
     </div>
     <form class="search" id="searchForm" autocomplete="off">
-      <input type="text" id="q" placeholder="Mã căn, VD A14-23" inputmode="text" spellcheck="false" aria-label="Mã căn">
+      <input type="text" id="q" placeholder="A14-23 · A3-02 đến A22-02" inputmode="text" spellcheck="false" aria-label="Mã căn, tầng hoặc trục căn">
       <button class="btn btn-primary" type="submit">Tra giá</button>
     </form>
     <div class="search-msg" id="searchMsg" role="status"></div>
@@ -342,6 +346,7 @@ body.cust .cust-bar button{margin-left:auto}
         <button class="preset" type="button" data-p="thue" aria-pressed="false">Đầu tư cho thuê</button>
         <button class="preset" type="button" data-p="gd" aria-pressed="false">Gia đình</button>
         <button class="preset" type="button" data-p="o" aria-pressed="false">Mua để ở (giảm 4%)</button>
+        <button class="preset wide" type="button" id="top5Btn" aria-pressed="false">Top 5 căn trống rẻ nhất mỗi loại</button>
       </div>
       <p class="small muted" id="presetNote" style="margin:6px 2px 0"></p>
     </div>
@@ -363,7 +368,8 @@ body.cust .cust-bar button{margin-left:auto}
       <div class="more" id="more" hidden>
         <label>Từ tầng<select id="fFrom"></select></label>
         <label>Đến tầng<select id="fTo"></select></label>
-        <label>Sắp xếp danh sách<select id="fSort"><option value="price">Giá thấp đến cao</option><option value="toHD">Tự có đến HĐMB</option><option value="area">Diện tích lớn đến nhỏ</option><option value="code">Mã căn</option></select></label>
+        <label>Trục căn<select id="fStack"></select></label>
+        <label>Sắp xếp danh sách<select id="fSort"><option value="price">Giá thấp đến cao</option><option value="top5">Top 5 rẻ nhất mỗi loại</option><option value="toHD">Tự có đến HĐMB</option><option value="area">Diện tích lớn đến nhỏ</option><option value="code">Mã căn</option></select></label>
       </div>
     </div>
 
@@ -469,7 +475,7 @@ $("#gateForm").addEventListener("submit", async e=>{
 $("#lockBtn").addEventListener("click", ()=>{ store.del(KEY_STORE); location.reload(); });
 
 /* ---------- TRẠNG THÁI GIAO DIỆN ---------- */
-const S = { od:false, tower:"all", types:new Set(), max:0, pt:"1N", cs:"0", view:"grid", st:{0:true,1:true,2:true,3:true,"-1":true}, from:3, to:22, sort:"price", preset:"", cust:false, cmp:[], tab:"ro", open:null, dpt:null };
+const S = { od:false, tower:"all", types:new Set(), max:0, pt:"1N", cs:"0", view:"grid", st:{0:true,1:true,2:true,3:true,"-1":true}, from:3, to:22, stack:"", sort:"price", preset:"", cust:false, cmp:[], tab:"ro", open:null, dpt:null };
 let D = null, U = [], BY = new Map(), HAS_ST = false;
 const avail = u => HAS_ST ? u.s === 0 : true;
 
@@ -512,6 +518,7 @@ const tyS = v => (v/1e9).toLocaleString("vi-VN",{minimumFractionDigits:2,maximum
 function baseMatch(u){
   if (S.types.size && !S.types.has(u.type)) return false;
   if (u.floor < S.from || u.floor > S.to) return false;
+  if (S.stack && u.stack !== S.stack) return false;
   if (S.max && T(u) > S.max * 1e9) return false;
   return true;
 }
@@ -520,11 +527,22 @@ const match = u => baseMatch(u) && stMatch(u);
 const inTower = u => S.tower === "all" || u.t === S.tower;
 
 /* ---------- VẼ ---------- */
+/* Trục căn: danh sách theo tòa đang chọn; đổi tòa mà trục không có thì bỏ lọc trục */
+function renderStackSel(){
+  const us = U.filter(inTower);
+  const stacks = [...new Set(us.map(u=>u.stack))].sort();
+  if (S.stack && !stacks.includes(S.stack)) S.stack = "";
+  const lab = st => { if (S.tower === "all") return st; const ts = new Set(us.filter(u=>u.stack === st).map(u=>u.type)); return ts.size === 1 ? `${st} · ${TYPE_SHORT[[...ts][0]]}` : st; };
+  $("#fStack").innerHTML = `<option value="">Tất cả</option>` + stacks.map(st=>`<option value="${st}">${lab(st)}</option>`).join("");
+  $("#fStack").value = S.stack;
+}
 function render(){
+  renderStackSel();
   $$("#fType .chip").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.t ? S.types.has(b.dataset.t) : S.types.size === 0)));
   $$("#fMax .chip").forEach(b=>b.setAttribute("aria-pressed", String(+b.dataset.m === S.max)));
   $$(".seg button").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.v === S.view)));
   $$("#presets .preset").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.p === S.preset)));
+  $("#top5Btn").setAttribute("aria-pressed", String(S.sort === "top5" && S.view === "list"));
   $("#fPt").value = S.pt; $("#fCs").value = S.cs; $("#fFrom").value = S.from; $("#fTo").value = S.to; $("#fSort").value = S.sort;
   document.body.classList.toggle("cust", S.cust); $("#custBtn").setAttribute("aria-pressed", String(S.cust));
   $$(".tab").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab === S.tab)));
@@ -558,6 +576,8 @@ function renderSummary(){
   if (S.types.size) parts.push([...S.types].map(k=>TYPE_SHORT[k]).join(", "));
   if (S.max) parts.push(`≤ ${S.max.toLocaleString("vi-VN")} tỷ`);
   if (S.from !== +$("#fFrom").options[0]?.value || S.to !== +$("#fTo").options[$("#fTo").options.length-1]?.value) parts.push(`tầng ${S.from}–${S.to}`);
+  if (S.stack) parts.push(`trục ${S.stack}`);
+  if (S.sort === "top5" && S.view === "list") parts.push("top 5 rẻ nhất mỗi loại");
   const cs = S.cs === "thue" ? " · chọn thuê lại" : S.cs === "ck4" ? (NO_CK4.includes(S.pt) ? " · CK 4% không áp dụng PTTT này" : " · đã trừ CK 4%") : "";
   $("#summary").innerHTML = (HAS_ST ? `<b>${free}</b> căn trống` + (S.cust ? "" : ` / ${us.length} căn đang hiện`) : `<b>${us.length}</b> căn`) + ` · ${parts.join(" · ")} · giá theo <b>${PLANS[S.pt].short}</b>${cs}` +
     (HAS_ST ? (S.od ? `<div class="small int" style="margin-top:4px">Đang lọc: cọc quá hạn hoàn tất, có thể sắp bung. Bấm lại thanh "Hôm nay" để bỏ lọc.</div>` : "") : `<div class="small int" style="color:#8a4b12;margin-top:4px">${liveNote()}</div>`);
@@ -612,7 +632,20 @@ function rowHtml(u, extra=""){
     `<div class="meta">${TYPES[u.type].name} · ${u.dt.toLocaleString("vi-VN")} m² · tầng ${u.floor}<br>Tự có đến HĐMB ${ty(q.toHD)}${extra}</div>`+
     `<div class="price num">${tyS(q.T)} tỷ<small>${PLANS[S.pt].short}</small></div></button>`;
 }
+/* Top 5 rẻ nhất mỗi loại căn, theo tòa, bộ lọc, trạng thái và giá theo PTTT đang chọn */
+function renderTop5(){
+  const all = U.filter(u=>inTower(u) && match(u));
+  const onlyFree = HAS_ST && ALL_ST.every(s=>!!S.st[s] === (s === 0));
+  const html = Object.keys(TYPES).filter(k=>!S.types.size || S.types.has(k)).map(k=>{
+    const us = all.filter(u=>u.type === k).sort((a,b)=>T(a)-T(b));
+    if (!us.length) return "";
+    return `<div class="grp-h"><h3>${TYPES[k].name}</h3><span class="small muted">${Math.min(5, us.length)} rẻ nhất / ${us.length} căn ${onlyFree ? "trống" : "khớp lọc"}</span></div>` +
+      `<div class="list">${us.slice(0, 5).map(u=>rowHtml(u)).join("")}</div>`;
+  }).join("");
+  $("#view").innerHTML = html || `<div class="empty">Không có căn nào khớp bộ lọc.</div>`;
+}
 function renderList(){
+  if (S.sort === "top5") return renderTop5();
   const us = sortUnits(U.filter(u=>inTower(u) && match(u)));
   $("#view").innerHTML = us.length ? `<div class="list">${us.slice(0, listLimit).map(u=>rowHtml(u)).join("")}</div>` +
     (us.length > listLimit ? `<div style="text-align:center;margin-top:10px"><button class="btn btn-ghost" type="button" id="moreList">Xem thêm ${Math.min(60, us.length - listLimit)} căn</button></div>` : "")
@@ -807,12 +840,27 @@ const PRESETS = {
 };
 function applyPreset(k){
   if (S.preset === k) { S.preset = ""; $("#presetNote").textContent = ""; render(); return; }
-  const p = PRESETS[k]; S.preset = k; S.od = false; S.types = new Set(p.types); S.max = p.max; S.pt = p.pt; S.cs = p.cs;
+  const p = PRESETS[k]; S.preset = k; S.od = false; S.types = new Set(p.types); S.max = p.max; S.pt = p.pt; S.cs = p.cs; S.stack = "";
   S.st = {0:true,1:false,2:false,3:false,"-1":false}; S.view = "list"; S.sort = "price"; listLimit = 60;
   $("#presetNote").textContent = p.note; render();
 }
 
 /* ---------- ĐƯỜNG DẪN (giữ bộ lọc khi tải lại, không chứa dữ liệu) ---------- */
+/* Đọc cú pháp trục căn trong ô tìm: "A3-02 đến A22-02", "A3-02 - A22-02", "A3-02..A22-02", "A*-02", "trục A-02" */
+function parseStack(raw){
+  let s = raw.toUpperCase().trim();
+  s = s.replace(/\s+(ĐẾN|DEN|TỚI|TOI|-|–|—|→|->|~)\s+/g, "|").replace(/ĐẾN|DEN|TỚI|TOI|→|->|~|\.\.|–|—/g, "|").replace(/\s+/g, "");
+  let m = s.match(/^([A-E])(\d{1,2})-(\d{1,2})\|([A-E])?(\d{1,2})(?:-(\d{1,2}))?$/);
+  if (m) {
+    if (m[4] && m[4] !== m[1]) return { err:"Hai mã phải cùng một tòa, ví dụ A3-02 đến A22-02" };
+    if (m[6] && +m[6] !== +m[3]) return { err:"Hai mã phải cùng trục (cùng số sau dấu gạch), ví dụ A3-02 đến A22-02" };
+    const a = +m[2], b = +m[5];
+    return { t:m[1], stack:m[3].padStart(2, "0"), from:Math.min(a, b), to:Math.max(a, b) };
+  }
+  m = s.match(/^(?:([A-E])[*X]-?|(?:TRỤC|TRUC)([A-E])?-?)(\d{1,2})$/);
+  if (m) { const t = m[1] || m[2] || (S.tower !== "all" ? S.tower : ""); if (!t) return { err:"Gõ kèm tòa, ví dụ trục A-02" }; return { t, stack:m[3].padStart(2, "0") }; }
+  return null;
+}
 function writeHash(){
   const h = new URLSearchParams();
   if (S.tower !== "all") h.set("t", S.tower);
@@ -821,6 +869,8 @@ function writeHash(){
   if (S.pt !== "1N") h.set("pt", S.pt);
   if (S.cs !== "0") h.set("cs", S.cs);
   if (S.view !== "grid") h.set("v", S.view);
+  if (S.stack) h.set("tr", S.stack);
+  if (S.sort === "top5") h.set("s", "top5");
   if (S.tab !== "ro") h.set("tab", S.tab);
   if (S.cmp.length) h.set("ss", S.cmp.join("."));
   if (S.open) h.set("u", S.open);
@@ -834,6 +884,8 @@ function readHash(){
   if (PLANS[h.get("pt")]) S.pt = h.get("pt");
   if (["thue","ck4"].includes(h.get("cs"))) S.cs = h.get("cs");
   if (h.get("v") === "list") S.view = "list";
+  if (/^\d{1,2}$/.test(h.get("tr") || "")) S.stack = h.get("tr").padStart(2, "0");
+  if (h.get("s") === "top5") S.sort = "top5";
   if (["ss","tim","bd"].includes(h.get("tab"))) S.tab = h.get("tab");
   if (h.get("ss")) S.cmp = h.get("ss").split(".").filter(c=>BY.has(c)).slice(0,3);
   if (h.get("u") && BY.has(h.get("u"))) setTimeout(()=>openUnit(h.get("u")), 0);
@@ -1013,7 +1065,7 @@ document.addEventListener("click", async e=>{
   }
   if (el.id === "moreList") { listLimit += 60; renderList(); }
   if (el.id === "moreBtn") { const m = $("#more"); m.hidden = !m.hidden; el.setAttribute("aria-expanded", String(!m.hidden)); }
-  if (el.id === "resetBtn") { Object.assign(S, { od:false, tower:"all", types:new Set(), max:0, pt:"1N", cs:"0", st:{0:true,1:true,2:true,3:true,"-1":true}, preset:"", sort:"price" }); S.from = +$("#fFrom").options[0].value; S.to = +$("#fTo").options[$("#fTo").options.length-1].value; $("#presetNote").textContent = ""; render(); }
+  if (el.id === "resetBtn") { Object.assign(S, { od:false, tower:"all", types:new Set(), max:0, pt:"1N", cs:"0", st:{0:true,1:true,2:true,3:true,"-1":true}, preset:"", sort:"price", stack:"" }); S.from = +$("#fFrom").options[0].value; S.to = +$("#fTo").options[$("#fTo").options.length-1].value; $("#presetNote").textContent = ""; render(); }
   if (el.id === "stockBtn") { fetchLive(true); return; }
   if (el.id === "today") { S.od = !S.od; if (S.od) { S.tab = "ro"; S.view = "list"; S.sort = "code"; } render(); return; }
   if (el.id === "bannerX") { $("#banner").hidden = true; try { sessionStorage.setItem("bpth-banner","x"); } catch(_){} }
@@ -1028,7 +1080,15 @@ $("#fPt").addEventListener("change", e=>{ S.pt = e.target.value; S.preset = ""; 
 $("#fCs").addEventListener("change", e=>{ S.cs = e.target.value; S.preset = ""; render(); });
 $("#fFrom").addEventListener("change", e=>{ S.from = +e.target.value; if (S.from > S.to) S.to = S.from; render(); });
 $("#fTo").addEventListener("change", e=>{ S.to = +e.target.value; if (S.to < S.from) S.from = S.to; render(); });
-$("#fSort").addEventListener("change", e=>{ S.sort = e.target.value; if (S.view !== "list") S.view = "list"; render(); });
+$("#fSort").addEventListener("change", e=>{ S.sort = e.target.value; if (S.view !== "list") S.view = "list"; if (S.sort === "top5") onlyFreeIfAll(); render(); });
+$("#fStack").addEventListener("change", e=>{ S.stack = e.target.value; render(); });
+/* Top 5 rẻ nhất: đang xem mọi trạng thái thì chuyển sang chỉ căn trống */
+function onlyFreeIfAll(){ if (HAS_ST && ALL_ST.every(s=>S.st[s])) ALL_ST.forEach(s=>S.st[s] = s === 0); S.od = false; }
+$("#top5Btn").addEventListener("click", ()=>{
+  if (S.sort === "top5" && S.view === "list") { S.sort = "price"; render(); return; }
+  S.sort = "top5"; S.view = "list"; S.tab = "ro"; S.preset = ""; $("#presetNote").textContent = ""; onlyFreeIfAll(); render();
+  $("#summary").scrollIntoView({ block:"start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+});
 ["#vHD","#vBG","#vLoan"].forEach(s=>$(s).addEventListener("input", renderFind));
 ["#vPt","#vType","#v1nLoan"].forEach(s=>$(s).addEventListener("change", renderFind));
 $("#searchForm").addEventListener("submit", e=>{
@@ -1036,15 +1096,26 @@ $("#searchForm").addEventListener("submit", e=>{
   const raw = $("#q").value.trim(); const p = parseUnit(raw); const code = p ? p.code : raw.toUpperCase().replace(/\s+/g, "");
   const msg = $("#searchMsg");
   const part = code.match(/^([A-E])-?(\d{1,2})?$/);
-  if (BY.has(code)) { msg.textContent = ""; S.tower = BY.get(code).t; S.view = "grid"; S.tab = "ro"; S.od = false; render(); openUnit(code); }
+  const sk = parseStack(raw);
+  if (sk && sk.err) { msg.textContent = sk.err; return; }
+  if (sk) {
+    /* Trục căn: "A3-02 đến A22-02" hoặc cả trục "A*-02" */
+    const fl = U.filter(u=>u.t===sk.t).map(u=>u.floor), lo = Math.min(...fl), hi = Math.max(...fl);
+    S.tower = sk.t; S.stack = sk.stack; S.tab = "ro"; S.od = false; S.preset = ""; S.types.clear(); S.max = 0; S.st = {0:true,1:true,2:true,3:true,"-1":true};
+    S.from = Math.max(lo, Math.min(hi, sk.from ?? lo)); S.to = Math.max(S.from, Math.min(hi, sk.to ?? hi)); S.view = "list"; S.sort = "code";
+    const n = U.filter(u=>u.t===sk.t && u.stack===sk.stack && u.floor>=S.from && u.floor<=S.to).length;
+    msg.textContent = n ? "" : `Tòa ${sk.t} không có trục ${sk.stack} trong bảng giá đợt này`;
+    render(); $("#summary").scrollIntoView({ block:"start" }); return;
+  }
+  if (BY.has(code)) { msg.textContent = ""; S.tower = BY.get(code).t; S.stack = ""; S.view = "grid"; S.tab = "ro"; S.od = false; render(); openUnit(code); }
   else if (part && D.towers[part[1]]) {
     /* Gõ "A" → cả tòa A; gõ "A14" → tầng 14 tòa A, hiện dạng danh sách */
-    S.tower = part[1]; S.tab = "ro"; S.od = false; S.preset = ""; S.types.clear(); S.max = 0; S.st = {0:true,1:true,2:true,3:true,"-1":true};
+    S.tower = part[1]; S.tab = "ro"; S.od = false; S.preset = ""; S.types.clear(); S.max = 0; S.stack = ""; S.st = {0:true,1:true,2:true,3:true,"-1":true};
     const fl = U.filter(u=>u.t===part[1]).map(u=>u.floor);
     if (part[2]) { S.from = S.to = +part[2]; S.view = "list"; S.sort = "code"; } else { S.from = Math.min(...fl); S.to = Math.max(...fl); S.view = "grid"; }
     msg.textContent = ""; render(); $("#summary").scrollIntoView({ block:"start" });
   }
-  else msg.textContent = p && !p.open ? `Tháp ${p.tower} chưa mở bán trong giai đoạn 1` : `Không có mã căn ${code || "này"}. Gõ đủ mã như A14-23, hoặc "A14" để xem cả tầng 14 tòa A`;
+  else msg.textContent = p && !p.open ? `Tháp ${p.tower} chưa mở bán trong giai đoạn 1` : `Không có mã căn ${code || "này"}. Gõ đủ mã như A14-23, "A14" để xem cả tầng 14 tòa A, hoặc "A3-02 đến A22-02" để xem một trục căn`;
 });
 
 /* Khởi động: thử khóa đã ghi nhớ trên máy */
