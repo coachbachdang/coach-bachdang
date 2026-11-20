@@ -721,7 +721,7 @@ function drawUnit(){
   $("#dlg").innerHTML =
     `<div class="sh-top"><div class="ttl"><div class="row1"><h2 id="dTitle">${u.code}</h2><span class="st ${st[2]} int">${st[0]}</span></div><div class="sub">${t.name} · ${pl.short} · <b>${tyS(q.T)} tỷ</b></div></div><button class="icon-btn x" type="button" data-act="close" aria-label="Đóng">✕</button></div>`+
     `<div class="facts"><div><span>Tòa</span><b>${u.t} · ${D.towers[u.t].name}</b></div><div><span>Tầng</span><b>${u.floor}</b></div><div><span>Loại</span><b>${t.name}</b></div>`+
-    `<div><span>Tim tường</span><b>${u.dt.toLocaleString("vi-VN")} m²</b></div><div><span>Thông thủy</span><b>${u.tt.toLocaleString("vi-VN")} m²</b></div><div><span>Giá gốc / m² TT</span><b>${(u.net/u.tt/1e6).toLocaleString("vi-VN",{maximumFractionDigits:1})} tr</b></div></div>`+
+    `<div><span>Tim tường</span><b>${u.dt.toLocaleString("vi-VN")} m²</b></div><div><span>Thông thủy</span><b>${u.tt.toLocaleString("vi-VN")} m²</b></div><div><span>Giá/m² tim tường, chưa VAT</span><b>${(q.N/u.dt/1e6).toLocaleString("vi-VN",{maximumFractionDigits:1})} tr</b></div></div>`+
     (HAS_ST && (u.coc || u.dl || u.ht) ? `<p class="small int" style="margin:-4px 0 0">${u.coc ? `Cọc ngày ${esc(u.coc)}` : ""}${u.dl ? ` · hạn hoàn tất ${esc(u.dl)}` : ""}${u.ht ? ` · đã vào tiền ${esc(u.ht)}` : ""}${u.od ? ` · <b style="color:#9b2c1f">quá hạn, có thể sắp bung</b>` : ""}</p>` : "")+
     `<div class="seg" role="group" aria-label="Chính sách 12/TB" style="width:100%;display:grid;grid-template-columns:repeat(3,1fr)">`+
       [["0","Chưa áp dụng"],["thue","Thuê lại 24 th"],["ck4","CK thêm 4%"]].map(([v,l])=>`<button type="button" data-cs="${v}" aria-pressed="${S.cs===v}">${l}</button>`).join("")+`</div>`+
@@ -792,24 +792,27 @@ function renderCompare(){
   const sec = lab => `<tr class="sec"><td colspan="${us.length+1}">${lab}</td></tr>`;
   const self = S.pt === "1N" || S.pt === "01";
   const k48 = u => costTo(quoteOf(u), { ...loanOpts(u, S.pt), selfLoan:true });
+  /* Khoản vay 50%: PTTT 03, 04, 05, 02 ngân hàng giải ngân theo chính sách; 1N, 01 khách tự vay */
+  const loanOf = u => self ? selfLoanMax(quoteOf(u)) : quoteOf(u).bank;
   $("#cmpView").innerHTML = `<div class="cmp-wrap"><table class="cmp num"><thead><tr><th></th>${us.map(u=>`<th>${u.code}<br><button class="btn btn-ghost btn-sm" type="button" data-rm="${u.code}" style="margin-top:6px">Bỏ</button></th>`).join("")}</tr></thead><tbody>`+
     row("Tòa · tầng", u=>`${D.towers[u.t].name} · ${u.floor}`)+
     row("Loại", u=>TYPES[u.type].name)+
     row("Tim tường", u=>`${u.dt.toLocaleString("vi-VN")} m²`)+
     row("Thông thủy", u=>`${u.tt.toLocaleString("vi-VN")} m²`)+
     `<tr class="int"><td>Trạng thái</td>${us.map(u=>`<td><span class="st ${stOf(u)[2]}">${stOf(u)[0]}</span></td>`).join("")}</tr>`+
-    row("Giá gốc / m² thông thủy", u=>`${(u.net/u.tt/1e6).toLocaleString("vi-VN",{maximumFractionDigits:1})} triệu`, u=>u.net/u.tt)+
     sec(`Tổng gồm VAT${S.cs==="ck4" ? " · đã trừ CK 4% nếu áp dụng" : ""}`)+
     PLAN_ORDER.map(c=>row(PLANS[c].short, u=>tyS(quoteOf(u,c,S.cs).T) + " tỷ", u=>quoteOf(u,c,S.cs).T)).join("")+
     sec(`Theo ${PLANS[S.pt].short}`)+
-    row("Tự có đến HĐMB", u=>ty(quoteOf(u).toHD), u=>quoteOf(u).toHD)+
-    row(self ? "Tự có hoặc tự vay trước bàn giao" : "Tự có trước bàn giao", u=>ty(quoteOf(u).selfBefore), u=>quoteOf(u).selfBefore)+
-    row(self ? "Khoản có thể tự vay" : "Ngân hàng giải ngân", u=>self ? ty(selfLoanMax(quoteOf(u))) : quoteOf(u).bank ? ty(quoteOf(u).bank) : "Không vay")+
-    row("Phí bảo trì 2%", u=>ty(quoteOf(u).fee))+
+    row("Đơn giá / m² tim tường, chưa VAT", u=>`${(quoteOf(u).N/u.dt/1e6).toLocaleString("vi-VN",{maximumFractionDigits:1})} triệu`, u=>quoteOf(u).N/u.dt)+
+    row("① Tự có đến HĐMB", u=>ty(quoteOf(u).toHD), u=>quoteOf(u).toHD)+
+    row(self ? "② Tự vay ngân hàng 50%" : "② Ngân hàng cho vay 50%", u=>ty(loanOf(u)))+
+    row("③ Tự có trước bàn giao<br><small>gồm ①, không tính ②</small>", u=>ty(quoteOf(u).selfBefore + quoteOf(u).bank - loanOf(u)), u=>quoteOf(u).selfBefore + quoteOf(u).bank - loanOf(u))+
+    row("④ Đóng khi bàn giao<br><small>25% + phí bảo trì 2%</small>", u=>ty(quoteOf(u).atBG), u=>quoteOf(u).atBG)+
+    row("⑤ Đóng khi nhận sổ 5%", u=>ty(quoteOf(u).atGCN))+
     (S.cs === "thue" ? row("Thuê lại 24 tháng", u=>`${(TYPES[u.type].rent*24).toLocaleString("vi-VN")} triệu`) : "")+
     row("Tổng chi phí đến tháng 48<br><small>cùng vay 50%, gồm lãi</small>", u=>tyS(k48(u).total) + " tỷ", u=>k48(u).total)+
     `</tbody></table></div>`+
-    `<p class="small muted" style="margin:6px 2px 0">Dấu ✓: con số thấp nhất trong hàng. Tổng chi phí đến tháng 48 = giá gồm VAT + phí bảo trì + lãi khách trả đến tháng 48 sau ký HĐMB, giả định lãi theo ô Kế hoạch vay trong chi tiết căn.</p>`+
+    `<p class="small muted" style="margin:6px 2px 0">Dấu ✓: con số thấp nhất trong hàng. Đơn giá tính trên diện tích tim tường theo bảng giá, chưa VAT; sổ hồng ghi diện tích thông thủy. ③ là tổng tiền khách tự bỏ ra từ lúc ký đến trước bàn giao; ③ + ② + ④ + ⑤ = giá gồm VAT + phí bảo trì. Tổng chi phí đến tháng 48 = giá gồm VAT + phí bảo trì + lãi khách trả đến tháng 48 sau ký HĐMB, giả định lãi theo ô Kế hoạch vay trong chi tiết căn.</p>`+
     `<div class="cmp-acts" style="margin-top:10px"><button class="btn btn-primary" type="button" id="cmpZalo">Chép tin Zalo so sánh</button><button class="btn btn-ghost" type="button" id="cmpClear">Xóa hết</button></div>`;
 }
 /* Tin Zalo so sánh 2–3 căn cho khách: không trạng thái nội bộ, không dấu chấm cuối câu */
@@ -819,11 +822,13 @@ function cmpZaloText(){
   const out = [`So sánh ${us.length} căn Bcons Central Park, giá theo ${pl.short} (${pl.title})${cs}`, ""];
   for (const u of us) {
     const q = quoteOf(u);
-    out.push(`${u.code} · ${TYPES[u.type].name} · tầng ${u.floor} · ${u.tt.toLocaleString("vi-VN")} m² thông thủy`);
+    out.push(`${u.code} · ${TYPES[u.type].name} · tầng ${u.floor} · ${u.dt.toLocaleString("vi-VN")} m² tim tường (${u.tt.toLocaleString("vi-VN")} m² thông thủy)`);
+    const self = S.pt === "1N" || S.pt === "01", loan = self ? selfLoanMax(q) : q.bank;
+    out.push(`Đơn giá ${(q.N/u.dt/1e6).toLocaleString("vi-VN",{maximumFractionDigits:1})} triệu/m² tim tường, chưa VAT`);
     out.push(`Giá gồm VAT ${vnd(q.T)}`);
     out.push(`Tự có đến ký HĐMB ${vnd(q.toHD)}`);
-    if (q.bank) out.push(`Ngân hàng giải ngân ${vnd(q.bank)}`);
-    else if (S.pt === "1N" || S.pt === "01") out.push(`Khoản có thể tự vay ngân hàng ${vnd(selfLoanMax(q))}`);
+    if (loan) out.push(`${self ? "Tự vay ngân hàng" : "Ngân hàng cho vay"} 50%: ${vnd(loan)}`);
+    out.push(`Tổng tự có trước bàn giao ${vnd(q.selfBefore + q.bank - loan)}`);
     out.push("");
   }
   out.push("Giá tham khảo theo bảng giá hiện hành, có thể điều chỉnh theo đợt mở bán. Anh chị chọn căn nào em gửi báo giá chính thức của căn đó");
