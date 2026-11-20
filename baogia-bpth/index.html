@@ -563,13 +563,17 @@ function renderSummary(){
     (HAS_ST ? (S.od ? `<div class="small int" style="margin-top:4px">Đang lọc: cọc quá hạn hoàn tất, có thể sắp bung. Bấm lại thanh "Hôm nay" để bỏ lọc.</div>` : "") : `<div class="small int" style="color:#8a4b12;margin-top:4px">${liveNote()}</div>`);
 }
 
+const ALL_ST = [0,1,2,3,-1];
 function renderLegend(){
   $("#legend").hidden = !HAS_ST; if (!HAS_ST) return;
   const us = U.filter(u=>inTower(u) && baseMatch(u));
   const n = s => us.filter(u=>u.s===s).length;
   const keys = [0,1,2,3,-1].filter(s=>s===0 || n(s));
   const icon = { 0:"i-free", 1:"i-dep", 2:"i-done", 3:"i-lock", "-1":"i-lock" };
-  $("#legend").innerHTML = keys.map(s=>`<button class="lg" type="button" data-s="${s}" aria-pressed="${!!S.st[s]}"><i class="${icon[s]}"></i>${STATUS[s][0]} ${n(s)}</button>`).join("");
+  const allOn = ALL_ST.every(s=>S.st[s]);
+  /* Đang xem tất cả thì các nhãn trạng thái để trơn; bấm một nhãn là chỉ xem trạng thái đó */
+  $("#legend").innerHTML = `<button class="lg" type="button" data-s="all" aria-pressed="${allOn}">Tất cả ${us.length}</button>` +
+    keys.map(s=>`<button class="lg" type="button" data-s="${s}" aria-pressed="${!allOn && !!S.st[s]}"><i class="${icon[s]}"></i>${STATUS[s][0]} ${n(s)}</button>`).join("");
 }
 
 function cellHtml(u){
@@ -973,7 +977,17 @@ document.addEventListener("click", async e=>{
   if (el.dataset.t !== undefined && el.closest("#fType")) { const k = el.dataset.t; if (!k) S.types.clear(); else S.types.has(k) ? S.types.delete(k) : S.types.add(k); S.preset = ""; S.od = false; render(); return; }
   if (el.dataset.m !== undefined) { S.max = +el.dataset.m; S.preset = ""; S.od = false; render(); return; }
   if (el.dataset.v) { S.view = el.dataset.v; render(); return; }
-  if (el.dataset.s !== undefined && el.closest("#legend")) { S.od = false; S.st[el.dataset.s] = !S.st[el.dataset.s]; render(); return; }
+  if (el.dataset.s !== undefined && el.closest("#legend")) {
+    S.od = false;
+    const k = el.dataset.s, allOn = ALL_ST.every(s=>S.st[s]);
+    if (k === "all") ALL_ST.forEach(s=>S.st[s] = true);
+    else if (allOn) ALL_ST.forEach(s=>S.st[s] = String(s) === k);   // đang xem tất cả: bấm một nhãn là chỉ xem nhãn đó
+    else {
+      S.st[k] = !S.st[k];                                             // đang lọc: bấm thêm để cộng hoặc bỏ trạng thái
+      if (!ALL_ST.some(s=>S.st[s])) ALL_ST.forEach(s=>S.st[s] = true);
+    }
+    render(); return;
+  }
   if (el.dataset.p) { applyPreset(el.dataset.p); return; }
   if (el.dataset.tab) { S.tab = el.dataset.tab; render(); return; }
   if (el.dataset.rm) { S.cmp = S.cmp.filter(c=>c!==el.dataset.rm); render(); return; }
