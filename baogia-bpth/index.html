@@ -255,6 +255,17 @@ body.cust .cell.od{box-shadow:none}body.cust .cell.od::after{display:none}
 .cmp th:first-child,.cmp td:first-child{text-align:left;color:var(--muted);font-weight:500;position:sticky;left:0;background:var(--surface)}
 .cmp thead th{font-size:1rem;color:var(--ink)}
 .cmp tr.sec td{background:#f5f8f6;font-weight:700;color:var(--ink);font-size:.78rem;letter-spacing:.06em;text-transform:uppercase}
+.cmp td.best{color:var(--river);font-weight:700}
+@media (max-width:520px){
+  .cmp{font-size:.76rem}
+  .cmp th,.cmp td{padding:7px 5px}
+  .cmp thead th{font-size:.84rem}
+  .cmp th:first-child,.cmp td:first-child{white-space:normal;min-width:88px;max-width:104px}
+  .cmp .st{white-space:normal;font-size:.68rem}
+  .cmp tr.sec td{letter-spacing:.02em}
+}
+.cmp td.best::after{content:" ✓";font-size:.75em}
+.cmp-acts{display:flex;gap:8px;flex-wrap:wrap}
 .find{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .find label{display:grid;gap:4px;font-size:.78rem;font-weight:600;color:var(--muted)}
 @media (min-width:760px){.find{grid-template-columns:repeat(4,1fr)}}
@@ -381,7 +392,15 @@ body.cust .cust-bar button{margin-left:auto}
 
   <!-- TAB SO SÁNH -->
   <section data-panel="ss" hidden style="display:grid;gap:12px;margin-top:12px">
-    <p class="small muted">Thêm tối đa 3 căn từ nút "So sánh" trong chi tiết căn. Giá theo chính sách đang chọn ở bộ lọc.</p>
+    <form class="search" id="cmpForm" autocomplete="off">
+      <input type="text" id="cmpQ" placeholder="Thêm mã căn, VD A13-23, A4-01" spellcheck="false" aria-label="Thêm mã căn để so sánh">
+      <button class="btn btn-primary" type="submit">Thêm</button>
+    </form>
+    <p class="small muted" id="cmpMsg" style="margin:0">So sánh tối đa 3 căn cạnh nhau. Gõ mã căn ở trên, nhiều mã thì cách nhau bằng dấu phẩy; hoặc mở một căn ở tab Rổ hàng và bấm "So sánh".</p>
+    <div class="fsel">
+      <label class="small muted" style="display:grid;gap:4px;font-weight:600">Tính theo<select id="cmpPt"></select></label>
+      <label class="small muted" style="display:grid;gap:4px;font-weight:600">Chính sách 12/TB<select id="cmpCs"><option value="0">Chưa áp dụng</option><option value="thue">Thuê lại 24 tháng</option><option value="ck4">Chiết khấu thêm 4%</option></select></label>
+    </div>
     <div id="cmpView"></div>
   </section>
 
@@ -494,6 +513,7 @@ function start(data){
   $("#fTo").innerHTML = floors.map(f=>`<option value="${f}">${f}</option>`).join("");
   $("#fFrom").value = S.from; $("#fTo").value = S.to;
   $("#fPt").innerHTML = PLAN_ORDER.map(c=>`<option value="${c}">${PLANS[c].short} · ${PLANS[c].tag}</option>`).join("");
+  $("#cmpPt").innerHTML = $("#fPt").innerHTML;
   $("#vPt").innerHTML += PLAN_ORDER.filter(c=>c!=="02").map(c=>`<option value="${c}">${PLANS[c].short} · ${PLANS[c].title}</option>`).join("");
   $("#vType").innerHTML += Object.entries(TYPES).map(([k,t])=>`<option value="${k}">${t.name}</option>`).join("");
   $("#fType").innerHTML = `<button class="chip" type="button" data-t="" aria-pressed="true">Tất cả</button>` + Object.keys(TYPES).map(k=>`<button class="chip" type="button" data-t="${k}" aria-pressed="false">${TYPE_SHORT[k]}</button>`).join("");
@@ -543,7 +563,7 @@ function render(){
   $$(".seg button").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.v === S.view)));
   $$("#presets .preset").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.p === S.preset)));
   $("#top5Btn").setAttribute("aria-pressed", String(S.sort === "top5" && S.view === "list"));
-  $("#fPt").value = S.pt; $("#fCs").value = S.cs; $("#fFrom").value = S.from; $("#fTo").value = S.to; $("#fSort").value = S.sort;
+  $("#fPt").value = S.pt; $("#fCs").value = S.cs; $("#cmpPt").value = S.pt; $("#cmpCs").value = S.cs; $("#fFrom").value = S.from; $("#fTo").value = S.to; $("#fSort").value = S.sort;
   document.body.classList.toggle("cust", S.cust); $("#custBtn").setAttribute("aria-pressed", String(S.cust));
   $$(".tab").forEach(b=>b.setAttribute("aria-selected", String(b.dataset.tab === S.tab)));
   $$("[data-panel]").forEach(p=>p.hidden = p.dataset.panel !== S.tab);
@@ -763,25 +783,51 @@ document.addEventListener("change", e=>{
 /* ---------- SO SÁNH ---------- */
 function renderCompare(){
   const us = S.cmp.map(c=>BY.get(c)).filter(Boolean);
-  if (!us.length) { $("#cmpView").innerHTML = `<div class="empty">Chưa có căn nào. Mở một căn trên sơ đồ tầng và bấm "So sánh".</div>`; return; }
-  const row = (lab, f) => `<tr><td>${lab}</td>${us.map(u=>`<td>${f(u)}</td>`).join("")}</tr>`;
+  if (!us.length) { $("#cmpView").innerHTML = `<div class="empty">Chưa có căn nào để so sánh. Gõ mã căn vào ô phía trên, ví dụ A13-23, A4-01, rồi bấm Thêm.</div>`; return; }
+  /* best: hàm trả số để so; số nhỏ nhất được đánh dấu ✓ (chỉ khi có từ 2 căn) */
+  const row = (lab, f, best) => {
+    const v = best && us.length > 1 ? us.map(best) : null, min = v ? Math.min(...v) : 0;
+    return `<tr><td>${lab}</td>${us.map((u,i)=>`<td${v && v[i] === min && v.filter(x=>x === min).length < us.length ? ` class="best"` : ""}>${f(u)}</td>`).join("")}</tr>`;
+  };
   const sec = lab => `<tr class="sec"><td colspan="${us.length+1}">${lab}</td></tr>`;
+  const self = S.pt === "1N" || S.pt === "01";
+  const k48 = u => costTo(quoteOf(u), { ...loanOpts(u, S.pt), selfLoan:true });
   $("#cmpView").innerHTML = `<div class="cmp-wrap"><table class="cmp num"><thead><tr><th></th>${us.map(u=>`<th>${u.code}<br><button class="btn btn-ghost btn-sm" type="button" data-rm="${u.code}" style="margin-top:6px">Bỏ</button></th>`).join("")}</tr></thead><tbody>`+
     row("Tòa · tầng", u=>`${D.towers[u.t].name} · ${u.floor}`)+
     row("Loại", u=>TYPES[u.type].name)+
     row("Tim tường", u=>`${u.dt.toLocaleString("vi-VN")} m²`)+
     row("Thông thủy", u=>`${u.tt.toLocaleString("vi-VN")} m²`)+
     `<tr class="int"><td>Trạng thái</td>${us.map(u=>`<td><span class="st ${stOf(u)[2]}">${stOf(u)[0]}</span></td>`).join("")}</tr>`+
-    row("Giá gốc / m² thông thủy", u=>`${(u.net/u.tt/1e6).toLocaleString("vi-VN",{maximumFractionDigits:1})} triệu`)+
+    row("Giá gốc / m² thông thủy", u=>`${(u.net/u.tt/1e6).toLocaleString("vi-VN",{maximumFractionDigits:1})} triệu`, u=>u.net/u.tt)+
     sec(`Tổng gồm VAT${S.cs==="ck4" ? " · đã trừ CK 4% nếu áp dụng" : ""}`)+
-    PLAN_ORDER.map(c=>row(PLANS[c].short, u=>tyS(quoteOf(u,c,S.cs).T) + " tỷ")).join("")+
+    PLAN_ORDER.map(c=>row(PLANS[c].short, u=>tyS(quoteOf(u,c,S.cs).T) + " tỷ", u=>quoteOf(u,c,S.cs).T)).join("")+
     sec(`Theo ${PLANS[S.pt].short}`)+
-    row("Tự có đến HĐMB", u=>ty(quoteOf(u).toHD))+
-    row("Tự có trước bàn giao", u=>ty(quoteOf(u).selfBefore))+
-    row("Ngân hàng giải ngân", u=>quoteOf(u).bank ? ty(quoteOf(u).bank) : "Không vay")+
+    row("Tự có đến HĐMB", u=>ty(quoteOf(u).toHD), u=>quoteOf(u).toHD)+
+    row(self ? "Tự có hoặc tự vay trước bàn giao" : "Tự có trước bàn giao", u=>ty(quoteOf(u).selfBefore), u=>quoteOf(u).selfBefore)+
+    row(self ? "Khoản có thể tự vay" : "Ngân hàng giải ngân", u=>self ? ty(selfLoanMax(quoteOf(u))) : quoteOf(u).bank ? ty(quoteOf(u).bank) : "Không vay")+
     row("Phí bảo trì 2%", u=>ty(quoteOf(u).fee))+
     (S.cs === "thue" ? row("Thuê lại 24 tháng", u=>`${(TYPES[u.type].rent*24).toLocaleString("vi-VN")} triệu`) : "")+
-    `</tbody></table></div>`;
+    row("Tổng chi phí đến tháng 48<br><small>cùng vay 50%, gồm lãi</small>", u=>tyS(k48(u).total) + " tỷ", u=>k48(u).total)+
+    `</tbody></table></div>`+
+    `<p class="small muted" style="margin:6px 2px 0">Dấu ✓: con số thấp nhất trong hàng. Tổng chi phí đến tháng 48 = giá gồm VAT + phí bảo trì + lãi khách trả đến tháng 48 sau ký HĐMB, giả định lãi theo ô Kế hoạch vay trong chi tiết căn.</p>`+
+    `<div class="cmp-acts" style="margin-top:10px"><button class="btn btn-primary" type="button" id="cmpZalo">Chép tin Zalo so sánh</button><button class="btn btn-ghost" type="button" id="cmpClear">Xóa hết</button></div>`;
+}
+/* Tin Zalo so sánh 2–3 căn cho khách: không trạng thái nội bộ, không dấu chấm cuối câu */
+function cmpZaloText(){
+  const us = S.cmp.map(c=>BY.get(c)).filter(Boolean), pl = PLANS[S.pt];
+  const cs = S.cs === "thue" ? ", chọn Chủ đầu tư thuê lại 24 tháng" : S.cs === "ck4" && !NO_CK4.includes(S.pt) ? ", đã trừ chiết khấu thêm 4%" : "";
+  const out = [`So sánh ${us.length} căn Bcons Central Park, giá theo ${pl.short} (${pl.title})${cs}`, ""];
+  for (const u of us) {
+    const q = quoteOf(u);
+    out.push(`${u.code} · ${TYPES[u.type].name} · tầng ${u.floor} · ${u.tt.toLocaleString("vi-VN")} m² thông thủy`);
+    out.push(`Giá gồm VAT ${vnd(q.T)}`);
+    out.push(`Tự có đến ký HĐMB ${vnd(q.toHD)}`);
+    if (q.bank) out.push(`Ngân hàng giải ngân ${vnd(q.bank)}`);
+    else if (S.pt === "1N" || S.pt === "01") out.push(`Khoản có thể tự vay ngân hàng ${vnd(selfLoanMax(q))}`);
+    out.push("");
+  }
+  out.push("Giá tham khảo theo bảng giá hiện hành, có thể điều chỉnh theo đợt mở bán. Anh chị chọn căn nào em gửi báo giá chính thức của căn đó");
+  return out.join("\n").replace(/\.(?=\n|$)/g, "");
 }
 
 /* ---------- TÍNH VỐN & TÌM CĂN ---------- */
@@ -1043,6 +1089,8 @@ document.addEventListener("click", async e=>{
   if (el.dataset.p) { applyPreset(el.dataset.p); return; }
   if (el.dataset.tab) { S.tab = el.dataset.tab; render(); return; }
   if (el.dataset.rm) { S.cmp = S.cmp.filter(c=>c!==el.dataset.rm); render(); return; }
+  if (el.id === "cmpZalo") { copy(cmpZaloText(), "Đã chép bảng so sánh. Dán vào Zalo."); return; }
+  if (el.id === "cmpClear") { S.cmp = []; render(); return; }
   if (el.dataset.pt && el.closest("#dlg")) { S.dpt = el.dataset.pt; drawUnit(); return; }
   if (el.dataset.lm && el.closest("#dlg")) { LOAN.mt = el.dataset.lm; drawUnit(); return; }
   if (el.dataset.cs !== undefined && el.closest("#dlg")) { S.cs = el.dataset.cs; drawUnit(); render(); return; }
@@ -1059,7 +1107,7 @@ document.addEventListener("click", async e=>{
     if (act === "zalo") copy(zaloText(u, S.dpt, S.cs), "Đã chép báo giá. Dán vào Zalo.");
     if (act === "cmp") {
       if (S.cmp.includes(u.code)) S.cmp = S.cmp.filter(c=>c!==u.code);
-      else { if (S.cmp.length >= 3) S.cmp.shift(); S.cmp.push(u.code); toast(`Đã thêm ${u.code} vào so sánh (${S.cmp.length}/3)`); }
+      else { if (S.cmp.length >= 3) S.cmp.shift(); S.cmp.push(u.code); toast(`Đã thêm ${u.code} vào so sánh (${S.cmp.length}/3). Xem ở tab So sánh căn`); }
       drawUnit(); render();
     }
   }
@@ -1091,6 +1139,18 @@ $("#top5Btn").addEventListener("click", ()=>{
 });
 ["#vHD","#vBG","#vLoan"].forEach(s=>$(s).addEventListener("input", renderFind));
 ["#vPt","#vType","#v1nLoan"].forEach(s=>$(s).addEventListener("change", renderFind));
+$("#cmpPt").addEventListener("change", e=>{ S.pt = e.target.value; S.preset = ""; render(); });
+$("#cmpCs").addEventListener("change", e=>{ S.cs = e.target.value; S.preset = ""; render(); });
+$("#cmpForm").addEventListener("submit", e=>{
+  e.preventDefault();
+  const raws = $("#cmpQ").value.split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean);
+  const ok = [], bad = [];
+  for (const r of raws) { const p = parseUnit(r); const c = p ? p.code : r.toUpperCase(); (BY.has(c) ? ok : bad).push(c); }
+  for (const c of ok) if (!S.cmp.includes(c)) { if (S.cmp.length >= 3) S.cmp.shift(); S.cmp.push(c); }
+  $("#cmpMsg").textContent = (ok.length ? `Đã thêm ${ok.join(", ")}.` : "") + (bad.length ? ` Không có mã ${bad.join(", ")} trong bảng giá.` : "") + (S.cmp.length >= 3 && ok.length ? " Tối đa 3 căn, căn thêm trước nhất được bỏ ra." : "");
+  if (ok.length) $("#cmpQ").value = "";
+  render();
+});
 $("#searchForm").addEventListener("submit", e=>{
   e.preventDefault();
   const raw = $("#q").value.trim(); const p = parseUnit(raw); const code = p ? p.code : raw.toUpperCase().replace(/\s+/g, "");
