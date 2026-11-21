@@ -160,7 +160,7 @@ function nextSteps(q, code, hasLoan){
       ["Ký Hợp đồng mua bán", `theo thông báo của Chủ đầu tư, khi dự án xong móng và có văn bản đủ điều kiện bán; đóng đợt 2: ${vnd(r1.pay)}.${hasLoan ? " Hồ sơ vay làm theo yêu cầu của ngân hàng, Bạch Đằng hỗ trợ kết nối." : ""}`]
     ],
     note: "Trước khi chuyển tiền, Bạch Đằng gửi văn bản Thỏa thuận để anh chị đọc kỹ, gồm điều kiện hoàn hoặc không hoàn từng khoản.",
-    sign: "Bcons Central Park · Theo dòng di sản, thuận lòng phồn vinh"
+    sign: "Bcons Central Park · Vị thế trung tâm - Nâng tầm đẳng cấp"
   };
 }
 /* Dòng lũy kế cho từng đợt: theo giá trị căn hộ chưa VAT như báo giá Chủ đầu tư; VAT ghi riêng */
