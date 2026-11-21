@@ -163,11 +163,15 @@ function xlRowMonth(r, i, k, M){
   return m ? +m[1] : 0;
 }
 
-/* Diễn giải lãi từng tháng, ngắn gọn cho cột ghi chú */
+/* Diễn giải lãi từng tháng, ngắn gọn cho cột ghi chú (bảng chữ tính một lần cho mỗi kế hoạch vay) */
 function xlKind(kind, p){
+  if (!p._kt) p._kt = xlKindTable(p);
+  return p._kt[kind] || "";
+}
+function xlKindTable(p){
   return ({ cdt:"Chủ đầu tư hỗ trợ lãi, ân hạn gốc", over:"Quá 24 tháng hỗ trợ, cần xác nhận với Chủ đầu tư", "none-pre":"",
     "cap-pre":"Chỉ trả lãi, trần 6,9% (tính ở mức trần)", "promo-pre":`Chỉ trả lãi, ưu đãi ngân hàng ${xlPct(p.r0)} (giả định)`, "float-pre":`Chỉ trả lãi, lãi ${xlPct(p.r1)} (giả định)`,
-    "cap-post":"Trả gốc và lãi, trần 6,9%", "promo-post":`Trả gốc và lãi, ưu đãi ngân hàng ${xlPct(p.r0)} (giả định)`, float:`Trả gốc và lãi, lãi ${xlPct(p.r1)} (giả định)` })[kind] || "";
+    "cap-post":"Trả gốc và lãi, trần 6,9%", "promo-post":`Trả gốc và lãi, ưu đãi ngân hàng ${xlPct(p.r0)} (giả định)`, float:`Trả gốc và lãi, lãi ${xlPct(p.r1)} (giả định)` });
 }
 
 /* Dòng tiền gộp theo tháng: đợt thanh toán cho Chủ đầu tư + khoản ngân hàng giải ngân + gốc, lãi trả ngân hàng + tiền thuê */

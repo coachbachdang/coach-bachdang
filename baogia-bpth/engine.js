@@ -221,7 +221,9 @@ function loanPlan(q, o){
   const bals = tr.map(()=>0), months = [];
   let pmt = 0, lastI = -1, princFixed = 0, bacP0 = 0;
   const bacN = Math.max(1, Math.round((N - M) / 12)), BAC_G = 0.2;
-  for (let t = 1; t <= N; t++) {
+  /* o.until: chỉ tính đến tháng này (dùng cho tìm căn, đỡ tính đủ 360 tháng) */
+  const Hz = o.until > 0 ? Math.min(N, Math.round(o.until)) : N;
+  for (let t = 1; t <= Hz; t++) {
     tr.forEach((x,k)=>{ if (x.off === t - 1) bals[k] += x.amt; });
     const bal = bals.reduce((a,b)=>a + b, 0);
     if (t > M && bal < 1) break;

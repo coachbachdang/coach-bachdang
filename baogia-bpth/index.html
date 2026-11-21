@@ -410,14 +410,15 @@ body.cust .cust-bar button{margin-left:auto}
       <h2>Khách có bao nhiêu vốn thì chọn được căn nào</h2>
       <div class="find">
         <label>Tiền có sẵn đến khi ký HĐMB (tỷ)<input type="text" inputmode="decimal" id="vHD" placeholder="0,5"></label>
-        <label>Lũy kế tự có đến trước bàn giao (tỷ)<input type="text" inputmode="decimal" id="vBG" placeholder="Không bắt buộc"></label>
+        <label>Mỗi tháng dành ra được (triệu)<input type="text" inputmode="decimal" id="vSave" placeholder="Không bắt buộc"></label>
         <label>Khách vay tối đa (tỷ)<input type="text" inputmode="decimal" id="vLoan" placeholder="Đủ 50%"></label>
         <label>Phương thức<select id="vPt"><option value="all">Mọi phương thức trừ 02</option></select></label>
         <label>Loại căn<select id="vType"><option value="all">Tất cả loại</option></select></label>
       </div>
       <label class="chk"><input type="checkbox" id="v1nLoan" checked>Khách 1N, 01 tự vay ngân hàng khoản 50%</label>
-      <p class="small muted">Ô thứ hai là số lũy kế: tổng tiền khách tự đóng từ lúc ký đến trước đợt bàn giao, đã gồm tiền đến HĐMB, không tính phần ngân hàng cho vay. Ví dụ có 0,8 tỷ lúc ký, gom thêm 0,7 tỷ sau đó thì nhập 1,5. Chưa biết thì bỏ trống, khi đó chỉ lọc theo tiền đến HĐMB.</p><p class="small muted">Ô vay tối đa: để trống là vay đủ 50%. Nhập số nhỏ hơn mức 50% của căn thì PTTT 03, 04, 05 bị loại (các phương thức này vay đủ 50% mới có lợi), chỉ còn PTTT 01 và 1N; với 01 và 1N, phần không vay được cộng vào tiền tự có trước bàn giao. Khoản vay riêng của khách ngoài phương thức thì cộng vào hai ô tự có. Đợt bàn giao 25% không tính vào các ô này; khách tự trả hoặc vay thêm, xem Kế hoạch vay trong chi tiết căn.</p><p class="small muted">Chỉ xét căn còn trống. Mỗi căn hiện phương thức có tổng giá thấp nhất mà khách đáp ứng được cả hai mức vốn. Theo chính sách đang chọn ở bộ lọc.</p>
-    </div>
+      <p class="small muted">Ô thứ nhất: tiền khách có sẵn để đóng đến lúc ký HĐMB, gồm cọc đăng ký, đợt 1 và đợt 2. Ô thứ hai: mỗi tháng khách dành ra được bao nhiêu từ thu nhập để đóng các đợt theo tiến độ và trả ngân hàng; để trống thì chỉ lọc theo tiền đến HĐMB.</p>
+      <p class="small muted">Căn được giữ lại khi: đủ tiền đến HĐMB, các tháng trước bàn giao không tháng nào hụt tiền (tiền có sẵn còn dư cộng số dành ra mỗi tháng, trừ các đợt tự đóng và tiền trả ngân hàng), và tiền trả ngân hàng sau bàn giao không vượt số dành ra mỗi tháng. Đợt bàn giao 25% và phí bảo trì ghi riêng đủ hay thiếu bao nhiêu để khách chuẩn bị hoặc vay thêm.</p>
+      <p class="small muted">Ô vay tối đa: để trống là vay đủ 50%. Vay ít hơn mức 50% của căn thì PTTT 03, 04, 05 bị loại (cần vay đủ 50% mới có lợi), chỉ còn 01 và 1N, phần không vay khách tự đóng. Chỉ xét căn còn trống; mỗi căn hiện phương thức có tổng giá thấp nhất mà khách theo được. Lãi suất, tháng bàn giao, thời hạn vay theo ô Kế hoạch vay trong chi tiết căn; chính sách theo bộ lọc.</p>
     <div id="findView"></div>
   </section>
 
@@ -861,36 +862,78 @@ function cmpZaloText(){
 
 /* ---------- TÍNH VỐN & TÌM CĂN ---------- */
 function renderFind(){
-  const hd = parseNum($("#vHD").value), bg = parseNum($("#vBG").value);
+  const hd = parseNum($("#vHD").value), sv = parseNum($("#vSave").value);
   if (!(hd > 0)) { $("#findView").innerHTML = `<div class="empty">Nhập số tiền khách có sẵn đến khi ký HĐMB để tìm căn.</div>`; return; }
+  const save = sv > 0 ? (sv >= 1e5 ? sv : sv * 1e6) : 0;
   const plans = $("#vPt").value === "all" ? PLAN_ORDER.filter(c=>c!=="02") : [$("#vPt").value];
   const ty1 = $("#vType").value, loan1N = $("#v1nLoan").checked;
   const capIn = $("#vLoan").value.trim(), cap = capIn ? parseMoney(capIn) : -1;
-  if (bg > 0 && bg < hd) { $("#findView").innerHTML = `<div class="empty">Ô thứ hai là số lũy kế nên phải lớn hơn hoặc bằng tiền đến HĐMB. Khách có ${String(hd).replace(".",",")} tỷ lúc ký, gom thêm ${String(bg).replace(".",",")} tỷ sau đó thì nhập ${String(+(hd+bg).toFixed(3)).replace(".",",")}.</div>`; return; }
-  const out = [];
+  const tr = v => v < 0.5 ? "0" : (Math.round(v / 1e5) / 10).toLocaleString("vi-VN") + " triệu";
+  const out = []; let shortPre = 0, shortAfter = 0;
   for (const u of U) {
     if (!avail(u) || (ty1 !== "all" && u.type !== ty1)) continue;
     let best = null;
     for (const c of plans) {
       const q = quoteOf(u, c, S.cs);
+      if (q.toHD > hd * 1e9) continue;
       const selfP = c === "1N" || c === "01";
       const fullL = selfP ? (loan1N ? selfLoanMax(q) : 0) : q.bank;
       /* PTTT có vay theo chính sách (03, 04, 05) chỉ xét khi khách vay đủ 50% */
       if (!selfP && fullL && cap >= 0 && cap < fullL) continue;
       const loan = cap >= 0 ? Math.min(fullL, cap) : fullL;
-      const before = q.selfBefore + q.bank - loan;
-      if (q.toHD <= hd*1e9 && (!(bg > 0) || before <= bg*1e9) && (!best || q.T < best.q.T)) best = { c, q, before, loan, short: fullL - loan };
+      if (best && q.T >= best.q.T) continue;
+      const M = Math.min(48, Math.max(1, Math.round(parseNum(LOAN.M) || 24)));
+      const o = { ...loanOpts(u, c), selfLoan: selfP && loan1N, amt: selfP ? (loan1N ? loan : 0) : NaN, addBG:false, until: M + 36 };
+      const sim = findSim(q, loanPlan(q, o), M, save, hd * 1e9, o.rent);
+      if (save && !sim.okPre) { shortPre++; continue; }
+      if (save && sim.payAfter > save + 1) { shortAfter++; continue; }
+      best = { c, q, loan, short: fullL - loan, M, ...sim };
     }
     if (best) out.push({ u, ...best });
   }
   out.sort((a,b)=>a.q.T - b.q.T);
+  const note = save ? ` · có sẵn ${String(hd).replace(".", ",")} tỷ, dành ra ${tr(save)}/tháng` : " (chưa nhập số dành ra mỗi tháng nên chỉ lọc theo tiền đến HĐMB)";
   $("#findView").innerHTML = out.length ?
-    `<p class="summary"><b>${out.length}</b> căn ${HAS_ST ? "trống " : ""}phù hợp${bg>0 ? "" : " (chưa nhập vốn trước bàn giao nên chỉ lọc theo tiền đến HĐMB)"}${cap >= 0 ? ` · vay tối đa ${ty(cap)}` : ""}</p><div class="list">`+
-    out.slice(0,80).map(x=>`<button class="row" type="button" data-u="${x.u.code}" data-fpt="${x.c}"><div><div class="code">${x.u.code}</div><span class="st st0">${PLANS[x.c].short}</span></div>`+
-      `<div class="meta">${TYPES[x.u.type].name} · ${x.u.dt.toLocaleString("vi-VN")} m² · tầng ${x.u.floor}<br>Đến HĐMB ${ty(x.q.toHD)} · trước bàn giao ${ty(x.before)}<br>${x.loan ? `Vay ${ty(x.loan)}` : "Không vay"}${x.short > 0.5 ? ` · tự bù ${ty(x.short)} phần không vay` : ""}</div>`+
-      `<div class="price num">${tyS(x.q.T)} tỷ<small>tổng gồm VAT</small></div></button>`).join("")+`</div>`
-    : `<div class="empty">${cap >= 0 && !plans.some(c=>c === "1N" || c === "01") ? `${plans.map(c=>PLANS[c].short).join(", ")} cần vay đủ 50% mới có lợi, mức vay tối đa ${ty(cap)} thấp hơn khoản vay của các căn. Khách vay ít hơn thì chọn PTTT 01 hoặc 1N.` : "Chưa có căn trống phù hợp với mức vốn này. Thử tăng tiền đến HĐMB hoặc chọn phương thức vay."}</div>`;
+    `<p class="summary"><b>${out.length}</b> căn ${HAS_ST ? "trống " : ""}phù hợp${note}${cap >= 0 ? ` · vay tối đa ${ty(cap)}` : ""}</p><div class="list">`+
+    out.slice(0,80).map(x=>{
+      const bg = save ? (x.cashBG >= x.bgNeed - 1 ? `bàn giao đủ ${ty(x.bgNeed)}` : `bàn giao cần ${ty(x.bgNeed)}, thiếu ${ty(x.bgNeed - Math.max(0, x.cashBG))}`) : `bàn giao cần ${ty(x.bgNeed)}`;
+      const bank = x.loan ? `Vay ${ty(x.loan)} · trả ngân hàng ${x.payPre >= 0.5 ? `đến ${tr(x.payPre)}/tháng trước bàn giao, ` : ""}khoảng ${tr(x.payAfter)}/tháng sau bàn giao${S.cs === "thue" ? " (đã trừ tiền thuê)" : ""}` : "Không vay";
+      return `<button class="row" type="button" data-u="${x.u.code}" data-fpt="${x.c}"><div><div class="code">${x.u.code}</div><span class="st st0">${PLANS[x.c].short}</span></div>`+
+        `<div class="meta">${TYPES[x.u.type].name} · ${x.u.dt.toLocaleString("vi-VN")} m² · tầng ${x.u.floor}<br>Đến HĐMB ${ty(x.q.toHD)}${x.extra >= 0.5 ? ` · tự đóng thêm ${ty(x.extra)} trước bàn giao` : ""} · ${bg}<br>${bank}${x.short > 0.5 ? ` · tự bù ${ty(x.short)} phần không vay` : ""}</div>`+
+        `<div class="price num">${tyS(x.q.T)} tỷ<small>tổng gồm VAT</small></div></button>`; }).join("")+`</div>`
+    : `<div class="empty">${cap >= 0 && !plans.some(c=>c === "1N" || c === "01") ? `${plans.map(c=>PLANS[c].short).join(", ")} cần vay đủ 50% mới có lợi, mức vay tối đa ${ty(cap)} thấp hơn khoản vay của các căn. Khách vay ít hơn thì chọn PTTT 01 hoặc 1N.` :
+        save && (shortPre || shortAfter) ? `Chưa có căn trống phù hợp. ${shortPre ? `${shortPre} lựa chọn bị hụt tiền ở các đợt trước bàn giao` : ""}${shortPre && shortAfter ? "; " : ""}${shortAfter ? `${shortAfter} lựa chọn có tiền trả ngân hàng sau bàn giao vượt ${tr(save)}/tháng` : ""}. Thử tăng tiền có sẵn, số dành ra mỗi tháng, hoặc đổi phương thức.` :
+        "Chưa có căn trống phù hợp với mức vốn này. Thử tăng tiền đến HĐMB hoặc chọn phương thức vay."}</div>`;
 }
+/* Dòng tiền theo tháng cho tìm căn: tiền có sẵn còn dư + dành ra mỗi tháng − đợt tự đóng − trả ngân hàng (trừ tiền thuê).
+   Đợt bàn giao 25% và phí bảo trì tính riêng: đủ hay thiếu. Sau bàn giao: tiền trả ngân hàng lớn nhất trong 36 tháng. */
+function findSim(q, lp, M, save, cash0, rentFix){
+  const k = q.rows.length, iBG = k - 2, selfRows = SELF_ROWS[q.code] || [];
+  const trBy = new Map(); if (lp) for (const t of lp.tr) if (!t.ext) trBy.set(t.off, (trBy.get(t.off) || 0) + t.amt);
+  const due = new Map(); let pre = 0, selfPre = 0;
+  q.rows.forEach((r, i)=>{
+    if (i >= iBG) return;
+    const m = xlRowMonth(r, i, k, M);
+    const bank = r.src === "bank" ? r.pay : (lp && selfRows.includes(i) ? trBy.get(Math.round(r.month || 0)) || 0 : 0);
+    const s = r.pay - bank; selfPre += s;
+    if (m < 0) pre += s; else due.set(m, (due.get(m) || 0) + s);
+  });
+  const lm = new Map(); if (lp) for (const x of lp.months) lm.set(x.t, x);
+  let cash = cash0 - pre - (due.get(0) || 0), okPre = cash >= -1, payPre = 0, payAfter = 0;
+  for (let m = 1; m <= M; m++) {
+    const x = lm.get(m), pay = x ? x.pay : 0;
+    cash += save - (due.get(m) || 0) - pay;
+    payPre = Math.max(payPre, pay);
+    if (cash < -1) okPre = false;
+  }
+  for (let m = M + 1; m <= M + 36; m++) {
+    const x = lm.get(m), net = x ? x.pay - x.rent : (rentFix && m <= M + 24 ? -rentFix : 0);
+    payAfter = Math.max(payAfter, net);
+  }
+  return { okPre, payPre, payAfter, bgNeed: q.rows[iBG].pay, cashBG: cash, extra: selfPre - q.toHD };
+}
+let findT = 0;
+const renderFindSoon = () => { clearTimeout(findT); findT = setTimeout(renderFind, 250); };
 
 /* ---------- BIẾN ĐỘNG ---------- */
 function renderChanges(){
@@ -1172,7 +1215,7 @@ $("#top5Btn").addEventListener("click", ()=>{
   S.sort = "top5"; S.view = "list"; S.tab = "ro"; S.preset = ""; $("#presetNote").textContent = ""; onlyFreeIfAll(); render();
   $("#summary").scrollIntoView({ block:"start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 });
-["#vHD","#vBG","#vLoan"].forEach(s=>$(s).addEventListener("input", renderFind));
+["#vHD","#vSave","#vLoan"].forEach(s=>$(s).addEventListener("input", renderFindSoon));
 ["#vPt","#vType","#v1nLoan"].forEach(s=>$(s).addEventListener("change", renderFind));
 $("#cmpPt").addEventListener("change", e=>{ S.pt = e.target.value; S.preset = ""; render(); });
 $("#cmpCs").addEventListener("change", e=>{ S.cs = e.target.value; S.preset = ""; render(); });
