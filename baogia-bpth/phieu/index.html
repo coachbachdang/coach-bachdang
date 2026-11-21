@@ -271,6 +271,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
   .cmp td[data-l]::before{content:attr(data-l);display:block;font-size:.72rem;color:var(--muted);font-weight:500}
   .cmp td.tot{grid-column:1/-1;border-top:1px dashed var(--line);padding-top:8px;display:flex;justify-content:space-between;align-items:baseline}
   .cmp td.tot::before{display:inline;font-size:.82rem}
+  .cmp td.tot{flex-wrap:wrap;gap:0 10px}
+  .cmp td.tot small{flex:1 0 100%;text-align:left;margin-top:2px}
 }
 
 /* Notes */
@@ -583,8 +585,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
           <th class="r">Tự có trước bàn giao</th>
           <th class="r">Ngân hàng giải ngân</th>
           <th class="r">Lãi khách trả<br>đến bàn giao</th>
-          <th class="r">Tổng chi phí<br>đến bàn giao</th>
-          <th class="r">Chênh lệch đến tháng 48<br><small style="font-weight:500">so với cách tiết kiệm nhất</small></th>
+          <th class="r">Tốn hơn cách<br>tiết kiệm nhất<br><small style="font-weight:500">đến tháng 48</small></th>
         </tr></thead>
         <tbody id="cmpRows"></tbody>
       </table>
@@ -927,7 +928,14 @@ if (typeof document !== "undefined") {
     const loan1N = state.vay === "1";
     const o = { M:parseNum(state.th), years:parseNum(state.yr), r1:parseNum(state.r1), r0:parseNum(state.ls), n0:parseNum(state.n0), method:state.mt, selfLoan: loan1N };
     const rows = PLAN_ORDER.map(c=>{ const q = computeQuote(b02, c, state.cs, ux); return { c, q, k: costTo(q, o) }; });
-    const best = Math.min(...rows.map(r=>r.k.total)), M = rows[0].k.M;
+    const best = Math.min(...rows.map(r=>r.k.total)), M = rows[0].k.M, B = rows.find(r=>r.k.total === best);
+    /* Chênh lệch tách hai phần cho khách dễ hiểu: chênh về giá (gồm VAT, phí bảo trì) và chênh về tiền lãi đến tháng 48 */
+    const parts = r => ({ dp: (r.q.T + r.q.fee) - (B.q.T + B.q.fee), di: r.k.iH - B.k.iH });
+    const mv = v => (Math.abs(v) >= 1e9 ? ty(Math.abs(v)) : (Math.round(Math.abs(v) / 1e5) / 10).toLocaleString("vi-VN") + " triệu");
+    const why = r => { const { dp, di } = parts(r); const a = [];
+      if (Math.abs(dp) >= 5e5) a.push(`giá ${dp > 0 ? "cao" : "thấp"} hơn ${mv(dp)}`);
+      if (Math.abs(di) >= 5e5) a.push(`lãi ${di > 0 ? "nhiều" : "ít"} hơn ${mv(di)}`);
+      return a.join("<br>"); };
     const sm = t => `<small style="display:block;color:var(--muted);font-size:.72rem">${t}</small>`;
     $("#cmpRows").innerHTML = rows.map(({c,q,k})=>{
       const p = PLANS[c], self = c==="1N" || c==="01";
@@ -939,12 +947,18 @@ if (typeof document !== "undefined") {
         `<td class="r" data-l="Giá trị gồm VAT">${ty(q.T)}</td><td class="r" data-l="Ít hơn giá gốc">${q.saving>0 ? "−"+ty(q.saving) : "0"}</td>`+
         `<td class="r" data-l="Tự có đến HĐMB">${ty(q.toHD)}</td><td class="r" data-l="Tự có trước bàn giao">${ty(q.selfBefore - (self && loan1N ? selfLoanMax(q) : 0))}</td><td class="r" data-l="Ngân hàng giải ngân">${bankTxt}</td>`+
         `<td class="r" data-l="Lãi khách trả đến bàn giao">${intTxt}</td>`+
-        `<td class="r" data-l="Tổng chi phí đến bàn giao">${ty(k.totalM)}</td>`+
-        `<td class="r tot" data-l="Chênh lệch đến tháng ${k.H}">${d < 0.5 ? "<b>Tiết kiệm nhất</b>" : `<b>+${ty(d)}</b>`}</td></tr>`;
+        `<td class="r tot" data-l="Tốn hơn cách tiết kiệm nhất, đến tháng ${k.H}">${d < 0.5 ? "<b>Tiết kiệm nhất</b>" : `<b>+${mv(d)}</b>${sm(why({ q, k }))}`}</td></tr>`;
     }).join("");
+    /* Ví dụ diễn giải bằng lời cho phương thức đang chọn (hoặc phương thức gần nhất nếu đang chọn cách tiết kiệm nhất) */
+    const cur = rows.find(r=>r.c === state.pt), ex = cur.k.total - best >= 0.5 ? cur : rows.filter(r=>r.k.total - best >= 0.5).sort((a,b)=>a.k.total - b.k.total)[0];
+    const exTxt = ex ? (()=>{ const { dp, di } = parts(ex), P = PLANS[ex.c].short, PB = PLANS[B.c].short;
+      const pTxt = Math.abs(dp) < 5e5 ? "giá bằng nhau" : `giá ${P} ${dp > 0 ? "cao" : "thấp"} hơn ${mv(dp)} vì mức chiết khấu khác nhau`;
+      const iTxt = Math.abs(di) < 5e5 ? "tiền lãi gần như bằng nhau" : `tiền lãi khách trả đến tháng 48 ${di > 0 ? "nhiều" : "ít"} hơn ${mv(di)} vì cách vay và hỗ trợ lãi khác nhau`;
+      return `Ví dụ: so với ${PB}, ${pTxt}; ${iTxt}. Cộng lại, ${P} tốn hơn ${mv(ex.k.total - best)}.`; })() : "";
     const pct = v => (parseNum(v) > 0 ? parseNum(v) : 0).toLocaleString("vi-VN");
     $("#cmpNote").innerHTML =
-      `<span>Cột chênh lệch so sánh tổng giá trị gồm VAT, phí bảo trì 2% và tiền lãi khách trả đến tháng 48 sau ký HĐMB giữa các phương thức; phương thức tiết kiệm nhất ghi "Tiết kiệm nhất", các phương thức khác ghi số tiền tốn hơn. Tổng chi phí đến bàn giao = giá trị gồm VAT + phí bảo trì 2% + tiền lãi khách trả đến bàn giao. Mọi phương thức tính cùng mức vay 50% giá trị gồm VAT, cùng cách trả gốc đang chọn ở mục Kế hoạch vay, giả định bàn giao ở tháng ${M} sau ký HĐMB. Ngày ký HĐMB chưa có thông báo nên số tháng là giả định, anh chị chỉnh theo kịch bản của mình.</span>`+
+      `<span>Cột cuối cho biết mỗi phương thức tốn hơn cách tiết kiệm nhất bao nhiêu, cộng hai phần: chênh về giá (giá trị gồm VAT và phí bảo trì 2%) và chênh về tiền lãi khách trả đến tháng 48 sau ký HĐMB. ${exTxt}</span>`+
+      `<span>Mọi phương thức tính cùng mức vay 50% giá trị gồm VAT, cùng cách trả gốc đang chọn ở mục Kế hoạch vay, giả định bàn giao ở tháng ${M} sau ký HĐMB. Ngày ký HĐMB chưa có thông báo nên số tháng là giả định, anh chị chỉnh theo kịch bản của mình.</span>`+
       `<span>Đến tháng 48, mọi ưu đãi lãi đều đã hết: PTTT 02, 05 Chủ đầu tư hỗ trợ lãi tối đa 24 tháng; PTTT 03, 04 trần 6,9% tối đa 48 tháng (tính ở mức trần, lãi thực tế thấp hơn thì khách trả ít hơn); 1N, 01 tự vay ưu đãi ${pct(state.ls)}%/năm trong ${pct(state.n0)} tháng (giả định, ví dụ mức OCB chào cho dự án Bcons ngày 11/09/2026). Hết ưu đãi tính lãi ${pct(state.r1)}%/năm (giả định), lãi thực tế theo ngân hàng tại thời điểm đó.</span>`+
       `<span>Nếu từ giải ngân đến bàn giao quá 24 tháng, phần lãi vượt của PTTT 02, 05 cần xác nhận với Chủ đầu tư; bảng tạm tính theo lãi sau ưu đãi. Sau tháng 48 mọi phương thức chịu lãi thả nổi như nhau, phương thức có giá thấp hơn thì dư nợ thấp hơn.</span>`;
   }
