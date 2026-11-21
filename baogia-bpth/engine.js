@@ -90,12 +90,13 @@ function computeQuote(b02, code, cs, unit){
   net[k-1] += N - net.reduce((a,b)=>a+b,0);
   const vat = vatPct.map(p=>Math.round(V * p / 100));
   vat[iBG] += V - vat.reduce((a,b)=>a+b,0);
-  let cum = 0;
+  let cum = 0, cn = 0, cv = 0;
   const rows = st.map((s,i)=>{
     const f = i===iBG ? fee : 0;
     const pay = net[i] + vat[i] + f;
-    cum += net[i] + vat[i];
-    return { n:i+1, pct:s[0], when:s[1], src:s[2], month:s[3], net:net[i], vat:vat[i], fee:f, pay, cumPct: cum / T * 100 };
+    cum += net[i] + vat[i]; cn += net[i]; cv += vat[i];
+    /* cumNet: lũy kế theo giá trị căn hộ chưa VAT (cách Chủ đầu tư ghi: 5%, 20%, ... 95%, 100%); cumVat: phần VAT đã đóng */
+    return { n:i+1, pct:s[0], when:s[1], src:s[2], month:s[3], net:net[i], vat:vat[i], fee:f, pay, cumPct: cum / T * 100, cumNet: cn / N * 100, cumVat: V ? cv / V * 100 : 0 };
   });
   const sum = (fn)=>rows.filter(fn).reduce((a,r)=>a+r.pay,0);
   return {
@@ -145,6 +146,14 @@ function vnd(v){ return Math.round(v).toLocaleString("vi-VN") + "\u00a0đ"; }
 function ty(v, d=2){
   if (Math.abs(v) >= 1e9) return (v/1e9).toLocaleString("vi-VN",{minimumFractionDigits:d,maximumFractionDigits:d}) + " tỷ";
   return (v/1e6).toLocaleString("vi-VN",{maximumFractionDigits:1}) + " triệu";
+}
+/* Dòng lũy kế cho từng đợt: theo giá trị căn hộ chưa VAT như báo giá Chủ đầu tư; VAT ghi riêng */
+function cumTxt(q, i){
+  const r = q.rows[i], k = q.rows.length, p = Math.round(r.cumNet * 100) / 100;
+  if (i === k - 1) return "đủ 100% giá trị căn hộ";
+  if (i === 0) return `lũy kế ${pctTxt(p)} giá trị căn hộ, chưa gồm VAT`;
+  if (r.cumVat >= 99.999) return `lũy kế ${pctTxt(p)} giá trị căn hộ và đủ 100% VAT`;
+  return `lũy kế ${pctTxt(p)} giá trị căn hộ, kèm VAT tương ứng`;
 }
 function pctTxt(p){ return p.toLocaleString("vi-VN",{maximumFractionDigits:2}) + "%"; }
 function esc(s){ return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
@@ -333,4 +342,4 @@ function loanBrief(p){
   return out;
 }
 
-if (typeof module !== "undefined") module.exports = { costTo, loanPlan, loanHtml, loanBrief, loanNotes, selfLoanMax, SELF_ROWS, computeQuote, estimateInterest, parseMoney, parseUnit, PLANS, PLAN_ORDER, TYPES, TOWERS, THEO_DISC, NO_CK4, vnd, ty, pctTxt, esc, parseNum, DEPOSIT, MGMT_FEE };
+if (typeof module !== "undefined") module.exports = { cumTxt, costTo, loanPlan, loanHtml, loanBrief, loanNotes, selfLoanMax, SELF_ROWS, computeQuote, estimateInterest, parseMoney, parseUnit, PLANS, PLAN_ORDER, TYPES, TOWERS, THEO_DISC, NO_CK4, vnd, ty, pctTxt, esc, parseNum, DEPOSIT, MGMT_FEE };

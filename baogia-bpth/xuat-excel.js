@@ -368,7 +368,7 @@ function xlOverviewBook(ctx){
   if (q.saving > 0) sh.kv("Ít hơn giá gốc PTTT 02", q.saving, 2, null, `${xlPct(q.saving / q.b02 * 100)} tổng giá`);
   sh.blank();
   sh.sec(`TIẾN ĐỘ THANH TOÁN · ${pl.short}`);
-  const hr = sh.add(["Đợt", "Thời điểm", "Tỷ lệ", "Chưa VAT", "VAT", "Phí bảo trì", "Phải đóng", "Nguồn tiền", "Lũy kế giá trị gồm VAT"].map(v=>({ v, s:"h" })), 32);
+  const hr = sh.add(["Đợt", "Thời điểm", "Tỷ lệ", "Chưa VAT", "VAT", "Phí bảo trì", "Phải đóng", "Nguồn tiền", "Lũy kế giá trị căn hộ (chưa VAT)"].map(v=>({ v, s:"h" })), 32);
   const iBG = q.rows.length - 2, self = SELF_ROWS[q.code] || [];
   const f0 = hr + 1;
   q.rows.forEach((r, i)=>{
@@ -377,9 +377,10 @@ function xlOverviewBook(ctx){
     const src = r.src === "bank" ? "Ngân hàng" : self.includes(i) ? "Tự có hoặc tự vay" : "Tự có";
     const hl = i === iBG;
     sh.add([{ v:r.n, s:hl ? "hlC" : "c" }, { v:when, s:hl ? "hl" : "txt" }, { v:r.pct / 100, s:hl ? "hlP" : "pct" }, { v:r.net, s:hl ? "hlM" : "m" }, { v:r.vat, s:hl ? "hlM" : "m" }, { v:r.fee, s:hl ? "hlM" : "m" },
-      { v:r.pay, f:`D${R}+E${R}+F${R}`, s:hl ? "hlM" : "mB" }, { v:src, s:hl ? "hl" : "txt" }, { v:r.cumPct / 100, s:hl ? "hlP" : "pct" }], when.length > 44 ? Math.ceil(when.length / 42) * 14 + 3 : undefined);
+      { v:r.pay, f:`D${R}+E${R}+F${R}`, s:hl ? "hlM" : "mB" }, { v:src, s:hl ? "hl" : "txt" }, { v:Math.round(r.cumNet * 100) / 10000, s:hl ? "hlP" : "pct" }], when.length > 44 ? Math.ceil(when.length / 42) * 14 + 3 : undefined);
   });
   const f1 = sh.rows.length;
+  sh.note("Lũy kế tính theo giá trị căn hộ chưa VAT, như báo giá của Chủ đầu tư. Đợt 1 chưa thu VAT; VAT của từng đợt cộng vào đợt sau như cột VAT; đến đợt bàn giao khách đóng đủ 95% giá trị căn hộ, 100% VAT và 100% phí bảo trì.");
   sh.add([{ v:null, s:"tot" }, { v:"Tổng cộng", s:"totT" }, { v:null, s:"tot" }, { v:q.N, f:`SUM(D${f0}:D${f1})`, s:"tot" }, { v:q.V, f:`SUM(E${f0}:E${f1})`, s:"tot" }, { v:q.fee, f:`SUM(F${f0}:F${f1})`, s:"tot" }, { v:q.T + q.fee, f:`SUM(G${f0}:G${f1})`, s:"tot" }, { v:null, s:"tot" }, { v:null, s:"tot" }]);
   sh.blank();
   sh.sec("KẾ HOẠCH VAY");

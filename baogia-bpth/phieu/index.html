@@ -857,7 +857,7 @@ if (typeof document !== "undefined") {
       const sub = i===0 ? `<small>đã gồm ${vnd(DEPOSIT)} cọc đăng ký</small>` : i===1 ? `<small>gồm VAT của đợt 1 và đợt 2</small>` : i===iBG ? `<small>gồm VAT đợt bàn giao và đợt nhận sổ</small>` : i===q.rows.length-1 ? `<small>không VAT</small>` : "";
       const who = r.src==="bank" ? `<span class="src src-bank">Ngân hàng</span>` : `<span class="src src-self">${(state.pt==="1N" && i===2) || (state.pt==="01" && i>=2 && i<=9) ? "Tự có / tự vay" : "Tự có"}</span>`;
       const split = r.vat ? `chưa VAT ${vnd(r.net)} · VAT ${vnd(r.vat)}` : `chưa VAT ${vnd(r.net)} · không VAT`;
-      const main = `<tr><td class="n">${r.n}</td><td class="when">${r.when}${sub}</td><td class="r pct">${r.pct}%</td><td class="r pay">${vnd(r.net + r.vat)}<span class="cum">${split}</span><span class="cum">lũy kế ${pctTxt(r.cumPct)} giá trị gồm VAT</span></td><td class="who">${who}</td></tr>`;
+      const main = `<tr><td class="n">${r.n}</td><td class="when">${r.when}${sub}</td><td class="r pct">${r.pct}%</td><td class="r pay">${vnd(r.net + r.vat)}<span class="cum">${split}</span><span class="cum">${cumTxt(q, i)}</span></td><td class="who">${who}</td></tr>`;
       const fee = r.fee ? `<tr class="fee"><td class="n"></td><td class="when">Phí bảo trì 2% giá chưa VAT, đóng cùng đợt bàn giao</td><td class="r pct">2%</td><td class="r pay">${vnd(r.fee)}<span class="cum">không VAT, không nằm trong khoản vay</span></td><td class="who"><span class="src src-self">Tự có</span></td></tr>` : "";
       return main + fee;
     }).join("");
