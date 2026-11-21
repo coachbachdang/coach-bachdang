@@ -372,6 +372,7 @@ body.cust .cust-bar button{margin-left:auto}
       <div class="frow"><span>View</span><div class="chips" id="fVw"></div></div>
       <div class="fsel">
         <label>Giá theo<select id="fPt"></select></label>
+        <label>Căn số<select id="fStack"></select></label>
         <label>Chính sách 12/TB<select id="fCs"><option value="0">Chưa áp dụng</option><option value="thue">Thuê lại 24 tháng</option><option value="ck4">Chiết khấu thêm 4%</option></select></label>
       </div>
       <div class="vrow">
@@ -382,7 +383,6 @@ body.cust .cust-bar button{margin-left:auto}
       <div class="more" id="more" hidden>
         <label>Từ tầng<select id="fFrom"></select></label>
         <label>Đến tầng<select id="fTo"></select></label>
-        <label>Trục căn<select id="fStack"></select></label>
         <label>Sắp xếp danh sách<select id="fSort"><option value="price">Giá thấp đến cao</option><option value="top5">Top 5 rẻ nhất mỗi loại</option><option value="toHD">Tự có đến HĐMB</option><option value="area">Diện tích lớn đến nhỏ</option><option value="code">Mã căn</option></select></label>
       </div>
     </div>
@@ -621,7 +621,7 @@ function renderSummary(){
   if (S.types.size) parts.push([...S.types].map(k=>TYPE_SHORT[k]).join(", "));
   if (S.max) parts.push(`≤ ${S.max.toLocaleString("vi-VN")} tỷ`);
   if (S.from !== +$("#fFrom").options[0]?.value || S.to !== +$("#fTo").options[$("#fTo").options.length-1]?.value) parts.push(`tầng ${S.from}–${S.to}`);
-  if (S.stack) parts.push(`trục ${S.stack}`);
+  if (S.stack) parts.push(`căn số ${S.stack}`);
   if (S.dirs.size) parts.push(`hướng ${[...S.dirs].join(", ")}`);
   if (S.vw.size) parts.push([...S.vw].map(k=>({ noi:"view nội khu", ngoai:"view ngoại khu", goc:"căn góc" })[k]).join(", "));
   if (S.sort === "top5" && S.view === "list") parts.push("top 5 rẻ nhất mỗi loại");
@@ -764,6 +764,7 @@ function drawUnit(){
       q.rows.map((r,i)=>`<div><span>${r.n}</span><span>${r.pct}% · ${r.when}${r.fee ? `<small>gồm phí bảo trì ${vnd(r.fee)}</small>` : ""}${i===0 ? `<small>đã gồm 30 triệu cọc đăng ký</small>` : ""}</span><b>${vnd(r.net + r.vat + r.fee)}${r.src==="bank" ? `<small>ngân hàng</small>` : ""}</b></div>`).join("")+
     `</div></div>`+
     loanBox(u, q, pt)+
+    altBox(u, pt)+
     `<div class="acts"><button class="btn btn-primary wide" type="button" data-act="share">Gửi phiếu cho khách</button>`+
       `<button class="btn btn-ghost" type="button" data-act="zalo">Chép tin Zalo</button>`+
       `<button class="btn btn-ghost" type="button" data-act="cmp">${S.cmp.includes(u.code) ? "Bỏ khỏi so sánh" : "So sánh"}</button>`+
@@ -786,6 +787,48 @@ const LOAN = { r1:"11", y:"30", mt:"goc", M:"24", r0:"10,7", n0:"18", amt:"", am
 /* Số tiền vay chỉ áp dụng cho căn đang nhập; mở căn khác thì về mức tối đa của phương thức */
 const loanAmt = u => LOAN.amt && LOAN.amtFor === u.code ? parseMoney(LOAN.amt) : NaN;
 function loanOpts(u, pt){ return { M:parseNum(LOAN.M), years:parseNum(LOAN.y), r1:parseNum(LOAN.r1), r0:parseNum(LOAN.r0), n0:parseNum(LOAN.n0), method:LOAN.mt, selfLoan: pt === "1N" || pt === "01", rent: S.cs === "thue" ? TYPES[u.type].rent * 1e6 : 0, amt: loanAmt(u), addBG: LOAN.bg, r2: parseNum(LOAN.r2) }; }
+/* Căn thay thế tương tự: cùng loại, còn trống; ưu tiên giá gần, cùng trục (căn số), cùng tòa, cùng hướng và view, diện tích và tầng gần */
+function altUnits(u, pt, n = 3){
+  const v0 = UV(u), T0 = quoteOf(u, pt, S.cs).T;
+  const out = [];
+  for (const x of U) {
+    if (x === u || x.type !== u.type || !avail(x)) continue;
+    const v = UV(x), T = quoteOf(x, pt, S.cs).T, dp = Math.abs(T - T0) / T0;
+    const sameStack = x.stack === u.stack, sameTower = x.t === u.t;
+    const sameView = !!(v && v0 && v.kinds.some(k=>v0.kinds.includes(k))), sameDir = !!(v && v0 && v.dirs.some(d=>v0.dirs.includes(d)));
+    const score = 100 - 45 * Math.min(1, dp / 0.08) - 15 * Math.min(1, Math.abs(x.dt - u.dt) / u.dt / 0.08) - 10 * Math.min(1, Math.abs(x.floor - u.floor) / 12)
+      + (sameStack ? 12 : 0) + (sameTower ? 6 : 0) + (sameView ? 10 : 0) + (sameDir ? 8 : 0) + (v && v0 && v.corner === v0.corner ? 4 : 0);
+    const why = [sameStack ? `cùng căn số ${x.stack}` : sameTower ? "cùng tòa" : "", sameDir ? "cùng hướng" : "", sameView ? "cùng view" : ""].filter(Boolean);
+    out.push({ x, T, d:T - T0, score, why, v });
+  }
+  /* Chỉ giữ căn giá và diện tích gần (lệch tối đa 10%, thiếu thì nới 20%); tối đa 2 căn cùng căn số, căn còn lại khác trục */
+  const near = lim => out.filter(a=>Math.abs(a.d) / T0 <= lim && Math.abs(a.x.dt - u.dt) / u.dt <= lim);
+  let pool = near(0.1); if (pool.length < n) pool = near(0.2); if (pool.length < n) pool = out;
+  const pick = []; let same = 0;
+  for (const a of pool.sort((a, b)=>b.score - a.score)) {
+    if (a.x.stack === u.stack) { if (same >= n - 1) continue; same++; }
+    pick.push(a); if (pick.length >= n) break;
+  }
+  return pick;
+}
+function altBox(u, pt){
+  const alts = altUnits(u, pt);
+  if (!alts.length) return "";
+  const dTxt = d => Math.abs(d) < 5e5 ? "giá gần bằng" : `${d > 0 ? "+" : "−"}${ty(Math.abs(d))}`;
+  return `<div class="alt"><div class="small muted" style="font-weight:600;margin-bottom:6px">3 căn thay thế tương tự${HAS_ST ? " · còn trống" : ""} · cùng loại ${TYPES[u.type].name}</div><div class="list">`+
+    alts.map(a=>`<button class="row" type="button" data-u="${a.x.code}"><div><div class="code">${a.x.code}</div><span class="st st0">${dTxt(a.d)}</span></div>`+
+      `<div class="meta">${a.x.dt.toLocaleString("vi-VN")} m² · tầng ${a.x.floor}${a.v ? ` · ${a.v.dirs.join(", ")} · ${a.v.kinds.map(k=>VIEW_KIND[k]).join(" + ")}` : ""}${a.why.length ? `<br>${a.why.join(" · ")}` : ""}</div>`+
+      `<div class="price num">${tyS(a.T)} tỷ<small>${PLANS[pt].short}</small></div></button>`).join("")+
+    `</div>${HAS_ST ? "" : `<p class="small muted" style="margin:4px 0 0">Chưa đọc được rổ hàng nên chưa lọc căn trống, kiểm tra trước khi gửi khách.</p>`}`+
+    `<button class="btn btn-ghost btn-sm" type="button" data-act="altzalo" style="margin-top:8px">Chép tin Zalo gợi ý 3 căn này</button></div>`;
+}
+function altZaloText(u, pt){
+  const alts = altUnits(u, pt), t = TYPES[u.type];
+  const lines = [`Em gửi anh chị thêm ${alts.length} căn cùng loại ${t.name}, giá gần căn ${u.code} để anh chị tham khảo`, ""];
+  for (const a of alts) lines.push(`${a.x.code} · tòa ${D.towers[a.x.t].name} · tầng ${a.x.floor} · ${a.x.dt.toLocaleString("vi-VN")} m²${a.v ? ` · hướng ${a.v.dirs.join(", ")}, view ${a.v.kinds.map(k=>VIEW_KIND[k]).join(" và ")}` : ""} · ${tyS(a.T)} tỷ`);
+  lines.push("", `Giá theo ${PLANS[pt].short}, tổng gồm VAT, theo bảng giá hiện hành`, "Căn còn trống hay không em xác nhận lại khi anh chị chọn");
+  return lines.join("\n");
+}
 /* Chênh lệch đến tháng 48 tách hai phần, không hiện tổng chi phí tiền tỷ: giá + phí bảo trì, và tiền lãi (cùng mốc tháng 48) */
 function diffTxt(qa, ka, qb, kb){
   const dp = (qa.T + qa.fee) - (qb.T + qb.fee), di = ka.iH - kb.iH, a = [];
@@ -1203,6 +1246,7 @@ document.addEventListener("click", async e=>{
   const act = el.dataset.act;
   if (act === "close") closeUnit();
   if (act === "cust") { S.cust = !S.cust; render(); toast(S.cust ? "Chế độ khách xem: chỉ hiện căn còn trống" : "Đã về chế độ nội bộ"); }
+  if (act === "altzalo") { const u = BY.get(S.open); if (u) copy(altZaloText(u, S.dpt || S.pt), "Đã chép tin Zalo gợi ý căn"); return; }
   if (act === "xlcf" || act === "xlov") {
     const u = BY.get(S.open); if (!u) return;
     try { const r = await xlDeliver(act === "xlcf" ? xlCashBook(xlCtxU(u)) : xlOverviewBook(xlCtxU(u))); if (r === "download") toast("Đã tải file Excel"); }
