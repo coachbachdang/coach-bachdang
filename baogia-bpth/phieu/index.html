@@ -1063,7 +1063,8 @@ if (typeof document !== "undefined") {
     const name = `Bao-gia-${xlSafe(unit ? unit.code : TYPES[state.loai].name)}-${xlSafe(PLANS[state.pt].short)}-${String(d.getDate()).padStart(2,"0")}${String(d.getMonth()+1).padStart(2,"0")}${d.getFullYear()}.pdf`;
     b.disabled = true; const old = b.textContent; b.textContent = "Đang tạo PDF…";
     try {
-      const blob = await sheetToPdf(document.getElementById("sheet"), name);
+      const head = `Phiếu báo giá tham khảo · ${unit ? "Căn " + unit.code : TYPES[state.loai].name} · ${PLANS[state.pt].short}${state.kh ? " · " + state.kh : ""}`;
+      const blob = await sheetToPdf(document.getElementById("sheet"), name, { head });
       const r = await deliverFile(blob, name);
       if (r !== "cancel") toast.textContent = r === "shared" ? "Đã tạo file PDF báo giá." : "Đã tải file PDF báo giá.";
     } catch (_) { toast.textContent = "Chưa tạo được PDF trên trình duyệt này. Anh chị dùng nút In phiếu rồi chọn Lưu PDF."; }

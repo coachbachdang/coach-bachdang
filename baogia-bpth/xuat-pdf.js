@@ -19,9 +19,34 @@ async function pdfInlineSvgImages(root){
     const d = await cache.get(href); if (d) { im.setAttribute("href", d); im.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", d); }
   }
 }
-/* el: phiếu cần xuất; name: tên file. Trả về Blob PDF.
-   Phiếu được dựng lại trong khung ẩn rộng 1000px để dùng bố cục máy tính (gọn hơn bố cục điện thoại), rồi chụp và ngắt trang A4 */
-async function sheetToPdf(el, name){
+/* Bỏ các khối @media theo bề rộng màn hình và @media print: PDF luôn dùng bố cục máy tính, trên iPhone cũng vậy */
+function pdfDesktopCss(css){
+  let out = "", i = 0;
+  while (i < css.length) {
+    const j = css.indexOf("@media", i);
+    if (j < 0) { out += css.slice(i); break; }
+    out += css.slice(i, j);
+    const b = css.indexOf("{", j); if (b < 0) break;
+    let depth = 0, k = b;
+    for (; k < css.length; k++) { if (css[k] === "{") depth++; else if (css[k] === "}" && --depth === 0) break; }
+    if (!/max-width|print/.test(css.slice(j, b))) out += css.slice(j, k + 1);
+    i = k + 1;
+  }
+  return out;
+}
+/* Dải chữ đầu, chân trang vẽ bằng canvas để giữ đúng font tiếng Việt của trang */
+function pdfStrip(left, right, wpx, hpx, line){
+  const c = document.createElement("canvas"); c.width = wpx; c.height = hpx;
+  const g = c.getContext("2d"); g.fillStyle = "#ffffff"; g.fillRect(0, 0, wpx, hpx);
+  g.fillStyle = "#566a64"; g.textBaseline = "middle"; g.font = `500 ${Math.round(hpx * 0.42)}px "Be Vietnam Pro", system-ui, sans-serif`;
+  g.textAlign = "left"; g.fillText(left, 0, hpx / 2);
+  g.textAlign = "right"; g.fillText(right, wpx, hpx / 2);
+  if (line) { g.fillStyle = "#d6e0db"; g.fillRect(0, line === "bottom" ? hpx - 3 : 0, wpx, 3); }
+  return c.toDataURL("image/png");
+}
+/* el: phiếu cần xuất; name: tên file; meta.head: dòng đầu các trang sau. Trả về Blob PDF.
+   Phiếu được dựng lại trong khung ẩn với CSS bố cục máy tính, chụp, rồi ngắt trang A4 tránh cắt ngang dòng, hình, khung */
+async function sheetToPdf(el, name, meta = {}){
   await pdfLibs();
   const W = 760;
   const clone = el.cloneNode(true);
@@ -39,38 +64,75 @@ async function sheetToPdf(el, name){
   document.body.appendChild(ifr);
   try {
     const d = ifr.contentDocument;
-    const css = [...document.querySelectorAll('style, link[rel="stylesheet"]')].map(n=>n.outerHTML).join("");
+    const css = [...document.querySelectorAll('style, link[rel="stylesheet"]')].map(n=>n.tagName === "LINK" ? n.outerHTML : `<style>${pdfDesktopCss(n.textContent)}</style>`).join("");
     d.open();
-    d.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8">${css}<style>html,body{margin:0;background:#fff}#pdfRoot{width:${W}px}#pdfRoot .pl-lay{max-height:380px;width:auto;margin:0 auto;display:block}#pdfRoot #shPlan{margin-top:6px}</style></head><body><div id="pdfRoot"></div></body></html>`);
+    d.write(`<!doctype html><html lang="vi"><head><meta charset="utf-8">${css}<style>
+      html,body{margin:0;background:#fff}
+      #pdfRoot{width:${W}px}
+      #pdfRoot .sheet{border:0!important;box-shadow:none!important;border-radius:0!important;overflow:visible!important}
+      #pdfRoot .sh-head{border-radius:0!important}
+      #pdfRoot .pl-lay{max-height:340px;width:auto;max-width:100%;margin:0 auto;display:block}
+      #pdfRoot .pl-floor{max-height:300px;width:auto;max-width:100%;margin:0 auto;display:block}
+      #pdfRoot .pl-unit{max-height:230px}
+      #pdfRoot .pl-zoom{border:0!important}
+      #pdfRoot #shPlan{margin-top:6px}
+    </style></head><body><div id="pdfRoot"></div></body></html>`);
     d.close();
     const root = d.getElementById("pdfRoot");
     root.appendChild(d.importNode(clone, true));
     const sheet = root.firstElementChild;
-    await new Promise(r=>setTimeout(r, 60));
+    await new Promise(r=>setTimeout(r, 80));
     await Promise.all([...sheet.querySelectorAll("img")].map(im=>im.complete && im.naturalWidth ? 0 : new Promise(r=>{ im.onload = im.onerror = r; setTimeout(r, 5000); })));
     if (d.fonts && d.fonts.ready) await Promise.race([d.fonts.ready, new Promise(r=>setTimeout(r, 3000))]);
-    const canvas = await window.html2canvas(sheet, { scale:2, backgroundColor:"#ffffff", useCORS:true, logging:false, windowWidth:1000 });
-    /* Điểm ngắt trang: đáy các dòng, đoạn, hình; không cắt ngang chữ */
-    const top = sheet.getBoundingClientRect().top, k = canvas.height / sheet.offsetHeight;
-    const cuts = [...new Set([...sheet.querySelectorAll("tr, p, li, figure, .sh-title, .kpis, .unit > *, .policy-box, .next-box, .fine > *, header, footer, .pl-row, table, h2, h3")]
-      .map(n=>Math.round((n.getBoundingClientRect().bottom - top) * k)))].filter(y=>y > 0 && y < canvas.height).sort((a, b)=>a - b);
+    /* iPhone giới hạn khung vẽ khoảng 16,7 triệu điểm ảnh: phiếu dài thì giảm độ phân giải cho vừa */
+    const scale = Math.max(1, Math.min(2, Math.sqrt(15e6 / (W * Math.max(1, sheet.offsetHeight)))));
+    const canvas = await window.html2canvas(sheet, { scale, backgroundColor:"#ffffff", useCORS:true, logging:false, windowWidth:1000 });
+    const H = canvas.height, top = sheet.getBoundingClientRect().top, k = H / sheet.offsetHeight;
+    const rect = n => { const r = n.getBoundingClientRect(); return [Math.round((r.top - top) * k), Math.round((r.bottom - top) * k)]; };
+
+    /* Khổ A4: lề 12 mm; trang 2 trở đi có dòng đầu trang; mọi trang có chân trang */
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit:"mm", format:"a4", compress:true });
-    const M = 10, CW = 210 - 2 * M, CH = 297 - 2 * M - 6, pxPerMm = canvas.width / CW, pageH = Math.floor(CH * pxPerMm);
+    const M = 12, CW = 210 - 2 * M, HEAD = 9, FOOT = 11, pxPerMm = canvas.width / CW;
+    const pageH1 = Math.floor((297 - M - FOOT) * pxPerMm), pageHn = Math.floor((297 - M - HEAD - FOOT) * pxPerMm);
+
+    /* Khối không được cắt: dòng bảng, đoạn, hình, khung; tiêu đề mục phải đi cùng phần nội dung ngay sau */
+    const KEEP = "tr, p, li, figure, .pl-row, .pl-block > *, .next-box, .policy-box, .kpis, .unit, .sh-head, .sh-foot, .breakdown tr, .lp-t tr";
+    const keeps = [...sheet.querySelectorAll(KEEP)].map(rect).filter(([a, b])=>b - a > 4 && b - a < pageHn * 0.85);
+    sheet.querySelectorAll(".sh-title").forEach(n=>{ const [a, b] = rect(n); keeps.push([a, b + Math.round(110 * k)]); });
+    const cands = [...new Set(keeps.flatMap(([a, b])=>[a, b]))].filter(c=>c > 0 && c < H).sort((x, y)=>x - y);
+    const inside = c => keeps.some(([a, b])=>a < c - 1 && c < b - 1);
+    /* Bảng tiến độ sang trang thì lặp lại dòng tiêu đề cột */
+    const heads = [...sheet.querySelectorAll("table")].map(t=>{ const th = t.querySelector("thead"); if (!th) return null; const [ha, hb] = rect(th), [, tb] = rect(t); return { ha, hb, tb }; }).filter(Boolean);
+    const headAt = y => heads.find(h=>y > h.hb + 2 && y < h.tb - 8);
     const pages = []; let y = 0;
-    while (y < canvas.height - 2) {
-      let end = Math.min(canvas.height, y + pageH);
-      if (end < canvas.height) { const c = cuts.filter(b=>b > y + pageH * 0.45 && b <= end); if (c.length) end = c[c.length - 1]; }
-      pages.push([y, end]); y = end;
+    while (y < H - 2) {
+      const rh = pages.length ? headAt(y) : null;
+      const ph = (pages.length ? pageHn : pageH1) - (rh ? rh.hb - rh.ha : 0), limit = Math.min(H, y + ph);
+      let end = limit;
+      if (limit < H) {
+        const ok = cands.filter(c=>c > y + ph * 0.3 && c <= limit);
+        const good = ok.filter(c=>!inside(c));
+        if (good.length) end = good[good.length - 1]; else if (ok.length) end = ok[ok.length - 1];
+      }
+      pages.push([y, end, rh]); y = end;
     }
-    pages.forEach(([a, b], i)=>{
-      const part = document.createElement("canvas"); part.width = canvas.width; part.height = b - a;
-      part.getContext("2d").drawImage(canvas, 0, a, canvas.width, b - a, 0, 0, canvas.width, b - a);
+    const n = pages.length, stripW = Math.round(CW * 12);
+    const foot = i => pdfStrip(meta.foot || "Bạch Đằng · Chuyên viên tư vấn căn hộ · 0784 313 668", `Trang ${i + 1}/${n}`, stripW, 60, "top");
+    const head = meta.head ? pdfStrip(meta.head, "Bcons Central Park", stripW, 60, "bottom") : null;
+    pages.forEach(([a, b, rh], i)=>{
+      const hh = rh ? rh.hb - rh.ha : 0;
+      const part = document.createElement("canvas"); part.width = canvas.width; part.height = b - a + hh;
+      const g = part.getContext("2d"); g.fillStyle = "#ffffff"; g.fillRect(0, 0, part.width, part.height);
+      if (hh) g.drawImage(canvas, 0, rh.ha, canvas.width, hh, 0, 0, canvas.width, hh);
+      g.drawImage(canvas, 0, a, canvas.width, b - a, 0, hh, canvas.width, b - a);
       if (i) doc.addPage();
-      doc.addImage(part.toDataURL("image/jpeg", 0.88), "JPEG", M, M, CW, (b - a) / pxPerMm);
-      doc.setFontSize(8); doc.setTextColor(120); doc.text(`${i + 1}/${pages.length}`, 210 - M, 297 - 6, { align:"right" });
+      let yTop = M;
+      if (i && head) { doc.addImage(head, "PNG", M, M - 2, CW, 5); yTop = M + HEAD; }
+      doc.addImage(part.toDataURL("image/jpeg", 0.9), "JPEG", M, yTop, CW, part.height / pxPerMm);
+      doc.addImage(foot(i), "PNG", M, 297 - FOOT + 1, CW, 5);
     });
-    doc.setProperties({ title:name.replace(/\.pdf$/, ""), author:"Bach Dang 0784 313 668" });
+    doc.setProperties({ title:name.replace(/\.pdf$/, ""), author:"Bach Dang 0784 313 668", subject:"Bao gia tham khao Bcons Central Park" });
     return doc.output("blob");
   } finally { ifr.remove(); }
 }
