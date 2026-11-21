@@ -367,6 +367,9 @@ body.cust .cust-bar button{margin-left:auto}
     <div class="card filters">
       <div class="frow"><span>Loại</span><div class="chips" id="fType"></div></div>
       <div class="frow"><span>Tối đa</span><div class="chips" id="fMax"></div></div>
+      <div class="frow"><span>Tầng</span><div class="chips" id="fFl"></div></div>
+      <div class="frow"><span>Hướng</span><div class="chips" id="fDir"></div></div>
+      <div class="frow"><span>View</span><div class="chips" id="fVw"></div></div>
       <div class="fsel">
         <label>Giá theo<select id="fPt"></select></label>
         <label>Chính sách 12/TB<select id="fCs"><option value="0">Chưa áp dụng</option><option value="thue">Thuê lại 24 tháng</option><option value="ck4">Chiết khấu thêm 4%</option></select></label>
@@ -445,6 +448,10 @@ body.cust .cust-bar button{margin-left:auto}
 const DATA_URL = "/baogia-bpth/data.enc.json";
 const PHIEU_URL = "https://hoangbachdang.com/baogia-bpth/phieu";
 const KEY_STORE = "bpth-key-v1";
+/* Hướng, view theo bản vẽ mặt bằng tầng (plans.js: unitView); tầng chia ba nhóm */
+const DIRS = ["Đông", "Tây", "Nam", "Bắc"], DIR_KEY = { "Đông":"d", "Tây":"t", "Nam":"n", "Bắc":"b" };
+let FL_BANDS = [];
+const UV = u => u._v === undefined ? (u._v = unitView(u.code)) : u._v;
 const STATUS = { 0:["Còn trống","s0","st0"], 1:["Đã cọc","s1","st1"], 2:["Hoàn tất cọc","s2","st2"], 3:["Lock","s3","st3"], "-1":["Chưa có trong rổ hàng","sx","stx"] };
 const MAXES = [0, 2.5, 3, 3.5, 4, 5];
 const TYPE_SHORT = { st:"Studio", "1pn":"1PN", "2pn1":"2PN 1WC", "2pn2":"2PN 2WC", "3pn":"3PN" };
@@ -497,7 +504,7 @@ $("#gateForm").addEventListener("submit", async e=>{
 $("#lockBtn").addEventListener("click", ()=>{ store.del(KEY_STORE); location.reload(); });
 
 /* ---------- TRẠNG THÁI GIAO DIỆN ---------- */
-const S = { od:false, tower:"all", types:new Set(), max:0, pt:"1N", cs:"0", view:"grid", st:{0:true,1:true,2:true,3:true,"-1":true}, from:3, to:22, stack:"", sort:"price", preset:"", cust:false, cmp:[], tab:"ro", open:null, dpt:null };
+const S = { od:false, tower:"all", types:new Set(), dirs:new Set(), vw:new Set(), max:0, pt:"1N", cs:"0", view:"grid", st:{0:true,1:true,2:true,3:true,"-1":true}, from:3, to:22, stack:"", sort:"price", preset:"", cust:false, cmp:[], tab:"ro", open:null, dpt:null };
 let D = null, U = [], BY = new Map(), HAS_ST = false;
 const avail = u => HAS_ST ? u.s === 0 : true;
 
@@ -520,6 +527,11 @@ function start(data){
   $("#vPt").innerHTML += PLAN_ORDER.filter(c=>c!=="02").map(c=>`<option value="${c}">${PLANS[c].short} · ${PLANS[c].title}</option>`).join("");
   $("#vType").innerHTML += Object.entries(TYPES).map(([k,t])=>`<option value="${k}">${t.name}</option>`).join("");
   $("#fType").innerHTML = `<button class="chip" type="button" data-t="" aria-pressed="true">Tất cả</button>` + Object.keys(TYPES).map(k=>`<button class="chip" type="button" data-t="${k}" aria-pressed="false">${TYPE_SHORT[k]}</button>`).join("");
+  const fl0 = floors[0] || 3, fl1 = floors[floors.length-1] || 22;
+  FL_BANDS = [[fl0, fl1, "Tất cả"], [fl0, 8, `Thấp ${fl0}–8`], [9, 15, "Giữa 9–15"], [16, fl1, `Cao 16–${fl1}`]];
+  $("#fFl").innerHTML = FL_BANDS.map(([a,b,l])=>`<button class="chip" type="button" data-fl="${a}-${b}" aria-pressed="false">${l}</button>`).join("");
+  $("#fDir").innerHTML = `<button class="chip" type="button" data-dir="" aria-pressed="true">Tất cả</button>` + DIRS.map(d=>`<button class="chip" type="button" data-dir="${d}" aria-pressed="false">${d}</button>`).join("");
+  $("#fVw").innerHTML = `<button class="chip" type="button" data-vw="" aria-pressed="true">Tất cả</button>` + [["noi","Nội khu"],["ngoai","Ngoại khu"],["goc","Căn góc"]].map(([k,l])=>`<button class="chip" type="button" data-vw="${k}" aria-pressed="false">${l}</button>`).join("");
   $("#fMax").innerHTML = MAXES.map(m=>`<button class="chip" type="button" data-m="${m}" aria-pressed="${m===0}">${m ? "≤ " + m.toLocaleString("vi-VN") + " tỷ" : "Tất cả"}</button>`).join("");
   try { if (sessionStorage.getItem("bpth-banner") === "x") $("#banner").hidden = true; } catch(_){}
   readHash();
@@ -543,6 +555,13 @@ function baseMatch(u){
   if (u.floor < S.from || u.floor > S.to) return false;
   if (S.stack && u.stack !== S.stack) return false;
   if (S.max && T(u) > S.max * 1e9) return false;
+  if (S.dirs.size || S.vw.size) {
+    const v = UV(u); if (!v) return false;
+    if (S.dirs.size && !v.dirs.some(d=>S.dirs.has(d))) return false;
+    const ks = [...S.vw].filter(k=>k !== "goc");
+    if (ks.length && !ks.some(k=>v.kinds.includes(k))) return false;
+    if (S.vw.has("goc") && !v.corner) return false;
+  }
   return true;
 }
 function stMatch(u){ if (!HAS_ST) return true; if (S.od) return !!u.od; return S.cust ? u.s === 0 : !!S.st[u.s]; }
@@ -563,6 +582,9 @@ function render(){
   renderStackSel();
   $$("#fType .chip").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.t ? S.types.has(b.dataset.t) : S.types.size === 0)));
   $$("#fMax .chip").forEach(b=>b.setAttribute("aria-pressed", String(+b.dataset.m === S.max)));
+  $$("#fFl .chip").forEach(b=>{ const [a,c] = b.dataset.fl.split("-").map(Number); b.setAttribute("aria-pressed", String(a === S.from && c === S.to)); });
+  $$("#fDir .chip").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.dir ? S.dirs.has(b.dataset.dir) : S.dirs.size === 0)));
+  $$("#fVw .chip").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.vw ? S.vw.has(b.dataset.vw) : S.vw.size === 0)));
   $$(".seg button").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.v === S.view)));
   $$("#presets .preset").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.p === S.preset)));
   $("#top5Btn").setAttribute("aria-pressed", String(S.sort === "top5" && S.view === "list"));
@@ -600,6 +622,8 @@ function renderSummary(){
   if (S.max) parts.push(`≤ ${S.max.toLocaleString("vi-VN")} tỷ`);
   if (S.from !== +$("#fFrom").options[0]?.value || S.to !== +$("#fTo").options[$("#fTo").options.length-1]?.value) parts.push(`tầng ${S.from}–${S.to}`);
   if (S.stack) parts.push(`trục ${S.stack}`);
+  if (S.dirs.size) parts.push(`hướng ${[...S.dirs].join(", ")}`);
+  if (S.vw.size) parts.push([...S.vw].map(k=>({ noi:"view nội khu", ngoai:"view ngoại khu", goc:"căn góc" })[k]).join(", "));
   if (S.sort === "top5" && S.view === "list") parts.push("top 5 rẻ nhất mỗi loại");
   const cs = S.cs === "thue" ? " · chọn thuê lại" : S.cs === "ck4" ? (NO_CK4.includes(S.pt) ? " · CK 4% không áp dụng PTTT này" : " · đã trừ CK 4%") : "";
   $("#summary").innerHTML = (HAS_ST ? `<b>${free}</b> căn trống` + (S.cust ? "" : ` / ${us.length} căn đang hiện`) : `<b>${us.length}</b> căn`) + ` · ${parts.join(" · ")} · giá theo <b>${PLANS[S.pt].short}</b>${cs}` +
@@ -652,7 +676,7 @@ const stOf = u => HAS_ST ? (STATUS[u.s] || STATUS["-1"]) : ["Kiểm tra rổ hà
 function rowHtml(u, extra=""){
   const st = stOf(u); const q = quoteOf(u);
   return `<button class="row" type="button" data-u="${u.code}"><div><div class="code">${u.code}</div><span class="st ${st[2]} int">${st[0]}</span></div>`+
-    `<div class="meta">${TYPES[u.type].name} · ${u.dt.toLocaleString("vi-VN")} m² · tầng ${u.floor}<br>Tự có đến HĐMB ${ty(q.toHD)}${extra}</div>`+
+    `<div class="meta">${TYPES[u.type].name} · ${u.dt.toLocaleString("vi-VN")} m² · tầng ${u.floor}${UV(u) ? ` · ${UV(u).dirs.join(", ")} · ${UV(u).kinds.map(k=>VIEW_KIND[k]).join(" + ")}${UV(u).corner ? " · góc" : ""}` : ""}<br>Tự có đến HĐMB ${ty(q.toHD)}${extra}</div>`+
     `<div class="price num">${tyS(q.T)} tỷ<small>${PLANS[S.pt].short}</small></div></button>`;
 }
 /* Top 5 rẻ nhất mỗi loại căn, theo tòa, bộ lọc, trạng thái và giá theo PTTT đang chọn */
@@ -725,6 +749,7 @@ function drawUnit(){
     `<div class="sh-top"><div class="ttl"><div class="row1"><h2 id="dTitle">${u.code}</h2><span class="st ${st[2]} int">${st[0]}</span></div><div class="sub">${t.name} · ${pl.short} · <b>${tyS(q.T)} tỷ</b></div></div><button class="icon-btn x" type="button" data-act="close" aria-label="Đóng">✕</button></div>`+
     `<div class="facts"><div><span>Tòa</span><b>${u.t} · ${D.towers[u.t].name}</b></div><div><span>Tầng</span><b>${u.floor}</b></div><div><span>Loại</span><b>${t.name}</b></div>`+
     `<div><span>Tim tường</span><b>${u.dt.toLocaleString("vi-VN")} m²</b></div><div><span>Thông thủy</span><b>${u.tt.toLocaleString("vi-VN")} m²</b></div><div><span>Giá/m² tim tường, chưa VAT</span><b>${(q.N/u.dt/1e6).toLocaleString("vi-VN",{maximumFractionDigits:1})} tr</b></div></div>`+
+    (unitView(u.code) ? `<p class="small" style="margin:-4px 0 0">${unitViewTxt(u.code)}<br><span class="muted">${VIEW_NOTE}</span></p>` : "")+
     (planInfo(u.code) ? `<details class="c48"${S.planOpen ? " open" : ""} id="plD"><summary>Mặt bằng căn và vị trí trên tầng · mẫu <b>${planInfo(u.code).u.m}</b></summary>${planBlockHtml(u.code)}</details>` : "")+
     (HAS_ST && (u.coc || u.dl || u.ht) ? `<p class="small int" style="margin:-4px 0 0">${u.coc ? `Cọc ngày ${esc(u.coc)}` : ""}${u.dl ? ` · hạn hoàn tất ${esc(u.dl)}` : ""}${u.ht ? ` · đã vào tiền ${esc(u.ht)}` : ""}${u.od ? ` · <b style="color:#9b2c1f">quá hạn, có thể sắp bung</b>` : ""}</p>` : "")+
     `<div class="seg" role="group" aria-label="Chính sách 12/TB" style="width:100%;display:grid;grid-template-columns:repeat(3,1fr)">`+
@@ -988,6 +1013,9 @@ function writeHash(){
   if (S.cs !== "0") h.set("cs", S.cs);
   if (S.view !== "grid") h.set("v", S.view);
   if (S.stack) h.set("tr", S.stack);
+  if (S.dirs.size) h.set("hg", [...S.dirs].map(d=>DIR_KEY[d]).join(""));
+  if (S.vw.size) h.set("vw", [...S.vw].join("."));
+  if (FL_BANDS.length && (S.from !== FL_BANDS[0][0] || S.to !== FL_BANDS[0][1])) h.set("tg", `${S.from}-${S.to}`);
   if (S.sort === "top5") h.set("s", "top5");
   if (S.tab !== "ro") h.set("tab", S.tab);
   if (S.cmp.length) h.set("ss", S.cmp.join("."));
@@ -1004,6 +1032,9 @@ function readHash(){
   if (h.get("v") === "list") S.view = "list";
   if (/^\d{1,2}$/.test(h.get("tr") || "")) S.stack = h.get("tr").padStart(2, "0");
   if (h.get("s") === "top5") S.sort = "top5";
+  if (h.get("hg")) S.dirs = new Set([...h.get("hg")].map(c=>DIRS.find(d=>DIR_KEY[d] === c)).filter(Boolean));
+  if (h.get("vw")) S.vw = new Set(h.get("vw").split(".").filter(k=>["noi","ngoai","goc"].includes(k)));
+  { const m = /^(\d{1,2})-(\d{1,2})$/.exec(h.get("tg") || ""); if (m && +m[1] <= +m[2]) { S.from = +m[1]; S.to = +m[2]; } }
   if (["ss","tim","bd"].includes(h.get("tab"))) S.tab = h.get("tab");
   if (h.get("ss")) S.cmp = h.get("ss").split(".").filter(c=>BY.has(c)).slice(0,3);
   if (h.get("u") && BY.has(h.get("u"))) setTimeout(()=>openUnit(h.get("u")), 0);
@@ -1146,6 +1177,9 @@ document.addEventListener("click", async e=>{
   if (el.dataset.tw) { S.tower = el.dataset.tw; render(); return; }
   if (el.dataset.t !== undefined && el.closest("#fType")) { const k = el.dataset.t; if (!k) S.types.clear(); else S.types.has(k) ? S.types.delete(k) : S.types.add(k); S.preset = ""; S.od = false; render(); return; }
   if (el.dataset.m !== undefined) { S.max = +el.dataset.m; S.preset = ""; S.od = false; render(); return; }
+  if (el.dataset.fl !== undefined) { const [a,c] = el.dataset.fl.split("-").map(Number); S.from = a; S.to = c; render(); return; }
+  if (el.dataset.dir !== undefined) { const k = el.dataset.dir; if (!k) S.dirs.clear(); else S.dirs.has(k) ? S.dirs.delete(k) : S.dirs.add(k); render(); return; }
+  if (el.dataset.vw !== undefined) { const k = el.dataset.vw; if (!k) S.vw.clear(); else S.vw.has(k) ? S.vw.delete(k) : S.vw.add(k); render(); return; }
   if (el.dataset.v) { S.view = el.dataset.v; render(); return; }
   if (el.dataset.s !== undefined && el.closest("#legend")) {
     S.od = false;
@@ -1191,7 +1225,7 @@ document.addEventListener("click", async e=>{
   }
   if (el.id === "moreList") { listLimit += 60; renderList(); }
   if (el.id === "moreBtn") { const m = $("#more"); m.hidden = !m.hidden; el.setAttribute("aria-expanded", String(!m.hidden)); }
-  if (el.id === "resetBtn") { Object.assign(S, { od:false, tower:"all", types:new Set(), max:0, pt:"1N", cs:"0", st:{0:true,1:true,2:true,3:true,"-1":true}, preset:"", sort:"price", stack:"" }); S.from = +$("#fFrom").options[0].value; S.to = +$("#fTo").options[$("#fTo").options.length-1].value; $("#presetNote").textContent = ""; render(); }
+  if (el.id === "resetBtn") { Object.assign(S, { od:false, tower:"all", types:new Set(), dirs:new Set(), vw:new Set(), max:0, pt:"1N", cs:"0", st:{0:true,1:true,2:true,3:true,"-1":true}, preset:"", sort:"price", stack:"" }); S.from = +$("#fFrom").options[0].value; S.to = +$("#fTo").options[$("#fTo").options.length-1].value; $("#presetNote").textContent = ""; render(); }
   if (el.id === "stockBtn") { fetchLive(true); return; }
   if (el.id === "today") { S.od = !S.od; if (S.od) { S.tab = "ro"; S.view = "list"; S.sort = "code"; } render(); return; }
   if (el.id === "bannerX") { $("#banner").hidden = true; try { sessionStorage.setItem("bpth-banner","x"); } catch(_){} }

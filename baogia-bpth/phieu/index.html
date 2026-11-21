@@ -793,7 +793,8 @@ if (typeof document !== "undefined") {
 
     /* Mặt bằng căn và vị trí trên tầng, theo số căn */
     const plan = unit && unit.open ? planBlockHtml(unit.code) : "";
-    $("#shPlan").innerHTML = plan ? `<div class="sh-title">Mặt bằng và vị trí căn</div>${plan}` : "";
+    const vtx = unit && unit.open && typeof unitViewTxt === "function" ? unitViewTxt(unit.code) : "";
+    $("#shPlan").innerHTML = plan ? `<div class="sh-title">Mặt bằng và vị trí căn</div>${vtx ? `<p style="margin:0 0 8px;font-size:.9rem">${vtx}<br><span style="color:var(--muted);font-size:.78rem">${VIEW_NOTE}</span></p>` : ""}${plan}` : "";
 
     /* Gợi ý diện tích */
     const dh = $("#dtHint");

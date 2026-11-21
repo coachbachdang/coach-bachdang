@@ -7,6 +7,41 @@ const PLAN_DATA = {"A":{"img":"orchid","name":"Orchid","u":{"22":{"b":[137,432,2
 const PLAN_W = 1920, PLAN_H = 1358, PLAN_CROP_H = 1270;   /* bỏ dải tiêu đề vàng cuối bản vẽ */
 /* Mặt bằng căn hộ điển hình có nội thất (thư mục "4. Thiết Kế Căn Hộ"), cắt phần bản vẽ: /baogia-bpth/plan/mau-{mẫu}.webp.
    Thêm mẫu mới: cắt ảnh rồi thêm mã mẫu vào danh sách này. */
+/* Hướng và view của từng căn, đọc từ bản vẽ mặt bằng tầng điển hình của Chủ đầu tư:
+   hướng theo la bàn in trên từng bản vẽ (Orchid: Đông ở phía trên; Bamboo, Tamarind: Bắc ở phía trên),
+   view theo nhãn "Hướng nhìn về..." / "View..." in ở cạnh tương ứng. Căn góc có thêm mặt thứ hai.
+   Tầm nhìn thực tế tùy tầng và công trình xung quanh; xác nhận theo từng căn trước khi cam kết với khách. */
+const PLAN_VIEW = {
+  A:{ s:{ Dg:["Đông","ngoai","Quốc lộ 1A, sân vận động Đồng Nai, sân bay Long Thành"], Tn:["Tây","noi","sân chơi nghệ thuật, công viên sự kiện"],
+          Bg:["Bắc","ngoai","Đại học Công nghệ Đồng Nai"], Ng:["Nam","ngoai","Trung tâm hành chính TP. Đồng Nai"] },
+      u:{ "22":"Dg,Bg", "23":"Dg", "24":"Dg", "25":"Dg", "26":"Dg", "27":"Dg", "01":"Dg", "02":"Dg", "03":"Dg", "04":"Dg", "05":"Dg", "06":"Dg", "07":"Dg,Ng",
+          "08":"Tn,Ng", "09":"Tn", "10":"Tn", "11":"Tn", "12":"Tn", "13":"Tn", "14":"Tn", "15":"Tn", "16":"Tn", "17":"Tn", "18":"Tn", "19":"Tn", "20":"Tn", "21":"Tn,Bg" } },
+  B:{ s:{ Tn1:["Tây","noi","hồ Nhật Nguyệt, đảo nhiệt đới"], Tn2:["Tây","noi","quảng trường nhạc nước"], Tn3:["Tây","noi","đảo nhiệt đới"],
+          Dn:["Đông","noi","sân chơi nghệ thuật, công viên sự kiện"], Bg:["Bắc","ngoai","sân bay Biên Hòa, công viên Dương Tử Giang"],
+          Nn:["Nam","noi","quảng trường nhạc nước"], Ng:["Nam","ngoai","sông Đồng Nai, Cù Lao Phố"] },
+      u:{ "01":"Tn2", "02":"Tn2", "03":"Tn2", "04":"Tn2", "05":"Tn2", "06":"Nn", "07":"Nn", "08":"Nn,Tn3", "09":"Bg,Tn3", "10":"Bg", "11":"Bg",
+          "12":"Tn1", "13":"Tn1", "14":"Tn1", "15":"Tn1", "16":"Tn1,Bg", "17":"Dn,Bg", "18":"Dn", "19":"Dn", "20":"Dn", "21":"Dn", "22":"Dn", "23":"Dn",
+          "24":"Dn", "25":"Dn", "26":"Dn", "27":"Dn", "28":"Dn", "29":"Dn", "30":"Dn,Ng", "31":"Tn2,Ng", "32":"Tn2", "33":"Tn2" } },
+  E:{ s:{ Bg:["Bắc","ngoai","sân bay Biên Hòa, công viên Dương Tử Giang"], Nn:["Nam","noi","đảo nhiệt đới"], Dn:["Đông","noi","đảo nhiệt đới"],
+          Tg:["Tây","ngoai","sông Đồng Nai"], Dg:["Đông","ngoai","Quốc lộ 1A, sân vận động Đồng Nai"], Nx:["Nam","",""] },
+      u:{ "01":"Dn", "02":"Dn", "03":"Dn", "04":"Dn", "05":"Dn", "06":"Dn,Nx", "07":"Tg,Nx", "08":"Tg", "09":"Tg", "10":"Tg", "11":"Tg", "12":"Tg",
+          "13":"Bg", "14":"Bg", "15":"Bg", "16":"Bg", "17":"Bg,Dg", "18":"Nn,Dg", "19":"Nn", "20":"Nn", "21":"Nn" } }
+};
+const VIEW_KIND = { noi:"nội khu", ngoai:"ngoại khu" };
+function unitView(code){
+  const m = /^([A-E])(\d{1,2})-(\d{2})$/.exec(String(code || "").toUpperCase()); if (!m) return null;
+  const V = PLAN_VIEW[m[1]]; const ks = V && V.u[m[3]]; if (!ks) return null;
+  const faces = ks.split(",").map(k=>{ const [dir, kind, text] = V.s[k]; return { dir, kind, text }; });
+  return { faces, dirs:[...new Set(faces.map(f=>f.dir))], kinds:[...new Set(faces.filter(f=>f.kind).map(f=>f.kind))], corner: faces.length > 1 };
+}
+/* Một dòng mô tả cho phiếu và chi tiết căn */
+function unitViewTxt(code){
+  const v = unitView(code); if (!v) return "";
+  const views = v.faces.filter(f=>f.text).map(f=>`${f.text} (${VIEW_KIND[f.kind]})`);
+  return `Hướng ${v.dirs.join(" và ")}${v.corner ? " · căn góc" : ""}${views.length ? " · nhìn ra " + views.join("; ") : ""}`;
+}
+const VIEW_NOTE = "Hướng theo la bàn và view theo nhãn trên bản vẽ mặt bằng tầng của Chủ đầu tư; tầm nhìn thực tế tùy tầng và công trình xung quanh.";
+
 const PLAN_LAYOUTS = ["A1", "A2", "B1", "B2", "B3", "B4", "B5", "B6", "B8", "C1", "C2", "C3", "C4", "D1", "D3", "D4", "D5", "D6"];
 
 function planInfo(code){
