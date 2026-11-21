@@ -61,7 +61,7 @@ const XL = (()=>{
     txt:[0,0,0,1,1], txtB:[0,1,0,1,1], c:[0,0,0,1,0,"center"], cB:[0,1,0,1,0,"center"],
     m:[3,0,0,1], mB:[3,1,0,1], pct:[10,0,0,1], lab:[0,3,0,1,1], val:[0,1,0,1,1],
     hl:[0,1,4,1,1], hlC:[0,1,4,1,0,"center"], hlM:[3,1,4,1], hlP:[10,1,4,1],
-    tot:[3,1,4,1], totT:[0,1,4,1,1]
+    tot:[3,1,4,1], totT:[0,1,4,1,1], valR:[0,1,0,1,1,"right"], hlR:[0,1,4,1,1,"right"], txtR:[0,0,0,1,1,"right"]
   };
   const SK = Object.keys(S), SI = Object.fromEntries(SK.map((k, i)=>[k, i]));
   const stylesXml = () => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">`+
@@ -186,8 +186,8 @@ function xlCashflow(ctx){
     else if (lp && SELF_ROWS[q.code] && SELF_ROWS[q.code].includes(i)) bank = trBy.get(Math.round(r.month || 0)) || 0;
     const base = `Đợt ${r.n} · ${r.pct}% · ${r.when}`;
     if (i === 0 && r.pay > DEPOSIT) {
-      ev.push({ m, label:"Cọc đăng ký khi chọn căn (kết chuyển vào đợt 1)", self:DEPOSIT, bank:0 });
-      ev.push({ m, label:`${base} (phần còn lại sau cọc đăng ký)`, self:r.pay - DEPOSIT, bank:0 });
+      ev.push({ i, m, label:"Cọc đăng ký khi chọn căn (kết chuyển vào đợt 1)", self:DEPOSIT, bank:0, dep:true });
+      ev.push({ i, m, label:`${base} (phần còn lại sau cọc đăng ký)`, self:r.pay - DEPOSIT, bank:0 });
       return;
     }
     let label = base;
@@ -195,7 +195,7 @@ function xlCashflow(ctx){
     if (i === k - 1) label = `Đợt ${r.n} · ${r.pct}% · Nhận Giấy chứng nhận (thời điểm theo thông báo của Chủ đầu tư)`;
     if (bank && r.src !== "bank") label += i === iBG ? " · vay thêm ngân hàng" : " · ngân hàng giải ngân (tự vay)";
     if (r.src === "bank") label += " · ngân hàng giải ngân";
-    ev.push({ m, label, self:r.pay - bank, bank });
+    ev.push({ i, m, label, self:r.pay - bank, bank });
   });
   const lm = new Map(); if (lp) for (const mo of lp.months) lm.set(mo.t, mo);
   /* Tiền thuê Chủ đầu tư cam kết (Lựa chọn 1, 12/TB-ĐTTH): 24 tháng sau bàn giao, kể cả khi khách không vay */
@@ -213,7 +213,7 @@ function xlCashflow(ctx){
       prin:mo ? mo.principal : 0, int:mo ? mo.interest : 0, rent:mo ? mo.rent : (rentFix && m > M && m <= M + 24 ? rentFix : 0), bal, note: mo && lp ? xlKind(mo.kind, lp) : "" });
     if (m === M) ev.filter(e=>e.m === M + 0.5).forEach(e=>out.push({ m:"Sau bàn giao", label:e.label, self:e.self, bank:e.bank, prin:0, int:0, rent:0, bal, note:"", gcn:true }));
   }
-  return { rows:out, M };
+  return { rows:out, M, ev };
 }
 
 function xlHead(ctx){
@@ -256,6 +256,85 @@ function xlNotes(ctx){
   n.push("Báo giá tham khảo lập theo bảng giá áp dụng từ 07/11/2026, file check giá 14/11/2026, Thông báo 11/TB-ĐTTH ngày 05/11/2026 và 12/TB-ĐTTH ngày 12/11/2026. Giá trị ràng buộc theo báo giá mã căn do Chủ đầu tư phát hành và HĐMB.");
   n.push("Bảng tính do Bạch Đằng, chuyên viên tư vấn căn hộ Bcons Central Park lập để khách tham khảo, không phải văn bản của Chủ đầu tư. Liên hệ 0784 313 668." + (ctx.link ? ` Phiếu báo giá trực tuyến: ${ctx.link}` : ""));
   return n;
+}
+
+/* Trang đầu của cả hai file: tóm tắt một trang để khách xem và quyết định */
+const xlMoney = v => Math.abs(v) >= 1e9 ? ty(v) : (Math.round(v / 1e5) / 10).toLocaleString("vi-VN", { maximumFractionDigits:1 }) + " triệu";
+function xlSummarySheet(ctx, where){
+  const { q, lp } = ctx, pl = PLANS[ctx.pt], u = ctx.unit, hd = xlHead(ctx), cf = xlCashflow(ctx), M = cf.M;
+  const k = q.rows.length, iBG = k - 2;
+  const sh = xlSheet("Tóm tắt", [38, 18, 48]);
+  sh.title(`TÓM TẮT ĐỂ QUYẾT ĐỊNH${u.code ? " · CĂN " + u.code : ""}`, ["Bcons Central Park · 236 Phan Trung, P. Tam Hiệp, TP. Đồng Nai", hd.unitTxt, `Phương thức: ${hd.planTxt}${hd.csTxt ? " · " + hd.csTxt : ""}`, hd.dateTxt]);
+  if (ctx.manual) sh.note("Giá tính theo số nhập tay, chưa phải giá riêng của căn. Giá đúng căn theo báo giá mã căn.", "txtB");
+  const line = (a, b, c, hl) => { const n = Math.max(1, Math.ceil(String(c || "").length / 46), Math.ceil(String(a).length / 36));
+    return sh.add([{ v:a, s:hl ? "hl" : "txt" }, { v:b, s:hl ? "hlR" : "valR" }, { v:c || null, s:hl ? "hl" : "txt" }], n > 1 ? n * 14.5 + 3 : undefined); };
+  sh.blank();
+  sh.sec("1. GIÁ CĂN");
+  line("Tổng giá trị căn hộ gồm VAT", xlMoney(q.T), vnd(q.T));
+  line("Phí bảo trì 2%", xlMoney(q.fee), `${vnd(q.fee)} · đóng khi nhận bàn giao`);
+  line("Tổng thanh toán", xlMoney(q.T + q.fee), vnd(q.T + q.fee), true);
+  if (u.dt) line("Đơn giá chưa VAT", `${(q.N / u.dt / 1e6).toLocaleString("vi-VN", { maximumFractionDigits:1 })} triệu/m²`, "theo diện tích tim tường");
+  if (q.saving > 0) line("Ít hơn giá gốc PTTT 02", xlMoney(q.saving), `${xlPct(q.saving / q.b02 * 100)} tổng giá, nhờ chiết khấu ${pl.discLabel ? pl.discLabel.replace(/^Chiết khấu /, "") : ""}${q.disc4 ? " và chiết khấu thêm 4%" : ""}`);
+  if (ctx.cs === "thue") line("Chủ đầu tư thuê lại", `${ctx.rentM} triệu/tháng`, `24 tháng kể từ thông báo bàn giao, tổng ${(ctx.rentM * 24).toLocaleString("vi-VN")} triệu; giá căn không đổi`);
+  sh.blank();
+
+  sh.sec("2. TIỀN TỰ CÓ CẦN CHUẨN BỊ THEO TỪNG MỐC");
+  const ev = cf.ev, selfOf = f => ev.filter(f).reduce((a, e)=>a + e.self, 0);
+  const dep = ev.find(e=>e.dep);
+  if (dep) line("Khi chọn căn: cọc đăng ký", xlMoney(dep.self), "kết chuyển vào đợt 1");
+  line("Khi ký Thỏa thuận đăng ký", xlMoney(selfOf(e=>e.i === 0 && !e.dep)), dep ? "phần còn lại của đợt 1 (5% giá chưa VAT)" : "đợt 1, 5% giá chưa VAT");
+  line("Khi ký HĐMB", xlMoney(selfOf(e=>e.i === 1)), "theo thông báo của Chủ đầu tư; gồm VAT đợt 1 và đợt 2");
+  const mid = ev.filter(e=>e.i > 1 && e.i < iBG && e.self >= 1);
+  if (mid.length > 3) {
+    const sm = mid.reduce((a, e)=>a + e.self, 0), ms = mid.map(e=>e.m);
+    line(`Tháng ${Math.min(...ms)}–${Math.max(...ms)} sau HĐMB (${mid.length} đợt)`, xlMoney(sm), mid.some(e=>e.bank > 0) ? "phần không vay của các đợt theo tiến độ" : "đóng theo tiến độ, mỗi đợt 5–10% giá trị");
+  } else mid.forEach(e=>{ if (e.self >= 1) line(q.rows[e.i].when, xlMoney(e.self), e.bank > 0 ? "phần không vay của đợt này" : `đợt ${e.i + 1}, ${q.rows[e.i].pct}% giá trị`); });
+  const preBG = selfOf(e=>e.i < iBG);
+  line("Tổng tự có đến trước bàn giao", xlMoney(preBG), vnd(preBG), true);
+  const bgE = ev.find(e=>e.i === iBG), gcnE = ev.find(e=>e.i === k - 1);
+  line(`Khi nhận bàn giao (giả định tháng ${M})`, xlMoney(bgE.self), bgE.bank > 0 ? "phí bảo trì 2%; phần 25% vay thêm ngân hàng" : "25% giá trị, đủ 100% VAT và phí bảo trì 2%");
+  line("Khi nhận Giấy chứng nhận", xlMoney(gcnE.self), "5% giá trị, không VAT");
+  sh.blank();
+
+  sh.sec("3. VAY NGÂN HÀNG VÀ SỐ TIỀN TRẢ MỖI THÁNG");
+  if (lp) {
+    line("Ngân hàng giải ngân", xlMoney(lp.L), `${lp.years} năm · ${METHOD_TXT[lp.method]}${lp.ext && lp.base ? ` · gồm ${xlMoney(lp.ext)} vay thêm đợt bàn giao` : ""}`);
+    const pm = v => v < 0.5 ? "0 đ" : xlMoney(v);
+    for (const sg of lp.segs) {
+      if (sg.kind === "none-pre") continue;
+      const range = sg.from === sg.to ? `Tháng ${sg.from} sau HĐMB` : `Tháng ${sg.from}–${sg.to} sau HĐMB`;
+      const amt = Math.abs(sg.first - sg.last) < 1e5 ? `${pm(sg.first)}/tháng` : `${pm(sg.first)} → ${pm(sg.last)}`;
+      line(range, amt, xlKind(sg.kind, lp));
+    }
+    const rm = lp.months.filter(m=>m.rent > 0);
+    if (rm.length) {
+      const nets = rm.map(m=>m.pay - m.rent), mx = Math.max(...nets), mn = Math.min(...nets);
+      line(`Tiền thuê Chủ đầu tư trả, tháng ${rm[0].t}–${rm[rm.length - 1].t}`, `${ctx.rentM} triệu/tháng`, mx <= 0 ? "đủ trả khoản vay hằng tháng trong giai đoạn này" : Math.abs(mx - Math.max(0, mn)) < 1e5 ? `khách bù thêm khoảng ${pm(mx)} mỗi tháng` : `khách bù thêm khoảng ${pm(Math.max(0, mn))} → ${pm(mx)} mỗi tháng`);
+    }
+    line("Tổng lãi cả kỳ vay (giả định)", xlMoney(lp.totalInt), "khách có thể trả bớt nợ trước hạn theo điều kiện ngân hàng");
+  } else {
+    line("Không vay", "", "khách tự đóng theo các mốc ở mục 2");
+    if (ctx.cs === "thue") line("Tiền thuê Chủ đầu tư trả", `${ctx.rentM} triệu/tháng`, `tháng ${M + 1}–${M + 24} sau HĐMB, 24 tháng kể từ thông báo bàn giao`);
+  }
+  sh.blank();
+
+  sh.sec("4. SO VỚI CÁC PHƯƠNG THỨC KHÁC (cùng vay 50%, tính đến tháng 48)");
+  sh.add([{ v:"Phương thức", s:"h" }, { v:"Tự có đến HĐMB", s:"h" }, { v:"Tổng giá + phí bảo trì + lãi đến tháng 48", s:"h" }], 31);
+  const rows = PLAN_ORDER.map(c=>{ const qq = ctx.getQ(c); return { c, q:qq, k:costTo(qq, ctx.cmpOpts(c)) }; });
+  const best = Math.min(...rows.map(r=>r.k.total));
+  rows.forEach(r=>{ const d = r.k.total - best, on = r.c === ctx.pt;
+    line(`${PLANS[r.c].short} · ${PLANS[r.c].title}${on ? " (đang chọn)" : ""}`, xlMoney(r.q.toHD), d < 0.5 ? "tiết kiệm nhất trong 6 phương thức" : `tốn hơn ${xlMoney(d)} so với cách tiết kiệm nhất`, on); });
+  sh.note(where === "ov" ? "Chi tiết và giả định ở trang So sánh phương thức." : "Chi tiết và giả định trong file Excel tổng quan báo giá.");
+  sh.blank();
+
+  sh.sec("5. ĐIỀU CẦN BIẾT TRƯỚC KHI XUỐNG TIỀN");
+  [ "Hiện ký Thỏa thuận đăng ký. Hợp đồng mua bán ký theo thông báo của Chủ đầu tư khi xong móng và có văn bản đủ điều kiện bán; hiện chưa có văn bản này.",
+    "Cọc đăng ký 30 triệu kết chuyển vào đợt 1. Điều kiện hoàn hoặc không hoàn từng khoản theo văn bản anh chị ký; Bạch Đằng gửi văn bản để đọc trước khi chuyển tiền.",
+    lp ? `Lãi sau ưu đãi theo ngân hàng tại thời điểm đó; bảng dùng ${xlPct(lp.r1)}/năm làm giả định. Ngày ký HĐMB chưa có thông báo nên tháng tính từ ký HĐMB, giả định bàn giao ở tháng ${M}; bàn giao dự kiến Quý II/2029.` : `Ngày ký HĐMB chưa có thông báo nên tháng tính từ ký HĐMB, giả định bàn giao ở tháng ${M}; bàn giao dự kiến Quý II/2029, mốc ràng buộc theo HĐMB.`,
+    `Ngoài giá căn: phí quản lý${u.dt ? ` khoảng ${vnd(u.dt * MGMT_FEE)}/tháng chưa VAT` : " 11.000 đ/m²/tháng chưa VAT"}, lệ phí trước bạ và phí cấp sổ khi làm Giấy chứng nhận, bảo hiểm cháy nổ bắt buộc.`,
+    "Giá trị ràng buộc theo báo giá mã căn của Chủ đầu tư và HĐMB. Bảng tham khảo do Bạch Đằng, chuyên viên tư vấn Bcons Central Park lập, liên hệ 0784 313 668."
+  ].forEach(t=>sh.note("• " + t, "txt"));
+  return sh;
 }
 
 /* File 1: dòng tiền hằng tháng */
@@ -337,7 +416,7 @@ function xlCashBook(ctx){
   });
   yr.blank();
   yr.note("Năm tính theo tháng kể từ ký HĐMB (năm 1 là tháng 1–12). Đợt nhận Giấy chứng nhận tính vào năm có đợt bàn giao; thời điểm thực tế theo thông báo của Chủ đầu tư. Bình quân mỗi tháng gồm cả các đợt đóng Chủ đầu tư trong năm.");
-  return { sheets:[sh, yr], name:`Dong-tien-hang-thang-${xlSafe(ctx.unit.code || ctx.unit.typeName)}-${xlSafe(PLANS[ctx.pt].short)}.xlsx` };
+  return { sheets:[xlSummarySheet(ctx, "cf"), sh, yr], name:`Dong-tien-hang-thang-${xlSafe(ctx.unit.code || ctx.unit.typeName)}-${xlSafe(PLANS[ctx.pt].short)}.xlsx` };
 }
 
 /* File 2: tổng quan báo giá + so sánh phương thức */
@@ -429,7 +508,7 @@ function xlOverviewBook(ctx){
   cs.note(`Cột chênh lệch so sánh tổng giá trị gồm VAT, phí bảo trì 2% và tiền lãi khách trả đến tháng 48 sau ký HĐMB giữa các phương thức; phương thức tiết kiệm nhất ghi "Tiết kiệm nhất", các phương thức khác ghi số tiền tốn hơn. Tổng chi phí đến bàn giao = giá trị gồm VAT + phí bảo trì 2% + tiền lãi khách trả đến bàn giao.`);
   cs.note(`Mọi phương thức tính cùng mức vay 50% giá trị gồm VAT, cùng cách trả gốc, giả định bàn giao ở tháng ${M} sau ký HĐMB. Đến tháng 48 mọi ưu đãi lãi đều đã hết: PTTT 02, 05 Chủ đầu tư hỗ trợ lãi tối đa 24 tháng; PTTT 03, 04 trần 6,9% tối đa 48 tháng (tính ở mức trần); 1N, 01 ${ctx.cmpSelf ? `tự vay ưu đãi ${t2(ctx.o.r0)}%/năm trong ${t2(ctx.o.n0)} tháng (giả định)` : "tính không vay"}. Hết ưu đãi tính lãi ${t2(ctx.o.r1 || 11)}%/năm (giả định), lãi thực tế theo ngân hàng tại thời điểm đó.`);
   cs.note("Bảng so sánh để khách tự cân nhắc theo dòng tiền của mình; giá trị ràng buộc theo báo giá mã căn của Chủ đầu tư và HĐMB.");
-  return { sheets:[sh, cs], name:`Tong-quan-bao-gia-${xlSafe(ctx.unit.code || ctx.unit.typeName)}.xlsx` };
+  return { sheets:[xlSummarySheet(ctx, "ov"), sh, cs], name:`Tong-quan-bao-gia-${xlSafe(ctx.unit.code || ctx.unit.typeName)}.xlsx` };
 }
 
 /* Tải file: điện thoại mở bảng chia sẻ (lưu vào Tệp, gửi Zalo); máy tính tải về như bình thường */
