@@ -330,7 +330,7 @@ function xlSummarySheet(ctx, where){
       const nets = rm.map(m=>m.pay - m.rent), mx = Math.max(...nets), mn = Math.min(...nets);
       line(`Tiền thuê Chủ đầu tư trả, tháng ${rm[0].t}–${rm[rm.length - 1].t}`, `${ctx.rentM} triệu/tháng`, mx <= 0 ? "đủ trả khoản vay hằng tháng trong giai đoạn này" : Math.abs(mx - Math.max(0, mn)) < 1e5 ? `khách bù thêm khoảng ${pm(mx)} mỗi tháng` : `khách bù thêm khoảng ${pm(Math.max(0, mn))} → ${pm(mx)} mỗi tháng`);
     }
-    line("Tổng lãi cả kỳ vay (giả định)", xlMoney(lp.totalInt), "khách có thể trả bớt nợ trước hạn theo điều kiện ngân hàng");
+    line("Trả bớt nợ trước hạn", "", "được, theo điều kiện của ngân hàng; trả sớm thì tiền lãi giảm");
   } else {
     line("Không vay", "", "khách tự đóng theo các mốc ở mục 2");
     if (ctx.cs === "thue") line("Tiền thuê Chủ đầu tư trả", `${ctx.rentM} triệu/tháng`, `tháng ${M + 1}–${M + 24} sau HĐMB, 24 tháng kể từ thông báo bàn giao`);
@@ -353,6 +353,13 @@ function xlSummarySheet(ctx, where){
     `Ngoài giá căn: phí quản lý${u.dt ? ` khoảng ${vnd(u.dt * MGMT_FEE)}/tháng chưa VAT` : " 11.000 đ/m²/tháng chưa VAT"}, lệ phí trước bạ và phí cấp sổ khi làm Giấy chứng nhận, bảo hiểm cháy nổ bắt buộc.`,
     "Giá trị ràng buộc theo báo giá mã căn của Chủ đầu tư và HĐMB. Bảng tham khảo do Bạch Đằng, chuyên viên tư vấn Bcons Central Park lập, liên hệ 0784 313 668."
   ].forEach(t=>sh.note("• " + t, "txt"));
+  sh.blank();
+  const ns = nextSteps(q, u.code, !!lp);
+  sh.sec("6. " + ns.title.toUpperCase());
+  sh.note(ns.inspire, "txtB");
+  ns.steps.forEach(([a, b], i)=>sh.note(`${i + 1}. ${a}: ${b}`, "txt"));
+  sh.note(ns.note);
+  sh.note(ns.sign, "accent");
   return sh;
 }
 
@@ -406,7 +413,7 @@ function xlCashBook(ctx){
   sh.add(tot);
   sh.blank();
   const totalInt = cf.rows.reduce((a, r)=>a + r.int, 0);
-  sh.note(`Khách đóng Chủ đầu tư + ngân hàng giải ngân = tổng thanh toán ${vnd(q.T + q.fee)}. Khách chi trong tháng = khách đóng Chủ đầu tư + gốc và lãi trả ngân hàng${hasRent ? " − tiền thuê Chủ đầu tư trả" : ""}. Tổng lãi khách trả cả kỳ theo giả định: ${vnd(totalInt)}.`, "txt");
+  sh.note(`Khách đóng Chủ đầu tư + ngân hàng giải ngân = tổng thanh toán ${vnd(q.T + q.fee)}. Khách chi trong tháng = khách đóng Chủ đầu tư + gốc và lãi trả ngân hàng${hasRent ? " − tiền thuê Chủ đầu tư trả" : ""}.`, "txt");
   xlNotes(ctx).forEach(t=>sh.note(t));
 
   /* Bảng theo năm */
@@ -495,7 +502,6 @@ function xlOverviewBook(ctx){
       const r = sh.add([{ v:range, s:"txtB" }, { v:null, s:"txt" }, { v:null, s:"txt" }, { v:`${amt}${why ? " · " + why : ""}`, s:"txt" }, ...Array(5).fill({ v:null, s:"txt" })]);
       sh.merge(r, 0, 2); sh.merge(r, 3, 8);
     }
-    sh.kv("Tổng lãi khách trả cả kỳ (theo giả định)", Math.round(lp.totalInt), 2);
     sh.note("Chi tiết từng tháng xem file Excel dòng tiền hằng tháng.");
   } else sh.note(ctx.noLoanTxt || "Không vay theo phương thức này; khách tự đóng theo tiến độ.", "txt");
   sh.blank();
@@ -530,22 +536,23 @@ function xlOverviewBook(ctx){
   return { sheets:[xlSummarySheet(ctx, "ov"), sh, cs], name:`Tong-quan-bao-gia-${xlSafe(ctx.unit.code || ctx.unit.typeName)}.xlsx` };
 }
 
-/* Tải file: điện thoại mở bảng chia sẻ (lưu vào Tệp, gửi Zalo); máy tính tải về như bình thường */
-async function xlDeliver(book, toast){
-  const bytes = XL.workbook(book.sheets);
-  const blob = new Blob([bytes], { type:XLSX_MIME });
+/* Giao file: điện thoại mở bảng chia sẻ (lưu vào Tệp, gửi Zalo); máy tính tải về như bình thường */
+async function deliverFile(blob, name, toast){
   try {
     if (typeof File !== "undefined" && navigator.canShare && matchMedia("(pointer:coarse)").matches) {
-      const file = new File([blob], book.name, { type:XLSX_MIME });
-      if (navigator.canShare({ files:[file] })) { await navigator.share({ files:[file], title:book.name }); return "shared"; }
+      const file = new File([blob], name, { type:blob.type });
+      if (navigator.canShare({ files:[file] })) { await navigator.share({ files:[file], title:name }); return "shared"; }
     }
   } catch (e) { if (e && e.name === "AbortError") return "cancel"; }
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url; a.download = book.name; a.rel = "noopener";
+  const a = document.createElement("a"); a.href = url; a.download = name; a.rel = "noopener";
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 30000);
-  if (toast) toast(`Đã tạo ${book.name}`);
+  if (toast) toast(`Đã tạo ${name}`);
   return "download";
 }
+async function xlDeliver(book, toast){
+  return deliverFile(new Blob([XL.workbook(book.sheets)], { type:XLSX_MIME }), book.name, toast);
+}
 
-if (typeof module !== "undefined") module.exports = { XL, xlCashBook, xlOverviewBook, xlCashflow, xlDeliver };
+if (typeof module !== "undefined") module.exports = { XL, xlCashBook, xlOverviewBook, xlCashflow, xlDeliver, deliverFile };

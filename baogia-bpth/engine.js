@@ -147,6 +147,22 @@ function ty(v, d=2){
   if (Math.abs(v) >= 1e9) return (v/1e9).toLocaleString("vi-VN",{minimumFractionDigits:d,maximumFractionDigits:d}) + " tỷ";
   return (v/1e6).toLocaleString("vi-VN",{maximumFractionDigits:1}) + " triệu";
 }
+/* Bước tiếp theo để sở hữu căn: lời mời quyết định (không tạo khan hiếm giả, không hứa tăng giá) và thủ tục 3 mốc tiền */
+function nextSteps(q, code, hasLoan){
+  const unitTxt = code ? `Căn ${code}` : "Căn anh chị chọn";
+  const r0 = q.rows[0], r1 = q.rows[1];
+  return {
+    title: `Bước tiếp theo để sở hữu ${code ? "căn " + code : "căn hộ"}`,
+    inspire: `Một quyết định lớn trở nên nhẹ nhàng khi anh chị nhìn rõ từng con số. ${unitTxt} cần ${ty(q.toHD)} đến lúc ký HĐMB, phần còn lại đã chia theo tiến độ${hasLoan ? " và kế hoạch vay" : ""} trong phiếu này. Mỗi mã căn chỉ có một, căn đã có người cọc thì không còn để chọn. Khi thấy phù hợp với gia đình mình, anh chị bắt đầu bằng khoản cọc đăng ký 30 triệu cho đúng căn đã chọn.`,
+    steps: [
+      ["Cọc đăng ký 30.000.000 đ", `cho đúng mã căn${code ? " " + code : ""}. Chuyển khoản vào tài khoản công ty Bcons Homes (đơn vị phân phối) theo thông tin Bạch Đằng gửi trực tiếp, không chuyển vào tài khoản cá nhân. Khoản này được kết chuyển vào đợt 1.`],
+      ["Ký Thỏa thuận đăng ký", `đóng đủ đợt 1: ${vnd(r0.pay)} (5% giá chưa VAT, đã gồm 30 triệu cọc đăng ký). Người đứng tên mang theo căn cước công dân.`],
+      ["Ký Hợp đồng mua bán", `theo thông báo của Chủ đầu tư, khi dự án xong móng và có văn bản đủ điều kiện bán; đóng đợt 2: ${vnd(r1.pay)}.${hasLoan ? " Hồ sơ vay làm theo yêu cầu của ngân hàng, Bạch Đằng hỗ trợ kết nối." : ""}`]
+    ],
+    note: "Trước khi chuyển tiền, Bạch Đằng gửi văn bản Thỏa thuận để anh chị đọc kỹ, gồm điều kiện hoàn hoặc không hoàn từng khoản.",
+    sign: "Bcons Central Park · Theo dòng di sản, thuận lòng phồn vinh"
+  };
+}
 /* Dòng lũy kế cho từng đợt: theo giá trị căn hộ chưa VAT như báo giá Chủ đầu tư; VAT ghi riêng */
 function cumTxt(q, i){
   const r = q.rows[i], k = q.rows.length, p = Math.round(r.cumNet * 100) / 100;
@@ -264,7 +280,7 @@ function loanPlan(q, o){
     totalInt: months.reduce((a,m)=>a + m.interest, 0), totalRent: months.reduce((a,m)=>a + m.rent, 0), over24: (code === "02" || code === "05") && M > 24 };
 }
 
-function loanHtml(p){
+function loanHtml(p, opt = {}){
   if (!p) return "";
   const pct = v => v.toLocaleString("vi-VN", { maximumFractionDigits:2 }) + "%";
   const LBL = {
@@ -296,7 +312,7 @@ function loanHtml(p){
     `<table class="lp-t"><tbody>${rows}</tbody></table>${rentNote}${loanNotes(p)}`+
     `<details class="lp-d"><summary>Bảng theo năm</summary><div class="lp-w"><table class="lp-t2"><thead><tr><th>Năm</th><th class="r">Gốc trả</th><th class="r">Lãi trả</th><th class="r">Bình quân/tháng</th>${rentTh}<th class="r">Dư nợ cuối năm</th></tr></thead><tbody>${yrs}</tbody></table></div></details>`+
     `<details class="lp-d"><summary>Bảng từng tháng (${p.months.length} tháng)</summary><div class="lp-w"><table class="lp-t2"><thead><tr><th>Tháng</th><th class="r">Gốc</th><th class="r">Lãi</th><th class="r">Phải trả</th>${rentTh}<th class="r">Dư nợ còn</th></tr></thead><tbody>${mons}</tbody></table></div></details>`+
-    `<p class="lp-note">Tháng tính từ ký HĐMB, giả định bàn giao ở tháng ${p.M}. Ân hạn gốc đến bàn giao${p.code === "02" || p.code === "05" ? " theo chính sách Chủ đầu tư" : " là giả định, theo ngân hàng duyệt"}. Lãi suất sau ưu đãi là giả định để minh họa, lãi thực tế theo ngân hàng tại thời điểm đó. Khách có thể trả bớt nợ trước hạn theo điều kiện của ngân hàng. Tổng lãi khách trả cả kỳ theo giả định này: ${vnd(p.totalInt)}.</p>`+
+    `<p class="lp-note">Tháng tính từ ký HĐMB, giả định bàn giao ở tháng ${p.M}. Ân hạn gốc đến bàn giao${p.code === "02" || p.code === "05" ? " theo chính sách Chủ đầu tư" : " là giả định, theo ngân hàng duyệt"}. Lãi suất sau ưu đãi là giả định để minh họa, lãi thực tế theo ngân hàng tại thời điểm đó. Khách có thể trả bớt nợ trước hạn theo điều kiện của ngân hàng.${opt.cust ? "" : ` Tổng lãi khách trả cả kỳ theo giả định này: ${vnd(p.totalInt)}.`}</p>`+
     `</div>`;
 }
 
@@ -344,4 +360,4 @@ function loanBrief(p){
   return out;
 }
 
-if (typeof module !== "undefined") module.exports = { cumTxt, costTo, loanPlan, loanHtml, loanBrief, loanNotes, selfLoanMax, SELF_ROWS, computeQuote, estimateInterest, parseMoney, parseUnit, PLANS, PLAN_ORDER, TYPES, TOWERS, THEO_DISC, NO_CK4, vnd, ty, pctTxt, esc, parseNum, DEPOSIT, MGMT_FEE };
+if (typeof module !== "undefined") module.exports = { nextSteps, cumTxt, costTo, loanPlan, loanHtml, loanBrief, loanNotes, selfLoanMax, SELF_ROWS, computeQuote, estimateInterest, parseMoney, parseUnit, PLANS, PLAN_ORDER, TYPES, TOWERS, THEO_DISC, NO_CK4, vnd, ty, pctTxt, esc, parseNum, DEPOSIT, MGMT_FEE };

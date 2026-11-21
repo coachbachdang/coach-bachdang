@@ -244,6 +244,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
 .policy-box{border-left:3px solid var(--river);background:#f6faf8;padding:12px 14px;border-radius:0 8px 8px 0;font-size:.88rem;display:grid;gap:6px}
 .policy-box.rent{border-left-color:var(--brass);background:#fcf8ef}
 .policy-box b{font-size:.92rem}
+.next-box{border:1px solid #e6d3ad;background:#fbf7ef;border-radius:10px;padding:14px 16px;display:grid;gap:8px}
+.next-box .inspire{margin:0;font-size:.95rem;line-height:1.55;color:var(--ink)}
+.next-box ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.88rem;line-height:1.5}
+.next-box .note{margin:0;font-size:.82rem;color:var(--muted)}
+.next-box .sign{margin:0;font-family:var(--display);font-style:italic;color:#8a6322;font-size:.92rem}
 .fine{font-size:.78rem;color:var(--muted);display:grid;gap:4px;padding-top:14px;border-top:1px solid var(--line)}
 .fine p::before{content:"· ";color:var(--brass);font-weight:700}
 .sh-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;padding:14px 22px;background:#f7faf8;border-top:1px solid var(--line);font-size:.86rem}
@@ -491,11 +496,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
 
       <div class="sheet-col">
         <div class="actions no-print">
-          <button type="button" class="btn btn-primary btn-sm" id="btnZalo">Chép tin nhắn Zalo</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnPdf">Tải báo giá PDF</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnZalo">Chép tin nhắn Zalo</button>
           <button type="button" class="btn btn-ghost btn-sm" id="btnLink">Chép đường dẫn báo giá</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="btnPrint">In hoặc lưu PDF</button>
           <button type="button" class="btn btn-ghost btn-sm" id="btnXlCf">Excel dòng tiền hằng tháng</button>
           <button type="button" class="btn btn-ghost btn-sm" id="btnXlOv">Excel tổng quan</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnPrint">In phiếu</button>
         </div>
         <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -533,6 +539,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
             <div class="policy-box rent" id="shRent" hidden></div>
 
             <div id="shLoan"></div>
+
+            <div class="next-box" id="shNext"></div>
 
             <div class="fine" id="shFine"></div>
           </div>
@@ -700,6 +708,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
 <script src="/baogia-bpth/engine.js"></script>
 <script src="/baogia-bpth/plans.js"></script>
 <script src="/baogia-bpth/xuat-excel.js"></script>
+<script src="/baogia-bpth/xuat-pdf.js"></script>
 <script>
 /* Cùng endpoint Google Apps Script với trang /BPTH: đăng ký lưu vào cùng Google Sheet */
 const LEAD_ENDPOINT = "https://script.google.com/macros/s/AKfycbws3j1_3qA0fsKx9-fDK7eGTipLh3vzBGoEd1lbfDKdc_vlQq3rRvrpJnBqaj34R9PDrA/exec";
@@ -910,8 +919,11 @@ if (typeof document !== "undefined") {
       (state.vbg === "1" ? `<div class="lp-in no-print" style="margin-bottom:8px">${lf("r2","Lãi phần vay thêm %/năm","decimal",state.r1 || "11")}</div>` : "");
     $("#shLoan").innerHTML = `<div class="sh-title">Kế hoạch vay${self1N && fullL ? ` · tự vay tối đa ${ty(fullL)}` : fullL ? ` · ngân hàng giải ngân ${ty(fullL)} theo ${pl.short}` : ""}</div>${intro}`+
       (ins ? `<div class="lp-in no-print">${ins}</div>` : "") + bgChk +
-      (lp ? `<div class="lp-seg no-print" role="group" aria-label="Cách trả" style="margin:8px 0"><button type="button" data-lm="goc" aria-pressed="${state.mt !== "deu" && state.mt !== "bac"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${state.mt === "deu"}">Trả đều</button><button type="button" data-lm="bac" aria-pressed="${state.mt === "bac"}">Bậc thang</button></div>` + loanHtml(lp)
+      (lp ? `<div class="lp-seg no-print" role="group" aria-label="Cách trả" style="margin:8px 0"><button type="button" data-lm="goc" aria-pressed="${state.mt !== "deu" && state.mt !== "bac"}">Gốc đều</button><button type="button" data-lm="deu" aria-pressed="${state.mt === "deu"}">Trả đều</button><button type="button" data-lm="bac" aria-pressed="${state.mt === "bac"}">Bậc thang</button></div>` + loanHtml(lp, { cust:true })
           : (fullL ? `<p class="note">Khách không vay, tự đóng toàn bộ theo tiến độ.</p>` : ""));
+    { const ns = nextSteps(q, unit && unit.open ? unit.code : "", !!lp);
+      $("#shNext").innerHTML = `<div class="sh-title">${ns.title}</div><p class="inspire">${ns.inspire}</p>`+
+        `<ol>${ns.steps.map(([a, b])=>`<li><b>${a}</b> ${b}</li>`).join("")}</ol><p class="note">${ns.note}</p><p class="sign">${ns.sign}</p>`; }
     const mg = area ? `<p>Phí quản lý ước tính ${vnd(area*MGMT_FEE)}/tháng chưa VAT (11.000 đ/m²; thực tế tính trên diện tích thông thủy ghi trong HĐMB).</p>` : "";
     $("#shFine").innerHTML =
       `<p>Báo giá tham khảo lập theo bảng giá áp dụng từ 07/11/2026, file check giá 14/11/2026, Thông báo 11/TB-ĐTTH ngày 05/11/2026 và 12/TB-ĐTTH ngày 12/11/2026. Giá trị ràng buộc theo báo giá mã căn do Chủ đầu tư phát hành và HĐMB.</p>`+
@@ -1043,6 +1055,20 @@ if (typeof document !== "undefined") {
     clearTimeout(copy.t); copy.t = setTimeout(()=>toast.textContent = "", 6000);
   }
   $("#btnXlCf").addEventListener("click", ()=>xlGo("cf"));
+  /* Tải phiếu báo giá thành PDF A4: đúng phiếu đang hiện, kèm bước tiếp theo */
+  $("#btnPdf").addEventListener("click", async e=>{
+    const toast = $("#toast"), b = e.currentTarget;
+    if (document.getElementById("sheet").style.opacity === "0.45" || !last) { toast.textContent = "Nhập giá hoặc tra mã căn trước khi tải báo giá."; return; }
+    const unit = last.unit, d = new Date();
+    const name = `Bao-gia-${xlSafe(unit ? unit.code : TYPES[state.loai].name)}-${xlSafe(PLANS[state.pt].short)}-${String(d.getDate()).padStart(2,"0")}${String(d.getMonth()+1).padStart(2,"0")}${d.getFullYear()}.pdf`;
+    b.disabled = true; const old = b.textContent; b.textContent = "Đang tạo PDF…";
+    try {
+      const blob = await sheetToPdf(document.getElementById("sheet"), name);
+      const r = await deliverFile(blob, name);
+      if (r !== "cancel") toast.textContent = r === "shared" ? "Đã tạo file PDF báo giá." : "Đã tải file PDF báo giá.";
+    } catch (_) { toast.textContent = "Chưa tạo được PDF trên trình duyệt này. Anh chị dùng nút In phiếu rồi chọn Lưu PDF."; }
+    finally { b.disabled = false; b.textContent = old; clearTimeout(copy.t); copy.t = setTimeout(()=>toast.textContent = "", 6000); }
+  });
   $("#btnXlOv").addEventListener("click", ()=>xlGo("ov"));
 
   /* Tra giá đúng căn: khách để lại tên + số điện thoại một lần, sau đó tra căn nào ra đúng giá căn đó.
