@@ -760,14 +760,21 @@ const LOAN = { r1:"11", y:"30", mt:"goc", M:"24", r0:"10,7", n0:"18", amt:"", am
 /* Số tiền vay chỉ áp dụng cho căn đang nhập; mở căn khác thì về mức tối đa của phương thức */
 const loanAmt = u => LOAN.amt && LOAN.amtFor === u.code ? parseMoney(LOAN.amt) : NaN;
 function loanOpts(u, pt){ return { M:parseNum(LOAN.M), years:parseNum(LOAN.y), r1:parseNum(LOAN.r1), r0:parseNum(LOAN.r0), n0:parseNum(LOAN.n0), method:LOAN.mt, selfLoan: pt === "1N" || pt === "01", rent: S.cs === "thue" ? TYPES[u.type].rent * 1e6 : 0, amt: loanAmt(u), addBG: LOAN.bg, r2: parseNum(LOAN.r2) }; }
+/* Chênh lệch đến tháng 48 tách hai phần, không hiện tổng chi phí tiền tỷ: giá + phí bảo trì, và tiền lãi (cùng mốc tháng 48) */
+function diffTxt(qa, ka, qb, kb){
+  const dp = (qa.T + qa.fee) - (qb.T + qb.fee), di = ka.iH - kb.iH, a = [];
+  if (Math.abs(dp) >= 5e5) a.push(`giá và phí bảo trì ${dp > 0 ? "cao" : "thấp"} hơn ${ty(Math.abs(dp))}`);
+  if (Math.abs(di) >= 5e5) a.push(`lãi ${di > 0 ? "nhiều" : "ít"} hơn ${ty(Math.abs(di))}`);
+  return a.join("<br>");
+}
 /* So sánh cùng vay 50% đến tháng 48, theo giả định ở ô Kế hoạch vay */
 function c48Box(u){
-  const r = PLAN_ORDER.map(c=>({ c, k: costTo(quoteOf(u, c, S.cs), { ...loanOpts(u, c), selfLoan: c === "1N" || c === "01" }) })).sort((a,b)=>a.k.total - b.k.total);
+  const r = PLAN_ORDER.map(c=>{ const q = quoteOf(u, c, S.cs); return { c, q, k: costTo(q, { ...loanOpts(u, c), selfLoan: c === "1N" || c === "01" }) }; }).sort((a,b)=>a.k.total - b.k.total);
   const best = r[0];
-  return `<details class="c48"><summary>Cùng vay 50%, tính đến tháng ${best.k.H}: thấp nhất <b>${PLANS[best.c].short}</b> · ${tyS(best.k.total)} tỷ</summary>`+
-    `<table class="pt-t num"><thead><tr><th>Phương thức</th><th>Lãi đến T${best.k.H}</th><th>Tổng chi phí</th></tr></thead><tbody>`+
-    r.map(x=>`<tr data-pt="${x.c}"><td><b>${PLANS[x.c].short}</b><small>${PLANS[x.c].title}</small></td><td>${x.k.iH >= 1 ? ty(x.k.iH) : "0"}</td><td><b>${tyS(x.k.total)}</b><small>${x === best ? "thấp nhất" : "+" + ty(x.k.total - best.k.total)}</small></td></tr>`).join("")+
-    `</tbody></table><p class="small muted" style="margin:6px 0 0">Tổng = giá gồm VAT + phí bảo trì 2% + lãi khách trả đến tháng ${best.k.H} sau ký HĐMB, lúc mọi ưu đãi lãi đã hết. 1N, 01 tính tự vay 50%. Giả định lãi, thời hạn, tháng bàn giao, cách trả theo ô Kế hoạch vay bên dưới.${best.k.over24 ? " Bàn giao quá 24 tháng: phần lãi vượt của 02, 05 cần xác nhận với CĐT." : ""}</p></details>`;
+  return `<details class="c48"><summary>Cùng vay 50%, tính đến tháng ${best.k.H}: tiết kiệm nhất <b>${PLANS[best.c].short}</b></summary>`+
+    `<table class="pt-t num"><thead><tr><th>Phương thức</th><th>Lãi đến T${best.k.H}</th><th>Tốn hơn</th></tr></thead><tbody>`+
+    r.map(x=>`<tr data-pt="${x.c}"><td><b>${PLANS[x.c].short}</b><small>${PLANS[x.c].title}</small></td><td>${x.k.iH >= 1 ? ty(x.k.iH) : "0"}</td><td>${x === best ? "<b>Tiết kiệm nhất</b>" : `<b>+${ty(x.k.total - best.k.total)}</b><small>${diffTxt(x.q, x.k, best.q, best.k)}</small>`}</td></tr>`).join("")+
+    `</tbody></table><p class="small muted" style="margin:6px 0 0">Tốn hơn = chênh giá và phí bảo trì 2% + chênh lãi so với cách tiết kiệm nhất. Cột lãi và cột tốn hơn cùng tính đến tháng ${best.k.H} sau ký HĐMB, lúc mọi ưu đãi lãi đã hết. 1N, 01 tính tự vay 50%. Giả định lãi, thời hạn, tháng bàn giao, cách trả theo ô Kế hoạch vay bên dưới.${best.k.over24 ? " Bàn giao quá 24 tháng: phần lãi vượt của 02, 05 cần xác nhận với CĐT." : ""}</p></details>`;
 }
 function loanBox(u, q, pt){
   const p = loanPlan(q, loanOpts(u, pt));
@@ -824,9 +831,12 @@ function renderCompare(){
     row("④ Đóng khi bàn giao<br><small>25% + phí bảo trì 2%</small>", u=>ty(quoteOf(u).atBG), u=>quoteOf(u).atBG)+
     row("⑤ Đóng khi nhận sổ 5%", u=>ty(quoteOf(u).atGCN))+
     (S.cs === "thue" ? row("Thuê lại 24 tháng", u=>`${(TYPES[u.type].rent*24).toLocaleString("vi-VN")} triệu`) : "")+
-    row("Tổng chi phí đến tháng 48<br><small>cùng vay 50%, gồm lãi</small>", u=>tyS(k48(u).total) + " tỷ", u=>k48(u).total)+
+    row("Lãi khách trả đến tháng 48<br><small>cùng vay 50%</small>", u=>ty(k48(u).iH), u=>k48(u).iH)+
+    (us.length > 1 ? (()=>{ const bu = us.reduce((a, b)=>k48(b).total < k48(a).total ? b : a), kb = k48(bu), qb = quoteOf(bu);
+      return row("Tốn hơn căn tiết kiệm nhất<br><small>đến tháng 48</small>", u=>{ const k = k48(u), d = k.total - kb.total;
+        return d < 0.5 ? "<b>Tiết kiệm nhất</b>" : `+${ty(d)}<br><small>${diffTxt(quoteOf(u), k, qb, kb)}</small>`; }); })() : "")+
     `</tbody></table></div>`+
-    `<p class="small muted" style="margin:6px 2px 0">Dấu ✓: con số thấp nhất trong hàng. Đơn giá tính trên diện tích tim tường theo bảng giá, chưa VAT; sổ hồng ghi diện tích thông thủy. ③ là tổng tiền khách tự bỏ ra từ lúc ký đến trước bàn giao; ③ + ② + ④ + ⑤ = giá gồm VAT + phí bảo trì. Tổng chi phí đến tháng 48 = giá gồm VAT + phí bảo trì + lãi khách trả đến tháng 48 sau ký HĐMB, giả định lãi theo ô Kế hoạch vay trong chi tiết căn.</p>`+
+    `<p class="small muted" style="margin:6px 2px 0">Dấu ✓: con số thấp nhất trong hàng. Đơn giá tính trên diện tích tim tường theo bảng giá, chưa VAT; sổ hồng ghi diện tích thông thủy. ③ là tổng tiền khách tự bỏ ra từ lúc ký đến trước bàn giao; ③ + ② + ④ + ⑤ = giá gồm VAT + phí bảo trì. Dòng lãi và dòng tốn hơn cùng tính đến tháng 48 sau ký HĐMB, cùng vay 50%, giả định lãi theo ô Kế hoạch vay trong chi tiết căn; tốn hơn = chênh giá và phí bảo trì + chênh lãi so với căn tiết kiệm nhất.</p>`+
     `<div class="cmp-acts" style="margin-top:10px"><button class="btn btn-primary" type="button" id="cmpZalo">Chép tin Zalo so sánh</button><button class="btn btn-ghost" type="button" id="cmpClear">Xóa hết</button></div>`;
 }
 /* Tin Zalo so sánh 2–3 căn cho khách: không trạng thái nội bộ, không dấu chấm cuối câu */
