@@ -249,7 +249,7 @@ function loanPlan(q, o){
     if (!Y) Y = years_[y - 1] = { y, int:0, prin:0, pay:0, rent:0, n:0, end:0 };
     Y.int += m.interest; Y.prin += m.principal; Y.pay += m.pay; Y.rent += m.rent; Y.n++; Y.end = m.bal - m.principal;
   }
-  return { code, L, full, base:want, short:full - want, ext, M, years, N, r0:r0*100, r1:r1*100, r2:r2*100, n0, capEnd, method:o.method === "deu" ? "deu" : o.method === "bac" ? "bac" : "goc", months, segs, years_,
+  return { code, tr, L, full, base:want, short:full - want, ext, M, years, N, r0:r0*100, r1:r1*100, r2:r2*100, n0, capEnd, method:o.method === "deu" ? "deu" : o.method === "bac" ? "bac" : "goc", months, segs, years_,
     totalInt: months.reduce((a,m)=>a + m.interest, 0), totalRent: months.reduce((a,m)=>a + m.rent, 0), over24: (code === "02" || code === "05") && M > 24 };
 }
 

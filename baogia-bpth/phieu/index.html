@@ -492,6 +492,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
           <button type="button" class="btn btn-primary btn-sm" id="btnZalo">Chép tin nhắn Zalo</button>
           <button type="button" class="btn btn-ghost btn-sm" id="btnLink">Chép đường dẫn báo giá</button>
           <button type="button" class="btn btn-ghost btn-sm" id="btnPrint">In hoặc lưu PDF</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnXlCf">Excel dòng tiền hằng tháng</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btnXlOv">Excel tổng quan</button>
         </div>
         <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -696,6 +698,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--river);b
 
 <script src="/baogia-bpth/engine.js"></script>
 <script src="/baogia-bpth/plans.js"></script>
+<script src="/baogia-bpth/xuat-excel.js"></script>
 <script>
 /* Cùng endpoint Google Apps Script với trang /BPTH: đăng ký lưu vào cùng Google Sheet */
 const LEAD_ENDPOINT = "https://script.google.com/macros/s/AKfycbws3j1_3qA0fsKx9-fDK7eGTipLh3vzBGoEd1lbfDKdc_vlQq3rRvrpJnBqaj34R9PDrA/exec";
@@ -762,7 +765,7 @@ if (typeof document !== "undefined") {
     return PAGE_URL + (s ? "?" + s : "");
   }
 
-  let last = null, last_ux = null, last_lp = null;
+  let last = null, last_ux = null, last_lp = null, last_lopt = null;
 
   function render(){
     const t = TYPES[state.loai];
@@ -812,7 +815,7 @@ if (typeof document !== "undefined") {
     const pl = PLANS[state.pt];
     last_ux = ux;
     const manual = !!state.ma && !ux;
-    last = { q, t, unit, area, pl, today, manual };
+    last = { q, t, unit, area, pl, today, manual, b02 };
     if (manual) {
       gh.className = "hint warn";
       gh.textContent += ` · Đây là số anh chị nhập, chưa phải giá riêng của căn ${unit ? unit.code : state.ma.toUpperCase()}. Gửi mã căn ở cuối trang để nhận giá đúng căn.`;
@@ -882,7 +885,7 @@ if (typeof document !== "undefined") {
     const fullL = selfP ? (state.vay === "1" ? selfLoanMax(q) : 0) : q.bank;
     const lopt = { M:parseNum(state.th), years:parseNum(state.yr), r1:parseNum(state.r1), r0:parseNum(state.ls), n0:parseNum(state.n0), method:state.mt, selfLoan: state.vay === "1", rent: state.cs === "thue" ? t.rent * 1e6 : 0,
       amt: selfP && state.vt ? parseMoney(state.vt) : NaN, addBG: state.vbg === "1", r2: parseNum(state.r2) };
-    const lp = loanPlan(q, lopt); last_lp = lp;
+    const lp = loanPlan(q, lopt); last_lp = lp; last_lopt = lopt;
     const lf = (k, lab, mode="decimal", ph="") => `<label>${lab}<input type="text" inputmode="${mode}" data-k="${k}" value="${esc(state[k])}"${ph ? ` placeholder="${ph}"` : ""}></label>`;
     const tyS2 = v => (v/1e9).toLocaleString("vi-VN",{minimumFractionDigits:2,maximumFractionDigits:2});
     const self1N = selfP;
@@ -994,6 +997,30 @@ if (typeof document !== "undefined") {
     copy(url, "Đã chép đường dẫn. Người nhận mở ra sẽ thấy đúng phiếu này.");
   });
   $("#btnPrint").addEventListener("click", ()=>window.print());
+
+  /* Xuất Excel: dòng tiền hằng tháng và tổng quan báo giá, theo đúng lựa chọn đang hiện trên phiếu */
+  function xlCtx(){
+    if (!last) return null;
+    const { q, t, unit, area, today, manual, b02 } = last;
+    const ux = last_ux, o = last_lopt || {};
+    const oc = { M:parseNum(state.th), years:parseNum(state.yr), r1:parseNum(state.r1), r0:parseNum(state.ls), n0:parseNum(state.n0), method:state.mt, selfLoan: state.vay === "1" };
+    const pi = unit && typeof planInfo === "function" ? planInfo(unit.code) : null;
+    return { unit:{ code: unit ? unit.code : "", tower: unit ? unit.tower : "", floor: unit ? unit.floor : "", typeName:t.name, dt: area || null, tt: ux ? ux.tt : null, model: pi ? pi.u.m : "" },
+      pt:state.pt, cs:state.cs, q, lp:last_lp, o, today, kh:state.kh, manual, link:shareUrl(), rentM:t.rent,
+      getQ: c => computeQuote(b02, c, state.cs, ux), cmpOpts: () => oc, cmpSelf: state.vay === "1" };
+  }
+  async function xlGo(kind){
+    const toast = $("#toast");
+    if (document.getElementById("sheet").style.opacity === "0.45") { toast.textContent = "Nhập giá hoặc tra mã căn trước khi xuất Excel."; return; }
+    const ctx = xlCtx(); if (!ctx) return;
+    try {
+      const r = await xlDeliver(kind === "cf" ? xlCashBook(ctx) : xlOverviewBook(ctx));
+      if (r !== "cancel") toast.textContent = r === "shared" ? "Đã tạo file Excel." : "Đã tải file Excel. Mở bằng Excel, Numbers hoặc Google Sheets.";
+    } catch (_) { toast.textContent = "Chưa tạo được file Excel trên trình duyệt này. Anh chị mở trang bằng Safari hoặc Chrome rồi thử lại."; }
+    clearTimeout(copy.t); copy.t = setTimeout(()=>toast.textContent = "", 6000);
+  }
+  $("#btnXlCf").addEventListener("click", ()=>xlGo("cf"));
+  $("#btnXlOv").addEventListener("click", ()=>xlGo("ov"));
 
   /* Tra giá đúng căn: khách để lại tên + số điện thoại một lần, sau đó tra căn nào ra đúng giá căn đó.
      Mỗi lượt tra ghi vào Google Sheet khách đăng ký. Không hiện trạng thái cọc. */

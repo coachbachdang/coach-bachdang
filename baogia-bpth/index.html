@@ -438,6 +438,7 @@ body.cust .cust-bar button{margin-left:auto}
 </script>
 <script src="/baogia-bpth/engine.js"></script>
 <script src="/baogia-bpth/plans.js"></script>
+<script src="/baogia-bpth/xuat-excel.js"></script>
 <script>
 "use strict";
 const DATA_URL = "/baogia-bpth/data.enc.json";
@@ -740,8 +741,18 @@ function drawUnit(){
     `<div class="acts"><button class="btn btn-primary wide" type="button" data-act="share">Gửi phiếu cho khách</button>`+
       `<button class="btn btn-ghost" type="button" data-act="zalo">Chép tin Zalo</button>`+
       `<button class="btn btn-ghost" type="button" data-act="cmp">${S.cmp.includes(u.code) ? "Bỏ khỏi so sánh" : "So sánh"}</button>`+
+      `<button class="btn btn-ghost" type="button" data-act="xlcf">Excel dòng tiền</button>`+
+      `<button class="btn btn-ghost" type="button" data-act="xlov">Excel tổng quan</button>`+
       `<a class="btn btn-ghost wide" href="${shareLink(u, pt, S.cs)}" target="_blank" rel="noopener">Mở phiếu báo giá đầy đủ</a></div>`+
     `<p class="small muted int">${HAS_ST ? `Trạng thái đọc trực tiếp từ rổ hàng chung lúc ${D.stockAt}. Trước khi nhận cọc vẫn xác nhận lại với admin.` : liveNote()}</p>`;
+}
+
+/* Xuất Excel cho căn đang mở: dòng tiền hằng tháng, tổng quan báo giá (xuat-excel.js) */
+function xlCtxU(u){
+  const pt = S.dpt || S.pt, q = quoteOf(u, pt, S.cs), t = TYPES[u.type], o = loanOpts(u, pt), pi = planInfo(u.code);
+  return { unit:{ code:u.code, tower:D.towers[u.t].name, floor:u.floor, typeName:t.name, dt:u.dt, tt:u.tt, model: pi ? pi.u.m : "" },
+    pt, cs:S.cs, q, lp:loanPlan(q, o), o, today:new Date().toLocaleDateString("vi-VN",{day:"2-digit",month:"2-digit",year:"numeric"}), kh:"", manual:false,
+    link:shareLink(u, pt, S.cs), rentM:t.rent, getQ:c=>quoteOf(u, c, S.cs), cmpOpts:c=>({ ...loanOpts(u, c), selfLoan: c === "1N" || c === "01" }), cmpSelf:true };
 }
 
 /* ---------- KẾ HOẠCH VAY (dùng loanPlan/loanHtml chung trong engine.js) ---------- */
@@ -1105,6 +1116,12 @@ document.addEventListener("click", async e=>{
   const act = el.dataset.act;
   if (act === "close") closeUnit();
   if (act === "cust") { S.cust = !S.cust; render(); toast(S.cust ? "Chế độ khách xem: chỉ hiện căn còn trống" : "Đã về chế độ nội bộ"); }
+  if (act === "xlcf" || act === "xlov") {
+    const u = BY.get(S.open); if (!u) return;
+    try { const r = await xlDeliver(act === "xlcf" ? xlCashBook(xlCtxU(u)) : xlOverviewBook(xlCtxU(u))); if (r === "download") toast("Đã tải file Excel"); }
+    catch (_) { toast("Chưa tạo được file Excel trên trình duyệt này"); }
+    return;
+  }
   if (act === "share" || act === "zalo" || act === "cmp") {
     const u = BY.get(S.open);
     if (act === "share") {
