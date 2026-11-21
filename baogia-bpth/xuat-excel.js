@@ -265,11 +265,11 @@ function xlCompare(ctx){
   rows.forEach(r=>{ r.d = r.k.total - best; r.dp = (r.q.T + r.q.fee) - (B.q.T + B.q.fee); r.di = r.k.iH - B.k.iH; });
   const mv = v => xlMoney(Math.abs(v));
   const why = r => { const a = [];
-    if (Math.abs(r.dp) >= 5e5) a.push(`giá ${r.dp > 0 ? "cao" : "thấp"} hơn ${mv(r.dp)}`);
+    if (Math.abs(r.dp) >= 5e5) a.push(`giá và phí bảo trì ${r.dp > 0 ? "cao" : "thấp"} hơn ${mv(r.dp)}`);
     if (Math.abs(r.di) >= 5e5) a.push(`lãi ${r.di > 0 ? "nhiều" : "ít"} hơn ${mv(r.di)}`);
     return a.join(", "); };
   const cur = rows.find(r=>r.c === ctx.pt), ex = cur && cur.d >= 0.5 ? cur : rows.filter(r=>r.d >= 0.5).sort((a, b)=>a.d - b.d)[0];
-  const example = ex ? `Ví dụ: so với ${PLANS[B.c].short}, ${Math.abs(ex.dp) < 5e5 ? "giá bằng nhau" : `giá ${PLANS[ex.c].short} ${ex.dp > 0 ? "cao" : "thấp"} hơn ${mv(ex.dp)} vì mức chiết khấu khác nhau`}; ${Math.abs(ex.di) < 5e5 ? "tiền lãi gần như bằng nhau" : `tiền lãi khách trả đến tháng 48 ${ex.di > 0 ? "nhiều" : "ít"} hơn ${mv(ex.di)} vì cách vay và hỗ trợ lãi khác nhau`}. Cộng lại, ${PLANS[ex.c].short} tốn hơn ${mv(ex.d)}.` : "";
+  const example = ex ? `Ví dụ: so với ${PLANS[B.c].short}, ${Math.abs(ex.dp) < 5e5 ? "giá bằng nhau" : `giá và phí bảo trì của ${PLANS[ex.c].short} ${ex.dp > 0 ? "cao" : "thấp"} hơn ${mv(ex.dp)} vì mức chiết khấu khác nhau`}; ${Math.abs(ex.di) < 5e5 ? "tiền lãi gần như bằng nhau" : `tiền lãi khách trả đến tháng 48 ${ex.di > 0 ? "nhiều" : "ít"} hơn ${mv(ex.di)} vì cách vay và hỗ trợ lãi khác nhau`}. Cộng lại, ${PLANS[ex.c].short} tốn hơn ${mv(ex.d)}.` : "";
   return { rows, best:B, why, example, mv };
 }
 
@@ -338,7 +338,7 @@ function xlSummarySheet(ctx, where){
   const C = xlCompare(ctx);
   C.rows.forEach(r=>{ const on = r.c === ctx.pt;
     line(`${PLANS[r.c].short} · ${PLANS[r.c].title}${on ? " (đang chọn)" : ""}`, xlMoney(r.q.toHD), r.d < 0.5 ? "tiết kiệm nhất trong 6 phương thức" : `tốn hơn ${C.mv(r.d)}: ${C.why(r)}`, on); });
-  sh.note(`Chênh giá: giá trị gồm VAT và phí bảo trì khác nhau do mức chiết khấu. Chênh lãi: tiền lãi khách trả từ lúc vay đến tháng 48 sau ký HĐMB, khác nhau do cách vay và hỗ trợ lãi. Tính đến tháng 48 vì đến đó mọi ưu đãi lãi đã hết. ${C.example}`, "txt");
+  sh.note(`Chênh giá: giá trị gồm VAT và phí bảo trì 2% khác nhau do mức chiết khấu. Chênh lãi: tiền lãi khách trả từ lúc vay đến tháng 48 sau ký HĐMB (không phải chỉ đến bàn giao), khác nhau do cách vay và hỗ trợ lãi. Tính đến tháng 48 vì đến đó mọi ưu đãi lãi đã hết. ${C.example}`, "txt");
   sh.note(where === "ov" ? "Chi tiết và giả định ở trang So sánh phương thức." : "Chi tiết và giả định trong file Excel tổng quan báo giá.");
   sh.blank();
 
@@ -499,7 +499,7 @@ function xlOverviewBook(ctx){
   xlNotes(ctx).forEach(t=>sh.note(t));
 
   /* So sánh các phương thức cùng mức vay 50% */
-  const cmpH = ["Phương thức", "Cách vay", "Giá trị gồm VAT", "Ít hơn giá gốc PTTT 02", "Tự có đến HĐMB", "Tự có trước bàn giao", "Ngân hàng giải ngân", "Lãi khách trả đến bàn giao", "Chênh giá so với cách tiết kiệm nhất", "Chênh lãi đến tháng 48", "Tốn hơn cách tiết kiệm nhất"];
+  const cmpH = ["Phương thức", "Cách vay", "Giá trị gồm VAT", "Ít hơn giá gốc PTTT 02", "Tự có đến HĐMB", "Tự có trước bàn giao", "Ngân hàng giải ngân", "Lãi khách trả đến tháng 48", "Chênh giá và phí bảo trì so với cách tiết kiệm nhất", "Chênh lãi đến tháng 48", "Tốn hơn cách tiết kiệm nhất"];
   const cs = xlSheet("So sánh phương thức", [30, 30, 16, 16, 16, 16, 16, 16, 16, 16, 18], { landscape:true });
   cs.title("SO SÁNH CÁC PHƯƠNG THỨC THANH TOÁN · BCONS CENTRAL PARK", [hd.unitTxt, hd.csTxt || "Chưa áp dụng chính sách 12/TB-ĐTTH", hd.dateTxt]);
   cs.blank();
@@ -507,20 +507,20 @@ function xlOverviewBook(ctx){
   const CP = xlCompare(ctx);
   CP.rows.forEach(r=>{ const { c, q:qq, k } = r, selfL = !!r.o.selfLoan && (c === "1N" || c === "01");
     const p = PLANS[c], on = c === ctx.pt, selfP = c === "1N" || c === "01";
-    const how = selfP ? (selfL ? "tự vay" : "không vay") : (c === "03" || c === "04") ? "tính ở trần 6,9%" : "Chủ đầu tư hỗ trợ";
+    const how = selfP ? (selfL ? "tự vay" : "không vay") : (c === "03" || c === "04") ? `trần 6,9% đến tháng ${Math.min(48, k.M + 24)}, sau đó thả nổi` : "Chủ đầu tư hỗ trợ đến bàn giao, sau đó thả nổi";
     const loanAmt = qq.bank || (selfL ? selfLoanMax(qq) : 0);
     const d = r.d, sgn = v => Math.abs(v) < 0.5 ? 0 : Math.round(v);
     const st = (a, b) => on ? b : a;
-    cs.add([{ v:`${p.short} · ${p.title}${on ? " (đang chọn)" : ""}`, s:st("txtB", "hl") }, { v:`${p.loan} · lãi đến bàn giao ${how}${k.over24 ? " · quá 24 tháng: cần xác nhận" : ""}`, s:st("txt", "hl") },
+    cs.add([{ v:`${p.short} · ${p.title}${on ? " (đang chọn)" : ""}`, s:st("txtB", "hl") }, { v:`${p.loan} · lãi: ${how}${k.over24 ? " · quá 24 tháng: cần xác nhận" : ""}`, s:st("txt", "hl") },
       { v:qq.T, s:st("m", "hlM") }, { v:qq.saving > 0 ? qq.saving : 0, s:st("m", "hlM") }, { v:qq.toHD, s:st("m", "hlM") },
       { v:Math.round(qq.selfBefore - (selfL ? selfLoanMax(qq) : 0)), s:st("m", "hlM") }, loanAmt ? { v:loanAmt, s:st("m", "hlM") } : { v:"Không vay", s:st("txt", "hl") },
-      { v:Math.round(k.iM), s:st("m", "hlM") }, { v:sgn(r.dp), s:st("m", "hlM") }, { v:sgn(r.di), s:st("m", "hlM") },
+      { v:Math.round(k.iH), s:st("m", "hlM") }, { v:sgn(r.dp), s:st("m", "hlM") }, { v:sgn(r.di), s:st("m", "hlM") },
       d < 0.5 ? { v:"Tiết kiệm nhất", s:st("txtB", "hl") } : { v:Math.round(d), s:st("mB", "hlM") }], 45);
   });
   cs.blank();
   const M = CP.rows[0].k.M;
   const t2 = o => (+o > 0 ? +o : 0).toLocaleString("vi-VN");
-  cs.note(`Tốn hơn cách tiết kiệm nhất = chênh giá + chênh lãi. Chênh giá: giá trị gồm VAT và phí bảo trì 2% khác nhau do mức chiết khấu. Chênh lãi: tiền lãi khách trả đến tháng 48 sau ký HĐMB khác nhau do cách vay và hỗ trợ lãi. Số âm là ít hơn cách tiết kiệm nhất ở phần đó. ${CP.example}`);
+  cs.note(`Tốn hơn cách tiết kiệm nhất = chênh giá và phí bảo trì + chênh lãi. Chênh giá: giá trị gồm VAT và phí bảo trì 2% khác nhau do mức chiết khấu. Cột lãi và cột chênh lãi cùng tính từ lúc vay đến tháng 48 sau ký HĐMB: lãi của một phương thức trừ lãi của cách tiết kiệm nhất là ra phần chênh lãi. Số âm là ít hơn cách tiết kiệm nhất ở phần đó. ${CP.example}`);
   cs.note(`Mọi phương thức tính cùng mức vay 50% giá trị gồm VAT, cùng cách trả gốc, giả định bàn giao ở tháng ${M} sau ký HĐMB. Đến tháng 48 mọi ưu đãi lãi đều đã hết: PTTT 02, 05 Chủ đầu tư hỗ trợ lãi tối đa 24 tháng; PTTT 03, 04 trần 6,9% tối đa 48 tháng (tính ở mức trần); 1N, 01 ${ctx.cmpSelf ? `tự vay ưu đãi ${t2(ctx.o.r0)}%/năm trong ${t2(ctx.o.n0)} tháng (giả định)` : "tính không vay"}. Hết ưu đãi tính lãi ${t2(ctx.o.r1 || 11)}%/năm (giả định), lãi thực tế theo ngân hàng tại thời điểm đó.`);
   cs.note("Bảng so sánh để khách tự cân nhắc theo dòng tiền của mình; giá trị ràng buộc theo báo giá mã căn của Chủ đầu tư và HĐMB.");
   return { sheets:[xlSummarySheet(ctx, "ov"), sh, cs], name:`Tong-quan-bao-gia-${xlSafe(ctx.unit.code || ctx.unit.typeName)}.xlsx` };
