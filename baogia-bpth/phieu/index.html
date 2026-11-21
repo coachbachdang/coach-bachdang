@@ -719,6 +719,13 @@ if (typeof document !== "undefined") {
   if (!(state.theo in THEO_DISC)) state.theo = "02";
   if (!["0","thue","ck4"].includes(state.cs)) state.cs = "0";
 
+  /* Giá đúng căn (tra mã căn hoặc phiếu gửi từ bảng giá nội bộ): ô giá hiện theo tỷ cho gọn (3,372),
+     còn tính toán dùng đúng từng đồng từ đơn giá và diện tích thông thủy */
+  const giaTy = g => (g / 1e9).toLocaleString("vi-VN", { minimumFractionDigits:3, maximumFractionDigits:3 });
+  function exactG(){ const dg = parseInt(state.dg, 10), tt = parseNum(state.tt); if (!(dg > 1e6 && tt > 10)) return 0;
+    const n = Math.round(dg * tt); return n + Math.round(n * VAT_RATE); }
+  { const gx = exactG(); if (gx && Math.abs(gx - parseMoney(state.gia)) < 1000) state.gia = giaTy(gx); }
+
   /* Bảng khoảng giá */
   $("#priceRows").innerHTML = Object.entries(TYPES).map(([k,t])=>{
     const a = t.area[0]===t.area[1] ? t.area[0].toLocaleString("vi-VN") : t.area.map(x=>x.toLocaleString("vi-VN")).join("–");
@@ -771,7 +778,8 @@ if (typeof document !== "undefined") {
     const t = TYPES[state.loai];
     const unit = parseUnit(state.ma);
     const area = parseNum(state.dt);
-    const raw = parseMoney(state.gia);
+    let raw = parseMoney(state.gia);
+    { const gx = exactG(); if (gx && state.theo === "02" && Math.abs(gx - raw) <= 500001) raw = gx; }
     const today = new Date().toLocaleDateString("vi-VN",{day:"2-digit",month:"2-digit",year:"numeric"});
 
     /* Gợi ý mã căn */
@@ -1039,7 +1047,7 @@ if (typeof document !== "undefined") {
     const row = PRICES.u[p.code];
     if (!row) { msg.className = "hint warn"; msg.textContent = `Căn ${p.code} chưa có trong bảng giá đợt này. Gửi mã căn ở cuối trang để Bạch Đằng kiểm tra.`; return; }
     const [type, dt, tt, dg] = row; const n = Math.round(dg * tt), g = n + Math.round(n * VAT_RATE);
-    Object.assign(state, { ma:p.code, loai:type, dt:String(dt).replace(".", ","), gia:g.toLocaleString("vi-VN"), theo:"02", dg:String(dg), tt:String(tt).replace(".", ",") });
+    Object.assign(state, { ma:p.code, loai:type, dt:String(dt).replace(".", ","), gia:giaTy(g), theo:"02", dg:String(dg), tt:String(tt).replace(".", ",") });
     if (!state.kh && who.name) state.kh = who.name;
     syncInputs(); render();
     $("#gateBox").hidden = true;
