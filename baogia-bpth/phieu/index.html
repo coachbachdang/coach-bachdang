@@ -723,6 +723,9 @@ if (typeof document !== "undefined") {
 
   /* Đọc tham số trên đường dẫn để mở đúng phiếu đã gửi */
   const qs = new URLSearchParams(location.search);
+  /* Nguồn khách: link quảng cáo gắn ?nguon=qc-fb để phân biệt với khách từ Zalo, Facebook tự nhiên */
+  const NGUON = (qs.get("nguon") || "").replace(/[^\w-]/g, "").slice(0, 30);
+  const SRC = location.host + location.pathname + (NGUON ? " · nguồn " + NGUON : "");
   for (const k of Object.keys(state)) if (qs.has(k)) state[k] = qs.get(k);
   if (!TYPES[state.loai]) state.loai = "2pn2";
   if (!PLANS[state.pt]) state.pt = "1N";
@@ -1099,7 +1102,7 @@ if (typeof document !== "undefined") {
       looked.add(p.code); const q = last && last.q;
       sendLead({ name:who.name, phone:who.phone, need:"Tra giá theo mã căn", type:`${p.code} · ${TYPES[type].name}`,
         goal:`${PLANS[state.pt].short}${state.cs==="thue" ? " · thuê lại 24 tháng" : state.cs==="ck4" ? " · chiết khấu thêm 4%" : ""}`,
-        budget: q ? `Theo bảng giá ${ty(q.T)} gồm VAT` : "", time:"", note:"Phiếu: " + shareUrl(), website:"", source: location.host + location.pathname });
+        budget: q ? `Theo bảng giá ${ty(q.T)} gồm VAT` : "", time:"", note:"Phiếu: " + shareUrl(), website:"", source: SRC });
     }
     $("#sheet").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start" });
   }
@@ -1134,7 +1137,7 @@ if (typeof document !== "undefined") {
       name, phone, need:"Nhận báo giá chính thức theo mã căn",
       type: f.unit.value.trim(), goal: last ? `${last.pl.short}${state.cs==="thue" ? " · thuê lại 24 tháng" : state.cs==="ck4" ? " · chiết khấu thêm 4%" : ""}` : "",
       budget: q ? (last.manual ? `Khách tự nhập giá ${ty(q.T)} (chưa phải giá căn)` : `Theo bảng giá ${ty(q.T)} gồm VAT`) : "", time:"", note: [f.note.value.trim(), "Phiếu: " + shareUrl()].filter(Boolean).join(" | "),
-      website: f.website.value, source: location.host + location.pathname
+      website: f.website.value, source: SRC
     };
     $("#done").hidden = false;
     if (LEAD_ENDPOINT){
