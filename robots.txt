@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /thank-you.html
+Disallow: /qlch
 
 Sitemap: https://coach-bachdang.vercel.app/sitemap.xml

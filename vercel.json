@@ -16,6 +16,14 @@
     {
       "source": "/baogia-BPTH/",
       "destination": "/baogia-bpth/index.html"
+    },
+    {
+      "source": "/qlch",
+      "destination": "/qlch/index.html"
+    },
+    {
+      "source": "/qlch/",
+      "destination": "/qlch/index.html"
     }
   ],
   "headers": [
@@ -29,6 +37,32 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=300"
+        }
+      ]
+    },
+    {
+      "source": "/qlch(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
+      "source": "/qlch/config.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
         }
       ]
     }

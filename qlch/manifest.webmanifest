@@ -1,0 +1,27 @@
+{
+  "name": "Quản lý Căn hộ N2 D2D",
+  "short_name": "N2 D2D",
+  "start_url": "/qlch/",
+  "scope": "/qlch/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4b5a2e",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "/qlch/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/qlch/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/qlch/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
