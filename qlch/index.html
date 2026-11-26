@@ -224,7 +224,7 @@ function lastReading(rid,exceptId,upTo){let best=null;for(const b of bills()){if
  if(!best||b.period>best.period||(b.period===best.period&&b.newE>best.newE))best=b}return best}
 function prevReading(b){let best=null;for(const x of bills()){if(x.room!==b.room||x.id===b.id||x.newE===null||x.newE===undefined||x.newE==='')continue;
  if(!(x.period<b.period||(x.period===b.period&&x.newE<=b.oldE)))continue;if(!best||x.period>best.period||(x.period===best.period&&x.newE>best.newE))best=x}return best}
-function periodList(){const s=new Set(bills().map(b=>b.period));const c=curP();for(let i=-12;i<=1;i++)s.add(addM(c,i));if(okP(S.period))s.add(S.period);return[...s].sort().reverse()}
+function periodList(){const s=new Set(bills().map(b=>b.period));const c=curP();for(let i=-12;i<=3;i++)s.add(addM(c,i));if(okP(S.period))s.add(S.period);return[...s].sort().reverse()}
 const nextKH=()=>'KH'+String(tenants().reduce((m,t)=>Math.max(m,Number(String(t.id).replace(/\D/g,''))||0),0)+1).padStart(2,'0');
 const mask=s=>s?'•••'+esc(String(s).slice(-4)):'—';
 
