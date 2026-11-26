@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quản lý Căn hộ N2 D2D</title>
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#4b5a2e">
+<link rel="manifest" href="/qlch/manifest.webmanifest"><link rel="icon" href="/qlch/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/qlch/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="N2 D2D">
+<script src="/qlch/config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/*
+VOICE: sổ quản lý nhà cho thuê của người quản gia — trầm, chính xác, không thừa chữ.
+IDEA: mặt đứng tòa nhà N2 D2D: mỗi phòng là một ô cửa mang trạng thái thu tiền của kỳ.
+PICTURE: tòa nhà 4 tầng (mái, bồn nước, sàn, nền), ô phòng tô màu theo trạng thái, bấm để lập/xem bill.
+COLOUR and TYPE: olive đậm của thương hiệu làm chủ đạo, vàng mù tạt để thu tiền, đỏ cho quá hạn; Be Vietnam Pro.
+LAYOUT: dải đầu olive tràn viền + điều hướng; nội dung 1240px; mọi thao tác sửa mở ở ngăn kéo bên phải.
+*/
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#13160e);--panel:light-dark(#f3f4ee,#1b1f15);--panel2:light-dark(#e8eadf,#262b1e);
+--line:light-dark(#dcdfd1,#333a28);--ink:light-dark(#1c2114,#e8ebdd);--mute:light-dark(#5d6551,#a4ab94);
+--olive:light-dark(#4b5a2e,#9db06e);--olived:light-dark(#3a4623,#5f6e3d);--head:light-dark(#4b5a2e,#262e17);
+--mustard:light-dark(#94700a,#d9ad35);
+--ok:light-dark(#2f6b2a,#86c976);--okb:light-dark(#e3efda,#1f3219);
+--wait:light-dark(#86660a,#e2b84e);--waitb:light-dark(#f6eed0,#372f14);
+--part:light-dark(#a55406,#f09a4a);--partb:light-dark(#fae6d2,#3a2713);
+--bad:light-dark(#b3261e,#ff8a7f);--badb:light-dark(#fbe2df,#3c1a17);
+--none:light-dark(#6f7466,#959b89);--noneb:light-dark(#eeeee8,#22251d)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Be Vietnam Pro",system-ui,sans-serif;overflow-x:clip;font-variant-numeric:tabular-nums}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:max(4vw,16px)}
+pre,.scroll{overflow-x:auto}html{scroll-padding-top:120px}
+h1{font-size:clamp(26px,3.3vw,40px);line-height:1.1;margin:0 0 8px;text-wrap:balance;font-weight:700;letter-spacing:-.01em}
+h2{font-size:20px;line-height:1.25;margin:0}h3{font-size:17px;margin:0 0 8px}
+.sub{color:var(--mute);margin:0;font-size:15px}.muted{color:var(--mute)}.num{white-space:nowrap}
+.top{background:var(--head);color:#f2f5e8;position:sticky;top:0;z-index:20}
+.topin{display:flex;align-items:center;gap:14px 18px;padding-block:12px 8px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto}.brand svg{flex:none}
+.brand b{display:block;font-size:19px;line-height:1.2}.brand small{opacity:.78;font-size:13px}
+.per{display:flex;align-items:center;gap:8px;font-size:14px}
+.per select{background:rgb(255 255 255/.12);color:inherit;border:1px solid rgb(255 255 255/.32);border-radius:10px;height:42px;padding:0 10px;font:inherit;font-size:16px;width:auto}
+.per select option{color:#1c2114;background:#fff}
+.sync{font:inherit;font-size:13px;display:flex;align-items:center;gap:7px;opacity:.92;background:none;border:0;color:inherit;cursor:pointer;min-height:40px;padding:0 4px;border-radius:8px}.sync:hover{background:rgb(255 255 255/.1)}.sync::before{content:"";width:8px;height:8px;border-radius:50%;background:#e9c46a}
+.sync.on::before{background:#9fdc8a}.sync.off::before{background:#ff8a7f}
+.tabs{display:flex;gap:4px;padding-bottom:10px;overflow-x:auto;scrollbar-width:none}
+.tabs a{flex:none;color:#eef1e4;text-decoration:none;padding:0 16px;border-radius:999px;font-weight:500;font-size:15px;min-height:40px;display:flex;align-items:center}
+.tabs a:hover{background:rgb(255 255 255/.1)}.tabs a[aria-current=page]{background:#f3f6e9;color:#2c3619}
+.note{background:var(--waitb);padding:10px max(4vw,16px);font-size:14px}.note[hidden]{display:none}
+main{padding-block:28px 72px}
+.btn{font:inherit;font-weight:600;font-size:15px;min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;text-decoration:none}
+.btn:hover{border-color:var(--mute)}.btn.pri{background:var(--olive);border-color:var(--olive);color:light-dark(#fff,#13160e)}
+.btn.acc{background:var(--mustard);border-color:var(--mustard);color:light-dark(#fff,#1a1404)}
+.btn.sm{min-height:38px;padding:0 13px;font-size:14px}.btn.dan{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 45%,transparent)}
+.btn[disabled]{opacity:.55;cursor:progress}
+:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+body.ro .w{display:none!important}body.nodl .dlb{display:none!important}
+.chip{display:inline-flex;align-items:center;font-size:13px;font-weight:600;padding:2px 10px;border-radius:999px;white-space:nowrap;background:var(--sb);color:var(--sc)}
+.s-ok{--sc:var(--ok);--sb:var(--okb)}.s-wait{--sc:var(--wait);--sb:var(--waitb)}.s-part{--sc:var(--part);--sb:var(--partb)}
+.s-bad,.s-none{--sc:var(--bad);--sb:var(--badb)}.s-empty,.s-fix,.s-mute{--sc:var(--none);--sb:var(--noneb)}
+.vh{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.tb,.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.tools{margin-bottom:16px}
+.seg{display:inline-flex;gap:4px;padding:4px;background:var(--panel);border-radius:12px;flex-wrap:wrap}
+.seg button{font:inherit;font-size:14px;font-weight:500;border:0;background:transparent;color:var(--mute);padding:0 14px;min-height:38px;border-radius:9px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--bg);color:var(--ink);box-shadow:0 1px 3px rgb(0 0 0/.14)}
+input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;min-height:44px;padding:0 12px;width:100%}
+textarea{padding:10px 12px;min-height:88px;resize:vertical}input[readonly]{background:var(--panel);color:var(--mute)}
+input[type=checkbox]{width:22px;height:22px;min-height:0;accent-color:var(--olive)}
+.search{width:min(300px,100%)}
+.fg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px;align-content:start}.full{grid-column:1/-1}
+.fl{display:grid;gap:6px;font-size:13px;color:var(--mute);font-weight:500}
+.hint{font-size:13px;color:var(--mute);margin:-6px 0 0}.hint:empty{display:none}.hint.warn{color:var(--part)}.hint.err{color:var(--bad)}
+fieldset{border:1px solid var(--line);border-radius:12px;padding:14px 16px 16px;margin:0}legend{font-weight:600;font-size:14px;padding:0 6px}
+fieldset.hot{border-color:var(--mustard);background:var(--waitb)}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{font-weight:600;color:var(--mute);text-align:left;padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:13px;background:var(--panel)}
+.tbl td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:top}.tbl .r{text-align:right;white-space:nowrap}
+.tbl tbody tr[data-act]{cursor:pointer}.tbl tbody tr[data-act]:hover{background:var(--panel)}
+.tbl tfoot td{font-weight:700;border-top:2px solid var(--ink);border-bottom:0}.tbl small{display:block;color:var(--mute);font-size:12.5px}
+.tblw{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.hero{display:grid;gap:18px;margin-bottom:24px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));border-top:2px solid var(--ink);border-bottom:1px solid var(--line);overflow:hidden}
+.kpi{padding:14px 18px 14px 16px;border-left:1px solid var(--line);margin-left:-1px}
+.kpi small{display:block;font-size:13px;color:var(--mute);font-weight:500}.kpi b{display:block;font-size:clamp(21px,2.2vw,26px);font-weight:700;white-space:nowrap;line-height:1.3}
+.kpi span{font-size:13px;color:var(--mute)}.up{color:var(--ok)}.dn{color:var(--bad)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:22px;align-items:start}
+.card{background:var(--panel);border-radius:16px;padding:18px 20px}
+.bldg{background:var(--panel);border-radius:16px;padding:18px 18px 0;overflow:hidden}
+.bh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.roof{display:flex;align-items:flex-end;height:40px;margin:0 1%}
+.tank{width:70px;height:28px;border-radius:9px 9px 2px 2px;background:var(--olive);margin-left:auto;margin-right:9%;position:relative;bottom:10px}
+.tank::after{content:"";position:absolute;left:10px;right:10px;bottom:-10px;height:10px;border-inline:4px solid var(--olive)}
+.parapet{height:12px;background:var(--olive);border-radius:4px 4px 0 0;margin:0 1%}
+.tower{border-inline:8px solid var(--olive);background:var(--bg);margin:0 1%}
+.floor{display:grid;grid-template-columns:74px repeat(var(--n),minmax(0,1fr));gap:10px;padding:12px;border-bottom:6px solid var(--olive)}
+.floor:last-child{border-bottom:0}.fln{align-self:center;font-size:13px;color:var(--mute);font-weight:600}
+.unit{all:unset;box-sizing:border-box;display:grid;gap:2px;align-content:start;padding:12px 14px;border-radius:10px;background:var(--sb);border:1px solid color-mix(in srgb,var(--sc) 32%,transparent);cursor:pointer;min-height:112px;color:var(--ink);transition:border-color .15s}
+.unit:hover{border-color:var(--sc)}.unit:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+.uc{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}.uc b{font-size:18px}.unit .chip{background:var(--bg)}
+.un{font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ua{font-size:13px;color:var(--mute);white-space:nowrap}
+.ubar{height:5px;border-radius:3px;background:color-mix(in srgb,var(--sc) 20%,transparent);margin-top:6px;overflow:hidden}.ubar i{display:block;height:100%;background:var(--sc)}
+.slot{border-radius:10px;background:repeating-linear-gradient(135deg,transparent 0 9px,var(--line) 9px 10px);opacity:.7}
+.base{height:16px;background:var(--olived);margin:0 -18px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:12px 2px 16px;font-size:13px;color:var(--mute)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--sc);margin-right:6px}
+.todo{list-style:none;margin:6px 0 0;padding:0}
+.todo li{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);font-size:15px}
+.todo li small{display:block;color:var(--mute);font-size:13px}.dot{width:10px;height:10px;border-radius:50%;background:var(--sc)}
+.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:16px}
+.rc{background:var(--panel);border-radius:14px;padding:16px 18px;display:grid;gap:10px;align-content:start}
+.rc header{display:flex;justify-content:space-between;align-items:center;gap:8px}.rc h3{margin:0}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;margin:0;font-size:14px}.kv dt{color:var(--mute)}.kv dd{margin:0;text-align:right;font-weight:600}
+.bars{display:grid;gap:10px}.bar{display:grid;grid-template-columns:76px minmax(0,1fr) 128px;gap:12px;align-items:center;font-size:14px}
+.stk{display:flex;height:26px;border-radius:6px;overflow:hidden;background:var(--panel2)}.stk i{display:block;height:100%}
+.lg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--mute);margin:12px 0 0}.lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.sec{margin-top:34px}.sec>h2{margin-bottom:12px}
+.ov{position:fixed;inset:0;z-index:50;background:rgb(10 12 6/.45);display:flex;justify-content:flex-end}.ov[hidden]{display:none}
+.drawer{width:min(1020px,100%);height:100%;background:var(--bg);display:flex;flex-direction:column;box-shadow:-12px 0 40px rgb(0 0 0/.25);animation:sl .22s ease-out}
+.drawer.nar{width:min(660px,100%)}@keyframes sl{from{transform:translateX(36px);opacity:.5}}
+.dh{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px 12px 22px;border-bottom:1px solid var(--line)}
+.x{all:unset;width:44px;height:44px;display:grid;place-items:center;border-radius:10px;cursor:pointer;font-size:20px;flex:none}.x:hover{background:var(--panel)}.x:focus-visible{outline:3px solid var(--mustard)}
+.dbd{padding:20px 22px 48px;overflow:auto;flex:1}
+.acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.bgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+.sheet{background:#fff;color:#1d2315;border:1px solid #d8dccb;border-radius:14px;overflow:hidden;font-size:14px}
+.sh-h{background:#4b5a2e;color:#fff;padding:16px 18px;display:flex;justify-content:space-between;align-items:baseline;gap:6px 12px;flex-wrap:wrap}.sh-h b{font-size:17px}
+.sh-m{display:flex;justify-content:space-between;gap:6px 12px;padding:12px 18px;font-weight:600;color:#3f4c26;flex-wrap:wrap;border-bottom:1px solid #e4e6da}
+.sh-t{width:100%;border-collapse:collapse}.sh-t th{font-size:12.5px;color:#666c5c;text-align:left;padding:9px 12px 6px;font-weight:600}
+.sh-t td{padding:9px 12px;border-top:1px solid #eceee4;vertical-align:top}.sh-t th:first-child,.sh-t td:first-child{padding-left:18px}.sh-t th:last-child,.sh-t td:last-child{padding-right:18px}
+.sh-t .r{text-align:right;white-space:nowrap}.sh-t .d{color:#666c5c;font-size:13px}.sh-t tfoot td{background:#eef1e4;font-weight:700;font-size:16px;border-top:0}
+.sh-f{padding:12px 18px 16px;font-size:13px;color:#4a503f;display:grid;gap:5px}.sh-f p{margin:0;white-space:pre-line}
+.pay{margin-top:22px;border-top:1px solid var(--line);padding-top:16px}
+.ph{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px}
+.ph li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;background:var(--panel);border-radius:10px;padding:10px 12px;font-size:14px}.ph small{display:block;color:var(--mute)}
+.mo{position:fixed;inset:0;z-index:70;background:rgb(10 12 6/.5);display:grid;place-items:center;padding:16px}.mo[hidden]{display:none}
+.mbox{background:var(--bg);border-radius:16px;padding:22px;width:min(560px,100%);max-height:92vh;overflow:auto;box-shadow:0 20px 50px rgb(0 0 0/.3)}.mbox p{margin:0 0 6px}.mbox textarea{min-height:200px;margin-top:10px;font-size:14px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:500;opacity:0;pointer-events:none;transition:.2s;z-index:90;max-width:min(560px,92vw)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.lg-ov{position:fixed;inset:0;z-index:60;background:var(--head);display:grid;place-items:center;padding:20px}.lg-ov[hidden]{display:none}
+.lg-box{background:var(--bg);border-radius:18px;padding:28px 26px;width:min(440px,100%);box-shadow:0 24px 60px rgb(0 0 0/.3);display:grid;gap:14px}
+.lg-box h1{font-size:26px;margin:0}.lg-box label.ck{display:flex;gap:10px;align-items:center;font-size:14px;color:var(--mute)}
+.emp{padding:40px 0;display:grid;gap:12px;justify-items:start}
+.bt td{padding:6px 6px;vertical-align:middle}.unit.s-none{border-style:dashed;border-color:var(--sc)}.sh-t td:nth-child(2){white-space:nowrap}.bt input{min-height:40px;padding:0 8px}.bt td.c{text-align:center;vertical-align:middle}
+@media(prefers-reduced-motion:reduce){.drawer{animation:none}.toast,.unit{transition:none}}
+@media(max-width:980px){.grid2{grid-template-columns:1fr}}
+@media(max-width:820px){.bgrid{grid-template-columns:1fr}}
+@media(max-width:600px){
+.fg{grid-template-columns:1fr}.floor{grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px;padding:10px}.fln{grid-column:1/-1}
+.unit{padding:10px;min-height:100px}.bar{grid-template-columns:58px minmax(0,1fr);}.bar .r{grid-column:2}.dbd{padding:16px 16px 40px}
+table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}
+.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mute)}.stack td:empty{display:none}.stack td.r{text-align:start}}
+</style><script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script></head>
+<body>
+<header class="top">
+ <div class="wrap topin">
+  <div class="brand"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="5" y="6" width="24" height="25" rx="2" fill="none" stroke="#f2f5e8" stroke-width="2.4"/><path d="M3 31h28" stroke="#f2f5e8" stroke-width="2.4"/><rect x="10" y="11" width="5" height="5" fill="#e3c25b"/><rect x="19" y="11" width="5" height="5" fill="#f2f5e8"/><rect x="10" y="19" width="5" height="5" fill="#f2f5e8"/><rect x="19" y="19" width="5" height="12" fill="#f2f5e8"/></svg>
+   <div><b id="bName">Căn hộ N2 D2D</b><small>Quản lý nội bộ</small></div></div>
+  <label class="per">Kỳ <select id="per" aria-label="Kỳ đang xem"></select></label>
+  <button id="sync" class="sync" data-act="reload" title="Tải lại dữ liệu mới nhất">Đang kết nối…</button>
+ </div>
+ <nav class="wrap tabs" id="tabs" aria-label="Điều hướng">
+  <a href="#tong-quan">Tổng quan</a><a href="#hoa-don">Hóa đơn</a><a href="#khach-thue">Khách thuê</a><a href="#phong">Phòng</a><a href="#bao-cao">Báo cáo</a><a href="#cai-dat">Cài đặt</a>
+ </nav>
+</header>
+<div id="note" class="note" role="status" hidden></div>
+<main id="main" class="wrap"></main>
+<div id="ov" class="ov" hidden><aside class="drawer" id="drw" role="dialog" aria-modal="true" aria-labelledby="dT"><div class="dh"><h2 id="dT"></h2><button class="x" data-act="close" aria-label="Đóng">✕</button></div><div id="dB" class="dbd"></div></aside></div>
+<div id="mo" class="mo" hidden><div class="mbox" role="alertdialog" aria-modal="true"><div id="mT"></div><div class="acts" id="mA"></div></div></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="login" class="lg-ov" hidden><form id="lgf" class="lg-box" autocomplete="on" novalidate>
+ <div><h1>Căn hộ N2 D2D</h1><p class="sub">Quản lý nội bộ · nhập mã truy cập của đội để tiếp tục.</p></div>
+ <label class="fl" id="lg_api_w">Link máy chủ dữ liệu (kết thúc bằng /exec)<input id="lg_api" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec"></label>
+ <label class="fl">Mã truy cập<input id="lg_pin" type="password" autocomplete="current-password" required></label>
+ <label class="fl">Tên của bạn (ghi vào lịch sử thu tiền)<input id="lg_user" autocomplete="name" placeholder="Ví dụ: Đằng"></label>
+ <label class="ck"><input type="checkbox" id="lg_rem" checked> Ghi nhớ trên thiết bị này</label>
+ <p class="hint err" id="lg_err" style="margin:0"></p>
+ <button class="btn pri" id="lg_btn">Vào hệ thống</button></form></div>
+<script>
+{
+const DEF={name:'Căn hộ N2 D2D',dueDay:10,dueOffset:1,elecRate:3700,waterFee:70000,bottleRate:49000,warnDays:60,bank:'',billNote:'Ngày chốt số điện và thanh toán tiền phòng là 10 tây hàng tháng.'};
+const VIEWS=['tong-quan','hoa-don','khach-thue','phong','bao-cao','cai-dat'];
+const ST={ok:'Đã thu',wait:'Chờ thu',part:'Thu thiếu',bad:'Quá hạn',none:'Chưa lập bill',empty:'Phòng trống',fix:'Đang sửa'};
+const S={rooms:{},tenants:{},bills:{},cfg:{...DEF},got:{},noDb:false,view:'tong-quan',period:'',dl:null,me:'',sheetUrl:'',edit:null,busy:0,
+ f:{billP:'cur',billSt:'all',billQ:'',tenSt:'dang',tenQ:'',rp:'12'}};
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>{const s=String(v??'');const d=s.replace(/\D/g,'');if(!d)return 0;return(s.trim().startsWith('-')?-1:1)*Number(d)};
+const fmt=n=>Math.round(Number(n)||0).toLocaleString('vi-VN');
+const vnd=n=>fmt(n)+'đ',dash=n=>n?fmt(n):'—';
+const tr=n=>Math.abs(n)>=1e6?(n/1e6).toLocaleString('vi-VN',{maximumFractionDigits:1})+' triệu':vnd(n);
+const okP=p=>/^\d{4}-\d{2}$/.test(p||''),okD=d=>/^\d{4}-\d{2}-\d{2}$/.test(d||'');
+const pl=p=>okP(p)?p.slice(5)+'/'+p.slice(0,4):'—';
+const dl=d=>okD(d)?d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(0,4):'—';
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>iso(new Date()),curP=()=>today().slice(0,7);
+const addM=(p,k)=>{let[y,m]=p.split('-').map(Number);m+=k;while(m>12){m-=12;y++}while(m<1){m+=12;y--}return y+'-'+String(m).padStart(2,'0')};
+const addD=(d,k)=>{const x=new Date(d+'T00:00:00');x.setDate(x.getDate()+k);return iso(x)};
+const days=(a,b)=>Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/864e5);
+const rooms=()=>Object.values(S.rooms).sort((a,b)=>a.id.localeCompare(b.id));
+const tenants=()=>Object.values(S.tenants).sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
+const bills=()=>Object.values(S.bills).filter(b=>okP(b.period));
+const billsOf=p=>bills().filter(b=>b.period===p);
+const curTenant=rid=>tenants().find(t=>t.room===rid&&t.status==='dang');
+const floorOf=r=>r.floor!==undefined&&r.floor!==null&&r.floor!==''?Number(r.floor)||0:Number(String(r.id)[0])||0;
+const fName=f=>f===0?'Tầng trệt':'Tầng '+f;
+const hasE=b=>b.oldE!==null&&b.oldE!==undefined&&b.oldE!==''&&b.newE!==null&&b.newE!==undefined&&b.newE!=='';
+function calc(b){const kwh=hasE(b)?Math.max(0,b.newE-b.oldE):0,elec=kwh*(b.elecRate||0),bottle=(b.bottles||0)*(b.bottleRate||0);
+ const total=(b.rent||0)+elec+(b.water||0)+bottle+(b.other||0),paid=(b.payments||[]).reduce((s,x)=>s+(Number(x.amount)||0),0);
+ return{kwh,elec,bottle,total,paid,left:Math.max(0,total-paid)}}
+function dueOf(b){if(okD(b.due))return b.due;let d=addM(b.period,Number(S.cfg.dueOffset)||0)+'-'+String(Math.min(28,Math.max(1,Number(S.cfg.dueDay)||10))).padStart(2,'0');
+ if(okD(b.issued)&&b.issued>d)d=addD(b.issued,5);return d}
+function st(b){const c=calc(b);if(c.paid>=c.total)return'ok';if(today()>dueOf(b))return'bad';return c.paid>0?'part':'wait'}
+function agg(list){const o={n:list.length,total:0,paid:0,rent:0,elec:0,water:0,bottle:0,other:0,kwh:0,bottles:0,okN:0};
+ for(const b of list){const c=calc(b);o.total+=c.total;o.paid+=Math.min(c.paid,c.total);o.rent+=b.rent||0;o.elec+=c.elec;o.water+=b.water||0;o.bottle+=c.bottle;o.other+=b.other||0;o.kwh+=c.kwh;o.bottles+=b.bottles||0;if(st(b)==='ok')o.okN++}
+ o.debt=o.total-o.paid;return o}
+function roomState(r,p){const t=curTenant(r.id);if(!t)return{k:r.status==='sua'?'fix':'empty',t:null,bills:[]};
+ const bs=billsOf(p).filter(b=>b.room===r.id&&b.tenantId===t.id);if(!bs.length)return{k:'none',t,bills:bs};
+ const ks=bs.map(st);return{k:['bad','part','wait','ok'].find(x=>ks.includes(x)),t,bills:bs}}
+function lastReading(rid,exceptId,upTo){let best=null;for(const b of bills()){if(b.room!==rid||b.id===exceptId||b.newE===null||b.newE===undefined||b.newE==='')continue;if(upTo&&b.period>upTo)continue;
+ if(!best||b.period>best.period||(b.period===best.period&&b.newE>best.newE))best=b}return best}
+function prevReading(b){let best=null;for(const x of bills()){if(x.room!==b.room||x.id===b.id||x.newE===null||x.newE===undefined||x.newE==='')continue;
+ if(!(x.period<b.period||(x.period===b.period&&x.newE<=b.oldE)))continue;if(!best||x.period>best.period||(x.period===best.period&&x.newE>best.newE))best=x}return best}
+function periodList(){const s=new Set(bills().map(b=>b.period));const c=curP();for(let i=-12;i<=1;i++)s.add(addM(c,i));if(okP(S.period))s.add(S.period);return[...s].sort().reverse()}
+const nextKH=()=>'KH'+String(tenants().reduce((m,t)=>Math.max(m,Number(String(t.id).replace(/\D/g,''))||0),0)+1).padStart(2,'0');
+const mask=s=>s?'•••'+esc(String(s).slice(-4)):'—';
+
+/* ---------- UI helpers ---------- */
+let tt;function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),2600)}
+function note(m){const e=$('#note');e.textContent=m||'';e.hidden=!m}
+function setSync(c,t){const e=$('#sync');e.className='sync '+c;e.textContent=t}
+function ask(html,ok='Đồng ý',danger=true){return new Promise(res=>{$('#mT').innerHTML=html;$('#mA').innerHTML=`<button class="btn" data-m="0">Hủy</button><button class="btn ${danger?'dan':'pri'}" data-m="1">${esc(ok)}</button>`;
+ const mo=$('#mo');mo.hidden=false;$('#mA [data-m="1"]').focus();mo.onclick=e=>{const b=e.target.closest('[data-m]');if(!b&&e.target!==mo)return;mo.hidden=true;mo.onclick=null;res(b?b.dataset.m==='1':false)}})}
+function showText(t){$('#mT').innerHTML='<p><b>Copy nội dung bên dưới</b></p><p class="sub">Trình duyệt không cho copy tự động. Bôi đen và copy thủ công.</p><textarea readonly></textarea>';$('#mT textarea').value=t;
+ $('#mA').innerHTML='<button class="btn pri" data-m="1">Xong</button>';const mo=$('#mo');mo.hidden=false;$('#mT textarea').select();mo.onclick=e=>{if(e.target.closest('[data-m]')||e.target===mo){mo.hidden=true;mo.onclick=null}}}
+async function copy(t,msg='Đã copy'){try{await navigator.clipboard.writeText(t);toast(msg);return}catch(e){}
+ try{const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0;top:0';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();if(ok){toast(msg);return}}catch(e){}showText(t)}
+function openD(title,html,nar){$('#dT').textContent=title;$('#dB').innerHTML=html;$('#drw').classList.toggle('nar',!!nar);$('#ov').hidden=false;$('#dB').scrollTop=0;
+ setTimeout(()=>{const f=$('#dB input:not([readonly]),#dB select');if(f&&matchMedia('(min-width:700px)').matches)f.focus()},60)}
+function closeD(){$('#ov').hidden=true;$('#dB').innerHTML='';S.edit=null;S.batch=null}
+function errMsg(e){const m=(e&&e.message)||String(e||'');return'Không lưu được: '+m}
+function ro(){document.body.classList.add('ro');note('Bạn đang ở chế độ chỉ xem.')}
+const CFG=(window.N2_CONFIG||{});
+const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}};
+S.api=(CFG.apiUrl||'').trim()||LS('n2.api')||'';S.pin=LS('n2.pin')||'';S.user=LS('n2.user')||'';
+async function api(fn,...args){if(!S.api||!S.pin){showLogin('');throw{code:'auth',message:'Chưa đăng nhập.'}}S.busy++;
+ try{let r;try{r=await fetch(S.api,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({pin:S.pin,user:S.user,fn,args}),redirect:'follow'})}
+  catch(e){throw{code:'net',message:'Không kết nối được máy chủ dữ liệu. Kiểm tra mạng hoặc link /exec.'}}
+  let j;try{j=await r.json()}catch(e){throw{code:'net',message:'Máy chủ không trả dữ liệu hợp lệ. Kiểm tra link /exec và quyền truy cập "Bất kỳ ai" khi triển khai.'}}
+  if(!j||!j.ok){const c=j&&j.code;if(c==='auth'||c==='locked'||c==='nopin'){S.pin='';LS('n2.pin',null);showLogin(j.error)}throw{code:c||'server',message:(j&&j.error)||'Lỗi máy chủ.'}}
+  return j.data}finally{S.busy--}}
+function showLogin(msg){const o=$('#login');$('#lg_api_w').hidden=!!(CFG.apiUrl||'').trim();$('#lg_api').value=S.api||'';$('#lg_user').value=S.user||'';$('#lg_err').textContent=msg||'';
+ if(o.hidden){o.hidden=false;setTimeout(()=>$('#lg_pin').focus(),50)}setSync('off','Chưa đăng nhập')}
+async function doLogin(){const btn=$('#lg_btn'),er=$('#lg_err');er.textContent='';const url=((CFG.apiUrl||'').trim()||$('#lg_api').value.trim());
+ if(!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(url)){er.textContent='Link máy chủ phải là link ứng dụng web Apps Script (https://script.google.com/…/exec).';return}
+ const pin=$('#lg_pin').value;if(!pin){er.textContent='Nhập mã truy cập.';return}
+ S.api=url;S.pin=pin;S.user=$('#lg_user').value.trim();busy(btn,true);btn.textContent='Đang kiểm tra…';
+ try{const st=await api('getAll');const rem=$('#lg_rem').checked;LS('n2.api',url);LS('n2.user',S.user);LS('n2.pin',rem?pin:null);
+  $('#login').hidden=true;$('#lg_pin').value='';apply(st);toast('Đã đăng nhập'+(S.user?' · '+S.user:''))}
+ catch(e){if(!$('#lg_err').textContent)er.textContent=e.message||'Không đăng nhập được.'}finally{busy(btn,false);btn.textContent='Vào hệ thống'}}
+function logout(){S.pin='';LS('n2.pin',null);S.rooms={};S.tenants={};S.bills={};S.got={};closeD();showLogin('Đã đăng xuất.');schedule()}
+function apply(st){if(!st)return;S.rooms=st.rooms||{};S.tenants=st.tenants||{};S.bills=st.bills||{};S.cfg={...DEF,...(st.config||{})};S.me=st.me||'';S.sheetUrl=st.sheetUrl||'';S.noDb=false;
+ S.got={rooms:1,tenants:1,bills:1,config:1};setSync('on','Cập nhật '+new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}));schedule()}
+async function load(){if(!S.api||!S.pin)return showLogin('');try{apply(await api('getAll'));if(!document.body.classList.contains('ro'))note('')}catch(e){if(e.code==='auth'||e.code==='locked'||e.code==='nopin')return;setSync('off','Lỗi kết nối · thử lại');note(e.message);if(!loaded()){S.noDb=true;schedule()}}}
+async function put(path,data){const[k,id]=path.split('/');apply(await api('saveDoc',k,id,data))}
+async function del(path){const[k,id]=path.split('/');apply(await api('deleteDoc',k,id))}
+const stamp=()=>({});
+function busy(btn,on){if(btn){btn.disabled=on}}
+function moneyFmt(el){const v=el.value,neg=v.trim().startsWith('-'),d=v.replace(/\D/g,'');el.value=(neg?'-':'')+(d?Number(d).toLocaleString('vi-VN'):'')}
+
+/* ---------- header & routing ---------- */
+function hdr(){const n=S.cfg.name||DEF.name;$('#bName').textContent=n;document.title='Quản lý '+n;
+ $('#per').innerHTML=periodList().map(p=>`<option value="${esc(p)}"${p===S.period?' selected':''}>${pl(p)}</option>`).join('')}
+const loaded=()=>S.noDb||(S.got.rooms&&S.got.tenants&&S.got.bills&&S.got.config);
+function go(v){if(!VIEWS.includes(v))return;if(location.hash!=='#'+v){location.hash=v;return}closeD();S.view=v;route()}
+function route(){if(!VIEWS.includes(S.view))S.view='tong-quan';
+ $$('#tabs a').forEach(a=>a.getAttribute('href')==='#'+S.view?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current'));
+ $('#main').innerHTML=V[S.view].shell();body();window.scrollTo(0,0)}
+function body(){if(!loaded()){const vb=$('#vb');if(vb)vb.innerHTML='<p class="sub">Đang tải dữ liệu…</p>';return}V[S.view].body()}
+let rq=0;function schedule(){if(rq)return;rq=requestAnimationFrame(()=>{rq=0;hdr();body()})}
+const seg=(k,opts)=>`<div class="seg" role="group">${opts.map(([v,l])=>`<button data-act="f" data-k="${k}" data-v="${v}" aria-pressed="${S.f[k]===v}">${l}</button>`).join('')}</div>`;
+
+/* ---------- Tổng quan ---------- */
+function vTQ(){const vb=$('#vb'),p=S.period,rs=rooms();
+ if(!rs.length){vb.innerHTML=`<section class="emp"><h1>Chưa có phòng nào</h1><p class="sub">${S.noDb?'Chưa kết nối được kho dữ liệu.':'Bắt đầu bằng việc khai báo danh mục phòng của tòa nhà.'}</p><button class="btn pri w" data-act="room-new">Thêm phòng</button></section>`;return}
+ const sts=rs.map(r=>({r,...roomState(r,p)})),pb=billsOf(p),a=agg(pb),pa=agg(billsOf(addM(p,-1)));
+ const occ=sts.filter(s=>s.t).length,none=sts.filter(s=>s.k==='none'),open=pb.filter(b=>st(b)!=='ok'),late=open.filter(b=>st(b)==='bad');
+ const act=tenants().filter(t=>t.status==='dang'),dep=act.reduce((s,t)=>s+(t.deposit||0),0);
+ const parts=[];if(none.length)parts.push(`${none.length} phòng chưa lập hóa đơn`);if(late.length)parts.push(`${late.length} hóa đơn quá hạn`);else if(a.debt>0)parts.push(`còn ${tr(a.debt)} chưa thu`);
+ const h1=parts.length?`Kỳ ${pl(p)}: ${parts.join(', ')}`:a.n?`Kỳ ${pl(p)} đã thu đủ ${tr(a.paid)}`:`Kỳ ${pl(p)} chưa có hóa đơn`;
+ const dlt=pa.total?(a.total-pa.total)/pa.total*100:null;
+ const dTxt=dlt===null?'kỳ trước chưa có số liệu':`<span class="${dlt>=0?'up':'dn'}">${dlt>=0?'+':''}${dlt.toLocaleString('vi-VN',{maximumFractionDigits:1})}%</span> so với ${pl(addM(p,-1))}`;
+ const floors={};for(const s of sts)(floors[floorOf(s.r)]=floors[floorOf(s.r)]||[]).push(s);
+ const fk=Object.keys(floors).map(Number).sort((x,y)=>y-x),n=Math.max(...fk.map(f=>floors[f].length));
+ const unit=s=>{const c=s.bills.length?s.bills.reduce((o,b)=>{const k=calc(b);o.t+=k.total;o.p+=Math.min(k.paid,k.total);return o},{t:0,p:0}):null;
+  const line=c?(s.k==='ok'?vnd(c.t):`${vnd(c.p)} / ${vnd(c.t)}`):s.t?`Giá HĐ ${vnd(s.t.price)}`:`Giá chuẩn ${vnd(s.r.stdPrice)}`;
+  return`<button class="unit s-${s.k}" data-act="room-click" data-room="${esc(s.r.id)}" aria-label="Phòng ${esc(s.r.id)}, ${ST[s.k]}"><span class="uc"><b>P.${esc(s.r.id)}</b><span class="chip">${ST[s.k]}</span></span><span class="un">${s.t?esc(s.t.name):'—'}</span><span class="ua">${line}</span>${c?`<span class="ubar"><i style="width:${c.t?Math.round(c.p/c.t*100):100}%"></i></span>`:''}</button>`};
+ const fh=fk.map(f=>{const us=floors[f].sort((x,y)=>x.r.id.localeCompare(y.r.id));return`<div class="floor" style="--n:${n}"><span class="fln">${fName(f)}</span>${us.map(unit).join('')}${'<span class="slot" aria-hidden="true"></span>'.repeat(n-us.length)}</div>`}).join('');
+ const td=[];
+ for(const s of none)td.push(['none',`P.${esc(s.r.id)} · ${esc(s.t.name)} chưa có hóa đơn kỳ ${pl(p)}`,'Phải lập trước hạn thu tiền.',`<button class="btn sm pri w" data-act="bill-new" data-room="${esc(s.r.id)}">Lập bill</button>`]);
+ for(const b of open.sort((x,y)=>dueOf(x).localeCompare(dueOf(y)))){const k=st(b),c=calc(b);td.push([k,`P.${esc(b.room)} · ${esc(b.tenantName)} còn ${vnd(c.left)}`,`${ST[k]} · hạn ${dl(dueOf(b))}`,`<button class="btn sm acc w" data-act="bill-pay" data-id="${esc(b.id)}">Thu tiền</button>`])}
+ for(const t of act.filter(t=>okD(t.end)&&days(today(),t.end)<=(Number(S.cfg.warnDays)||60))){const d=days(today(),t.end);td.push([d<0?'bad':'wait',`Hợp đồng P.${esc(t.room)} · ${esc(t.name)} ${d<0?'đã hết hạn':'còn '+d+' ngày'}`,`Hết hạn ${dl(t.end)} — gia hạn hoặc chuẩn bị trả phòng.`,`<button class="btn sm" data-act="ten-open" data-id="${esc(t.id)}">Mở hồ sơ</button>`])}
+ for(const b of pb){if(!hasE(b))continue;const pr=prevReading(b);if(pr&&pr.newE!==b.oldE)td.push(['part',`Chỉ số điện P.${esc(b.room)} lệch ${fmt(Math.abs(b.oldE-pr.newE))} kWh`,`Bill trước (${pl(pr.period)}, ${esc(pr.tenantName)}) chốt ${fmt(pr.newE)}, bill này bắt đầu từ ${fmt(b.oldE)}.`,`<button class="btn sm" data-act="bill-open" data-id="${esc(b.id)}">Kiểm tra</button>`])}
+ const ne=act.filter(t=>!okD(t.end)).length,np=act.filter(t=>!t.phone).length,ni=act.filter(t=>!t.idNo).length;
+ if(ne||np||ni)td.push(['mute','Hồ sơ khách thuê chưa đủ',[ne&&`${ne} chưa có ngày hết HĐ`,np&&`${np} chưa có SĐT`,ni&&`${ni} chưa có CCCD/hộ chiếu`].filter(Boolean).join(' · '),`<button class="btn sm" data-act="go" data-view="khach-thue" data-k="tenSt" data-v="thieu">Bổ sung</button>`]);
+ vb.innerHTML=`<section class="hero"><div><h1>${h1}</h1><p class="sub">Đã thu ${vnd(a.paid)} trên ${vnd(a.total)} phải thu từ ${a.n} hóa đơn · ${occ}/${rs.length} phòng đang có khách.</p></div>
+ <div class="kpis"><div class="kpi"><small>Phải thu kỳ ${pl(p)}</small><b>${vnd(a.total)}</b><span>${dTxt}</span></div>
+ <div class="kpi"><small>Đã thu</small><b>${vnd(a.paid)}</b><span>${a.okN}/${a.n} hóa đơn đủ tiền</span></div>
+ <div class="kpi"><small>Còn phải thu</small><b class="${a.debt?'dn':''}">${vnd(a.debt)}</b><span>${open.length} hóa đơn · ${none.length} phòng chưa lập</span></div>
+ <div class="kpi"><small>Lấp đầy</small><b>${occ}/${rs.length} phòng</b><span>${Math.round(occ/rs.length*100)}% công suất</span></div>
+ <div class="kpi"><small>Tiền cọc đang giữ</small><b>${vnd(dep)}</b><span>${act.length} hợp đồng hiệu lực</span></div></div></section>
+ <section class="grid2"><div class="bldg"><div class="bh"><h2>Trạng thái các phòng</h2><span class="sub">Bấm vào phòng để lập hoặc mở hóa đơn</span></div>
+ <div class="roof"><span class="tank" aria-hidden="true"></span></div><div class="parapet"></div><div class="tower">${fh}</div><div class="base"></div>
+ <div class="legend">${['ok','wait','part','bad','none','empty'].map(k=>`<span class="s-${k}"><i></i>${ST[k]}</span>`).join('')}</div></div>
+ <div class="card"><h2>Việc cần xử lý</h2>${td.length?`<ul class="todo">${td.map(([k,t,s,b])=>`<li class="s-${k}"><span class="dot"></span><div>${t}<small>${s}</small></div>${b}</li>`).join('')}</ul>`:'<p class="sub" style="margin-top:10px">Không có việc tồn đọng trong kỳ này.</p>'}</div></section>`}
+
+/* ---------- Hóa đơn ---------- */
+function shHD(){return`<div class="vh"><div><h1>Hóa đơn</h1><p class="sub" id="hdSub"></p></div><div class="tb w"><button class="btn" data-act="batch">Chốt điện cả kỳ</button><button class="btn pri" data-act="bill-new">Lập hóa đơn</button></div></div>
+ <div class="tools">${seg('billP',[['cur','Kỳ đang chọn'],['3','3 kỳ gần nhất'],['all','Tất cả']])}${seg('billSt',[['all','Mọi trạng thái'],['open','Chưa thu đủ'],['ok','Đã thu']])}<input class="search" type="search" placeholder="Tìm phòng, tên khách" data-q="billQ" value="${esc(S.f.billQ)}" aria-label="Tìm hóa đơn"></div><div id="vb"></div>`}
+function vHD(){let L=bills();const p=S.period;if(S.f.billP==='cur')L=L.filter(b=>b.period===p);else if(S.f.billP==='3'){const lo=addM(p,-2);L=L.filter(b=>b.period>=lo&&b.period<=p)}
+ if(S.f.billSt==='open')L=L.filter(b=>st(b)!=='ok');if(S.f.billSt==='ok')L=L.filter(b=>st(b)==='ok');
+ const q=S.f.billQ.trim().toLowerCase();if(q)L=L.filter(b=>(b.room+' '+b.tenantName).toLowerCase().includes(q));
+ L.sort((a,b)=>b.period.localeCompare(a.period)||a.room.localeCompare(b.room));const a=agg(L);
+ $('#hdSub').textContent=`${L.length} hóa đơn · phải thu ${vnd(a.total)} · đã thu ${vnd(a.paid)}${a.debt?' · còn '+vnd(a.debt):''}`;
+ $('#vb').innerHTML=L.length?`<div class="tblw scroll"><table class="tbl"><thead><tr><th>Kỳ</th><th>Phòng</th><th>Khách thuê</th><th class="r">Chỉ số điện</th><th class="r">kWh</th><th class="r">Tiền phòng</th><th class="r">Tiền điện</th><th class="r">Nước</th><th class="r">Nước bình</th><th class="r">Khác</th><th class="r">Tổng cộng</th><th class="r">Đã thu</th><th>Trạng thái</th><th></th></tr></thead><tbody>
+ ${L.map(b=>{const c=calc(b),k=st(b);return`<tr data-act="bill-open" data-id="${esc(b.id)}"><td>${pl(b.period)}</td><td><b>${esc(b.room)}</b></td><td>${esc(b.tenantName)}</td><td class="r">${hasE(b)?fmt(b.oldE)+' → '+fmt(b.newE):'—'}</td><td class="r">${dash(c.kwh)}</td><td class="r">${dash(b.rent)}</td><td class="r">${dash(c.elec)}</td><td class="r">${dash(b.water)}</td><td class="r">${dash(c.bottle)}</td><td class="r">${dash(b.other)}</td><td class="r"><b>${fmt(c.total)}</b></td><td class="r">${fmt(Math.min(c.paid,c.total))}</td><td><span class="chip s-${k}">${ST[k]}</span></td><td class="r">${k!=='ok'?`<button class="btn sm acc w" data-act="bill-pay" data-id="${esc(b.id)}">Thu tiền</button>`:''}</td></tr>`}).join('')}
+ </tbody><tfoot><tr><td colspan="4">Cộng</td><td class="r">${fmt(a.kwh)}</td><td class="r">${fmt(a.rent)}</td><td class="r">${fmt(a.elec)}</td><td class="r">${fmt(a.water)}</td><td class="r">${fmt(a.bottle)}</td><td class="r">${fmt(a.other)}</td><td class="r">${fmt(a.total)}</td><td class="r">${fmt(a.paid)}</td><td colspan="2"></td></tr></tfoot></table></div>`
+ :`<div class="emp"><p class="sub">Không có hóa đơn phù hợp bộ lọc.</p><button class="btn pri w" data-act="bill-new">Lập hóa đơn</button></div>`}
+
+function tenantOpts(room,sel){const ts=tenants().filter(t=>t.room===room).sort((a,b)=>(a.status==='dang'?0:1)-(b.status==='dang'?0:1)||String(b.start||'').localeCompare(String(a.start||'')));
+ if(sel&&S.tenants[sel]&&!ts.includes(S.tenants[sel]))ts.push(S.tenants[sel]);
+ return ts.length?ts.map(t=>`<option value="${esc(t.id)}"${t.id===sel?' selected':''}>${esc(t.name)} (${t.status==='dang'?'đang thuê':'đã rời'})</option>`).join(''):'<option value="">Phòng chưa có khách</option>'}
+function newBill(o={}){const p=o.period||S.period,room=o.room||(rooms()[0]||{}).id||'',r=S.rooms[room]||{},t=o.tenant?S.tenants[o.tenant]:curTenant(room),lr=lastReading(room,null,p);
+ return{period:p,room,tenantId:t?t.id:'',tenantName:t?t.name:'',issued:today(),due:'',oldE:lr?lr.newE:null,newE:null,rent:t?t.price||0:r.stdPrice||0,
+  elecRate:r.elecRate??S.cfg.elecRate,water:r.waterFee??S.cfg.waterFee,bottles:0,bottleRate:r.bottleRate??S.cfg.bottleRate,other:0,otherNote:'',note:'',payments:[]}}
+function rows(b){const c=calc(b),R=[['Tiền phòng','',b.rent||0]];
+ if(hasE(b)||c.elec)R.push(['Tiền điện',hasE(b)?`${fmt(b.oldE)} → ${fmt(b.newE)} (${fmt(c.kwh)} kWh × ${fmt(b.elecRate)})`:'',c.elec]);
+ if(b.water)R.push(['Tiền nước','',b.water]);if(b.bottles)R.push(['Nước bình',`${b.bottles} bình × ${fmt(b.bottleRate)}`,c.bottle]);
+ if(b.other)R.push([b.other<0?'Giảm trừ':'Chi phí khác',b.otherNote||'',b.other]);return R}
+function sheet(b){const c=calc(b);return`<div class="sheet"><div class="sh-h"><b>THÔNG BÁO TIỀN PHÒNG</b><span>${esc((S.cfg.name||DEF.name).toUpperCase())}</span></div>
+ <div class="sh-m"><span>Phòng ${esc(b.room)} · ${esc(b.tenantName||'—')}</span><span>Kỳ ${pl(b.period)}</span></div>
+ <table class="sh-t"><thead><tr><th>Stt</th><th>Khoản</th><th>Chi tiết</th><th class="r">Thành tiền</th></tr></thead><tbody>${rows(b).map((r,i)=>`<tr><td>${i+1}</td><td>${r[0]}</td><td class="d">${esc(r[1])}</td><td class="r">${fmt(r[2])}</td></tr>`).join('')}</tbody>
+ <tfoot><tr><td colspan="3">Tổng cộng</td><td class="r">${fmt(c.total)}đ</td></tr></tfoot></table>
+ <div class="sh-f"><p><b>Hạn thanh toán: ${dl(dueOf(b))}</b></p>${S.cfg.bank?`<p>${esc(S.cfg.bank)}</p>`:''}${b.note?`<p>Ghi chú: ${esc(b.note)}</p>`:''}${S.cfg.billNote?`<p>${esc(S.cfg.billNote)}</p>`:''}<p>Ngày lập phiếu: ${dl(b.issued)}</p></div></div>`}
+function zalo(b){const c=calc(b),n=S.cfg.name||DEF.name;return[`THÔNG BÁO TIỀN PHÒNG – ${n.toUpperCase()}`,`Phòng ${b.room} · ${b.tenantName} · Kỳ ${pl(b.period)}`,'',...rows(b).map((r,i)=>`${i+1}. ${r[0]}${r[1]?' ('+r[1]+')':''}: ${vnd(r[2])}`),'',`TỔNG CỘNG: ${vnd(c.total)}`,c.paid&&c.left?`Đã thanh toán: ${vnd(c.paid)} · Còn lại: ${vnd(c.left)}`:'',`Hạn thanh toán: ${dl(dueOf(b))}`,S.cfg.bank||'',b.note?'Ghi chú: '+b.note:'',S.cfg.billNote||''].filter((x,i,a)=>x!==''||a[i-1]!=='').join('\n').trim()}
+
+function openBill(id,o={}){const ex=id&&S.bills[id];if(id&&!ex){toast('Hóa đơn không còn tồn tại');return}
+ const b=ex?JSON.parse(JSON.stringify(ex)):newBill(o);delete b.id;S.edit={kind:'bill',id:ex?id:null,b,dueTouched:!!(ex&&okD(ex.due))};
+ openD(ex?`Hóa đơn P.${b.room} · kỳ ${pl(b.period)}`:'Lập hóa đơn mới',billHTML());billLive();if(o.pay){const a=$('#p_amt');if(a){a.scrollIntoView({block:'center'});a.focus()}}}
+function billHTML(){const b=S.edit.b,isNew=!S.edit.id,ps=periodList(),mi=(id,v,l,x='')=>`<label class="fl">${l}<input id="${id}" class="m" inputmode="numeric" value="${fmt(v)}"${x}></label>`;
+ return`<div class="bgrid"><form id="bf" class="fg" autocomplete="off" novalidate>
+ <label class="fl">Kỳ hóa đơn<select id="b_period">${ps.map(p=>`<option value="${esc(p)}"${p===b.period?' selected':''}>${pl(p)}</option>`).join('')}</select></label>
+ <label class="fl">Ngày lập phiếu<input id="b_issued" type="date" value="${esc(b.issued||'')}"></label>
+ <label class="fl">Phòng<select id="b_room">${rooms().map(r=>`<option value="${esc(r.id)}"${r.id===b.room?' selected':''}>Phòng ${esc(r.id)}</option>`).join('')}</select></label>
+ <label class="fl">Khách thuê<select id="b_tenant">${tenantOpts(b.room,b.tenantId)}</select></label>
+ <label class="fl">Số điện cũ<input id="b_old" type="number" inputmode="numeric" min="0" step="1" value="${b.oldE??''}"></label>
+ <label class="fl">Số điện mới<input id="b_new" type="number" inputmode="numeric" min="0" step="1" value="${b.newE??''}"></label><p class="hint full" id="h_e"></p>
+ ${mi('b_rent',b.rent,'Tiền phòng')}${mi('b_er',b.elecRate,'Đơn giá điện (đ/kWh)')}<p class="hint full" id="h_r"></p>
+ ${mi('b_water',b.water,'Tiền nước')}<label class="fl">Nước bình (số bình)<input id="b_bot" type="number" inputmode="numeric" min="0" step="1" value="${b.bottles||0}"></label>
+ ${mi('b_br',b.bottleRate,'Đơn giá nước bình')}<label class="fl">Chi phí khác (âm = giảm trừ)<input id="b_other" class="m" inputmode="numeric" value="${b.other?(b.other<0?'-':'')+fmt(Math.abs(b.other)):'0'}"></label>
+ <label class="fl full">Diễn giải chi phí khác<input id="b_onote" value="${esc(b.otherNote||'')}" placeholder="Ví dụ: sửa vòi nước, phí gửi xe"></label>
+ <label class="fl">Hạn thanh toán<input id="b_due" type="date" value="${esc(dueOf(b))}"></label>
+ <label class="fl">Ghi chú in trên phiếu<input id="b_note" value="${esc(b.note||'')}"></label>
+ <p class="hint err full" id="h_s"></p>
+ <div class="acts full w" style="margin-top:4px"><button type="submit" class="btn pri" id="b_save">Lưu hóa đơn</button>${isNew?'':'<button type="button" class="btn dan" data-act="bill-del">Xóa hóa đơn</button>'}</div></form>
+ <div><div id="bprev"></div><div class="acts"><button class="btn" data-act="bill-copy">Copy tin nhắn Zalo</button><button class="btn dlb" data-act="bill-png">Tải ảnh bill</button></div><div id="bpay"></div></div></div>`}
+function rfBill(){const g=id=>$('#'+id),nv=id=>{const v=g(id).value.trim();return v===''?null:Math.max(0,Math.round(Number(v)))||0},t=S.tenants[g('b_tenant').value];
+ return{...S.edit.b,period:g('b_period').value,issued:g('b_issued').value,room:g('b_room').value,tenantId:g('b_tenant').value,tenantName:t?t.name:'',oldE:nv('b_old'),newE:nv('b_new'),
+  rent:num(g('b_rent').value),elecRate:num(g('b_er').value),water:num(g('b_water').value),bottles:Math.max(0,Math.round(Number(g('b_bot').value)||0)),bottleRate:num(g('b_br').value),
+  other:num(g('b_other').value),otherNote:g('b_onote').value.trim(),due:g('b_due').value,note:g('b_note').value.trim()}}
+function billLive(){const b=S.edit.b;$('#bprev').innerHTML=sheet(b);
+ const he=$('#h_e');he.className='hint full';he.textContent='';
+ if(hasE(b)&&b.newE<b.oldE){he.className='hint err full';he.textContent='Số mới nhỏ hơn số cũ — kiểm tra lại.'}
+ else{const pr=hasE(b)?prevReading({...b,id:S.edit.id}):lastReading(b.room,S.edit.id,b.period);
+  if(pr&&b.oldE!==null&&pr.newE!==b.oldE){he.className='hint warn full';he.textContent=`Bill trước của phòng (kỳ ${pl(pr.period)}, ${pr.tenantName}) chốt ở ${fmt(pr.newE)} — lệch ${fmt(Math.abs(b.oldE-pr.newE))} kWh so với số cũ.`}
+  else if(pr)he.textContent=`Số cũ khớp với bill kỳ ${pl(pr.period)} (${fmt(pr.newE)}).`}
+ const t=S.tenants[b.tenantId],r=S.rooms[b.room];$('#h_r').textContent=[t&&`Giá hợp đồng: ${vnd(t.price)}`,r&&`giá chuẩn phòng: ${vnd(r.stdPrice)}`].filter(Boolean).join(' · ');
+ const bp=$('#bpay');if(!S.edit.id){bp.innerHTML='<p class="sub" style="margin-top:16px">Lưu hóa đơn xong sẽ ghi nhận được tiền thu.</p>';return}
+ const c=calc(b),ps=b.payments||[];
+ bp.innerHTML=`<section class="pay"><h3>Thu tiền</h3><p class="sub">Đã thu ${vnd(c.paid)} / ${vnd(c.total)}${c.left?` · còn <b class="dn">${vnd(c.left)}</b>`:' · đã đủ'}</p>
+ ${c.left?`<form id="pf" class="fg w" style="margin-top:12px"><label class="fl">Số tiền thu<input id="p_amt" class="m" inputmode="numeric" value="${fmt(c.left)}"></label><label class="fl">Ngày thu<input id="p_date" type="date" value="${today()}"></label>
+ <label class="fl">Hình thức<select id="p_m"><option>Chuyển khoản</option><option>Tiền mặt</option><option>Khác</option></select></label><label class="fl">Ghi chú<input id="p_note" placeholder="Mã giao dịch, người nộp…"></label>
+ <div class="full"><button class="btn acc" id="p_save">Ghi nhận đã thu</button></div></form>`:''}
+ ${ps.length?`<ul class="ph">${ps.map((x,i)=>`<li><div>${dl(x.date)} · ${esc(x.method||'—')}<small>${esc(x.note||'')}${x.by?`${x.note?' · ':''}người ghi: ${esc(x.by)}`:''}</small></div><b class="num">${vnd(x.amount)}</b><button class="btn sm dan w" data-act="pay-del" data-i="${i}" aria-label="Xóa khoản thu">Xóa</button></li>`).join('')}</ul>`:''}</section>`;
+}
+function billInput(e){const id=e.target.id,isNew=!S.edit.id;if(e.target.classList.contains('m'))moneyFmt(e.target);if(id==='b_due')S.edit.dueTouched=true;
+ if(id==='b_room'){const room=e.target.value,t=curTenant(room);$('#b_tenant').innerHTML=tenantOpts(room,t?t.id:'');
+  if(isNew){const nb=newBill({room,period:$('#b_period').value});$('#b_old').value=nb.oldE??'';$('#b_rent').value=fmt(nb.rent);$('#b_er').value=fmt(nb.elecRate);$('#b_water').value=fmt(nb.water);$('#b_br').value=fmt(nb.bottleRate)}}
+ if(id==='b_tenant'&&isNew){const t=S.tenants[e.target.value];if(t)$('#b_rent').value=fmt(t.price)}
+ if(id==='b_period'&&isNew){const lr=lastReading($('#b_room').value,null,e.target.value);$('#b_old').value=lr?lr.newE:''}
+ S.edit.b=rfBill();if(!S.edit.dueTouched&&(id==='b_period'||id==='b_issued')){const d=dueOf({...S.edit.b,due:''});$('#b_due').value=d;S.edit.b.due=d}billLive()}
+async function saveBill(){const b=rfBill(),hs=$('#h_s');hs.textContent='';
+ if(!okP(b.period)||!b.room||!b.tenantId){hs.textContent='Chọn kỳ, phòng và khách thuê.';return}
+ if(hasE(b)&&b.newE<b.oldE){hs.textContent='Số điện mới phải lớn hơn hoặc bằng số cũ.';return}
+ const nid=`${b.period}_${b.room}_${b.tenantId}`;if(nid!==S.edit.id&&S.bills[nid]){hs.textContent=`Đã có hóa đơn kỳ ${pl(b.period)} của ${b.tenantName} ở phòng ${b.room}. Mở hóa đơn đó để sửa.`;return}
+ if(!okD(b.due))b.due=dueOf({...b,due:''});const data={...b,total:calc(b).total,...stamp()};delete data.id;const btn=$('#b_save');busy(btn,true);
+ try{await put('bills/'+nid,data);if(S.edit.id&&S.edit.id!==nid)await del('bills/'+S.edit.id);toast('Đã lưu hóa đơn');S.bills[nid]={...data,id:nid};
+  const wasNew=!S.edit.id;S.edit={kind:'bill',id:nid,b:data,dueTouched:true};$('#dT').textContent=`Hóa đơn P.${b.room} · kỳ ${pl(b.period)}`;
+  if(wasNew){$('#dB').innerHTML=billHTML()}billLive()}catch(e){hs.textContent=errMsg(e)}finally{const x=$('#b_save');busy(x,false)}}
+async function savePay(){const b=S.edit.b,amt=num($('#p_amt').value);if(amt<=0){toast('Nhập số tiền thu');return}
+ const ps=[...(b.payments||[]),{amount:amt,date:$('#p_date').value||today(),method:$('#p_m').value,note:$('#p_note').value.trim(),by:S.me||'',at:new Date().toLocaleString('sv-SE').slice(0,16)}];
+ const btn=$('#p_save');busy(btn,true);try{apply(await api('setPayments',S.edit.id,ps));S.edit.b={...b,payments:ps};toast(`Đã ghi nhận ${vnd(amt)}`);billLive()}catch(e){toast(errMsg(e));busy(btn,false)}}
+
+/* batch: chốt điện cả kỳ */
+function openBatch(){const p=S.period,R=[];for(const r of rooms()){const t=curTenant(r.id);if(!t||bills().some(b=>b.period===p&&b.room===r.id&&b.tenantId===t.id))continue;R.push(newBill({room:r.id,tenant:t.id,period:p}))}
+ S.batch=R;openD(`Chốt điện & lập hóa đơn kỳ ${pl(p)}`,R.length?`<p class="sub" style="margin-bottom:14px">${R.length} phòng đang thuê chưa có hóa đơn kỳ ${pl(p)}. Nhập số điện mới và số bình nước; tiền phòng lấy theo giá hợp đồng, sửa nếu khách vào giữa kỳ.</p>
+ <div class="tblw scroll"><table class="tbl bt"><thead><tr><th>Tạo</th><th>Phòng</th><th>Khách</th><th>Số cũ</th><th>Số mới</th><th>Bình</th><th>Tiền phòng</th><th class="r">Tổng</th></tr></thead><tbody>
+ ${R.map((b,i)=>`<tr data-i="${i}"><td class="c"><input type="checkbox" checked aria-label="Tạo hóa đơn phòng ${esc(b.room)}"></td><td><b>${esc(b.room)}</b></td><td>${esc(b.tenantName)}</td><td><input type="number" data-f="oldE" value="${b.oldE??''}" style="width:96px"></td><td><input type="number" data-f="newE" value="" style="width:96px"></td><td><input type="number" data-f="bottles" value="0" min="0" style="width:64px"></td><td><input class="m" data-f="rent" inputmode="numeric" value="${fmt(b.rent)}" style="width:128px"></td><td class="r" data-t>${fmt(calc(b).total)}</td></tr>`).join('')}
+ </tbody></table></div><p class="hint err" id="h_bt" style="margin-top:10px"></p><div class="acts w"><button class="btn pri" data-act="batch-save" id="bt_save">Tạo hóa đơn đã chọn</button></div>`
+ :'<p class="sub">Tất cả phòng đang thuê đã có hóa đơn kỳ này.</p>')}
+function batchRow(tr){const b=S.batch[tr.dataset.i],g=f=>tr.querySelector(`[data-f="${f}"]`),nv=v=>v.trim()===''?null:Math.max(0,Math.round(Number(v)))||0;
+ b.oldE=nv(g('oldE').value);b.newE=nv(g('newE').value);b.bottles=Math.max(0,Math.round(Number(g('bottles').value)||0));b.rent=num(g('rent').value);tr.querySelector('[data-t]').textContent=fmt(calc(b).total);return b}
+async function saveBatch(){const trs=$$('#dB tbody tr').filter(tr=>tr.querySelector('input[type=checkbox]').checked),h=$('#h_bt');h.textContent='';
+ const L=trs.map(batchRow);const bad=L.find(b=>hasE(b)&&b.newE<b.oldE);if(bad){h.textContent=`P.${bad.room}: số mới nhỏ hơn số cũ.`;return}
+ const miss=L.filter(b=>b.newE===null);if(miss.length&&!(await ask(`<p><b>${miss.length} phòng chưa nhập số điện mới</b></p><p class="sub">Hóa đơn của ${miss.map(b=>'P.'+esc(b.room)).join(', ')} sẽ chưa tính tiền điện. Vẫn tạo?</p>`,'Vẫn tạo',false)))return;
+ const btn=$('#bt_save');busy(btn,true);try{apply(await api('saveBills',L.map(b=>({...b,due:dueOf(b)}))));toast(`Đã tạo ${L.length} hóa đơn`);closeD()}catch(e){h.textContent=errMsg(e);busy(btn,false)}}
+
+/* ---------- Khách thuê ---------- */
+function shKT(){return`<div class="vh"><div><h1>Khách thuê</h1><p class="sub" id="ktSub"></p></div><div class="tb w"><button class="btn pri" data-act="ten-new">Thêm khách</button></div></div>
+ <div class="tools">${seg('tenSt',[['dang','Đang thuê'],['roi','Đã rời'],['thieu','Hồ sơ thiếu'],['all','Tất cả']])}<input class="search" type="search" placeholder="Tìm tên, phòng, SĐT" data-q="tenQ" value="${esc(S.f.tenQ)}" aria-label="Tìm khách"></div><div id="vb"></div>`}
+function vKT(){let L=tenants();const f=S.f.tenSt;if(f==='dang')L=L.filter(t=>t.status==='dang');if(f==='roi')L=L.filter(t=>t.status!=='dang');
+ if(f==='thieu')L=L.filter(t=>t.status==='dang'&&(!t.phone||!t.idNo||!okD(t.end)));const q=S.f.tenQ.trim().toLowerCase();
+ if(q)L=L.filter(t=>[t.name,t.room,t.phone,t.coName,t.id].join(' ').toLowerCase().includes(q));
+ const act=tenants().filter(t=>t.status==='dang');$('#ktSub').textContent=`${act.length} khách đang thuê · cọc đang giữ ${vnd(act.reduce((s,t)=>s+(t.deposit||0),0))}`;
+ const end=t=>{if(t.status!=='dang')return`Rời ${dl(t.leave)}<small>Trả cọc ${t.depReturn!=null&&t.depReturn!==''?vnd(t.depReturn):'—'}</small>`;if(!okD(t.end))return'<span class="chip s-mute">Chưa ghi</span>';
+  const d=days(today(),t.end);return d<0?`<span class="chip s-bad">Hết hạn ${dl(t.end)}</span>`:d<=(Number(S.cfg.warnDays)||60)?`<span class="chip s-wait">Còn ${d} ngày</span><small>${dl(t.end)}</small>`:dl(t.end)};
+ $('#vb').innerHTML=L.length?`<div class="tblw"><table class="tbl stack"><thead><tr><th>Khách thuê</th><th>Phòng</th><th class="r">Giá thuê</th><th class="r">Tiền cọc</th><th>Liên hệ</th><th>CCCD/HC</th><th>Ngày vào</th><th>Hết HĐ / rời</th><th>Ghi chú</th></tr></thead><tbody>
+ ${L.map(t=>`<tr data-act="ten-open" data-id="${esc(t.id)}"><td><b>${esc(t.name)}</b><small>${esc(t.id)}${t.coName?' · ở cùng: '+esc(t.coName):''}</small></td><td>P.${esc(t.room)}${t.status==='dang'?'':' <span class="chip s-mute">Đã rời</span>'}</td><td class="r">${vnd(t.price)}</td><td class="r">${vnd(t.deposit)}</td><td>${t.phone?esc(t.phone):'<span class="muted">—</span>'}</td><td>${mask(t.idNo)}</td><td>${dl(t.start)}</td><td>${end(t)}</td><td>${esc(t.note||'')}</td></tr>`).join('')}
+ </tbody></table></div>`:'<p class="sub">Không có hồ sơ phù hợp.</p>'}
+function openTen(id,o={}){const ex=id&&S.tenants[id];const rr=S.rooms[o.room]||null;
+ const t=ex?{...ex}:{id:nextKH(),room:o.room||'',status:'dang',name:'',phone:'',idNo:'',start:today(),end:'',price:rr?rr.stdPrice||0:0,deposit:rr?(rr.stdPrice||0)*2:0,coName:'',coPhone:'',leave:'',deduct:0,depReturn:null,note:''};
+ const isNew=!ex,roi=t.status!=='dang',mi=(i,v,l)=>`<label class="fl">${l}<input id="${i}" class="m" inputmode="numeric" value="${v===null||v===undefined||v===''?'':fmt(v)}"></label>`;
+ S.edit={kind:'ten',id:ex?id:null,t};
+ openD(isNew?'Thêm khách thuê':`Hồ sơ ${t.id} · ${t.name}`,`<form id="tf" class="fg" autocomplete="off" novalidate>
+ <label class="fl">Mã khách<input value="${esc(t.id)}" readonly></label><label class="fl">Trạng thái<select id="t_st"><option value="dang"${roi?'':' selected'}>Đang thuê</option><option value="roi"${roi?' selected':''}>Đã rời</option></select></label>
+ <label class="fl">Phòng<select id="t_room"><option value="">Chọn phòng</option>${rooms().map(r=>`<option value="${esc(r.id)}"${r.id===t.room?' selected':''}>Phòng ${esc(r.id)}${curTenant(r.id)&&curTenant(r.id).id!==t.id?' · đang có khách':''}</option>`).join('')}</select></label>
+ <label class="fl">Họ tên khách<input id="t_name" value="${esc(t.name)}" required></label>
+ <label class="fl">Số điện thoại<input id="t_phone" type="tel" value="${esc(t.phone||'')}"></label><label class="fl">CCCD / hộ chiếu<input id="t_id" value="${esc(t.idNo||'')}"></label>
+ <label class="fl">Ngày vào<input id="t_start" type="date" value="${esc(t.start||'')}"></label><label class="fl">Ngày hết hợp đồng<input id="t_end" type="date" value="${esc(t.end||'')}"></label>
+ ${mi('t_price',t.price,'Giá phòng áp dụng')}${mi('t_dep',t.deposit,'Tiền đặt cọc')}
+ <label class="fl">Người ở cùng<input id="t_co" value="${esc(t.coName||'')}"></label><label class="fl">SĐT người ở cùng<input id="t_cop" type="tel" value="${esc(t.coPhone||'')}"></label>
+ <label class="fl full">Ghi chú<textarea id="t_note">${esc(t.note||'')}</textarea></label>
+ <fieldset class="full ${roi?'hot':''}" id="t_co_fs"><legend>Trả phòng & hoàn cọc</legend><div class="fg"><label class="fl">Ngày trả phòng<input id="t_leave" type="date" value="${esc(t.leave||'')}"></label>
+ ${mi('t_ded',t.deduct||0,'Khấu trừ từ cọc')}${mi('t_ret',t.depReturn,'Tiền cọc trả lại')}<p class="hint full" id="h_ret"></p></div></fieldset>
+ <p class="hint err full" id="h_t"></p><div class="acts full w"><button class="btn pri" id="t_save">Lưu hồ sơ</button>${!isNew&&!roi?'<button type="button" class="btn" data-act="ten-out">Làm thủ tục trả phòng</button>':''}${!isNew?'<button type="button" class="btn dan" data-act="ten-del">Xóa hồ sơ</button>':''}</div></form>`,true);retHint()}
+function retHint(){const dep=num($('#t_dep').value),ded=num($('#t_ded').value),r=$('#t_ret').value.trim();$('#h_ret').textContent=`Cọc ${vnd(dep)} − khấu trừ ${vnd(ded)} = ${vnd(dep-ded)} cần hoàn${r!==''&&num(r)!==dep-ded?` · đang ghi ${vnd(num(r))}, lệch ${vnd(num(r)-(dep-ded))}`:''}.`}
+async function saveTen(){const g=id=>$('#'+id),h=$('#h_t');h.textContent='';const t=S.edit.t;
+ const d={room:g('t_room').value,status:g('t_st').value,name:g('t_name').value.trim(),phone:g('t_phone').value.trim(),idNo:g('t_id').value.trim(),start:g('t_start').value,end:g('t_end').value,
+  price:num(g('t_price').value),deposit:num(g('t_dep').value),coName:g('t_co').value.trim(),coPhone:g('t_cop').value.trim(),note:g('t_note').value.trim(),
+  leave:g('t_leave').value,deduct:num(g('t_ded').value),depReturn:g('t_ret').value.trim()===''?null:num(g('t_ret').value)};
+ if(!d.name||!d.room){h.textContent='Cần nhập họ tên và chọn phòng.';return}
+ if(d.status==='dang'){const o=curTenant(d.room);if(o&&o.id!==t.id){h.textContent=`Phòng ${d.room} đang có khách ${o.name}. Làm thủ tục trả phòng cho khách đó trước.`;return}}
+ if(d.status!=='dang'&&!okD(d.leave)){h.textContent='Nhập ngày trả phòng.';return}if(okD(d.end)&&okD(d.start)&&d.end<d.start){h.textContent='Ngày hết hợp đồng phải sau ngày vào.';return}
+ if(d.status!=='dang'&&d.depReturn===null)d.depReturn=d.deposit-d.deduct;
+ const btn=g('t_save');busy(btn,true);try{await put('tenants/'+t.id,{...d,...stamp()});toast('Đã lưu hồ sơ '+t.id);closeD()}catch(e){h.textContent=errMsg(e);busy(btn,false)}}
+
+/* ---------- Phòng ---------- */
+function shPH(){return`<div class="vh"><div><h1>Danh mục phòng</h1><p class="sub" id="phSub"></p></div><div class="tb w"><button class="btn pri" data-act="room-new">Thêm phòng</button></div></div><div id="vb"></div>`}
+function vPH(){const rs=rooms(),occ=rs.filter(r=>curTenant(r.id));
+ const gap=occ.reduce((s,r)=>s+((curTenant(r.id).price||0)-(r.stdPrice||0)),0);
+ $('#phSub').textContent=`${rs.length} phòng · ${occ.length} đang thuê${gap?` · tổng giá hợp đồng ${gap<0?'thấp hơn':'cao hơn'} giá chuẩn ${vnd(Math.abs(gap))}/tháng`:''}`;
+ $('#vb').innerHTML=rs.length?`<div class="rooms">${rs.map(r=>{const t=curTenant(r.id),k=t?'ok':r.status==='sua'?'fix':'empty',lr=lastReading(r.id),df=t?(t.price||0)-(r.stdPrice||0):0;
+ return`<article class="rc"><header><h3>Phòng ${esc(r.id)}${t?` · <span style="color:var(--olive)">${esc(t.name)}</span>`:''}</h3><span class="chip s-${k}">${t?'Đang thuê':ST[k]}</span></header>
+ <dl class="kv"><dt>Tầng</dt><dd>${fName(floorOf(r))}</dd><dt>Giá chuẩn</dt><dd>${vnd(r.stdPrice)}</dd>${t?`<dt>Giá hợp đồng</dt><dd>${vnd(t.price)}${df?` <small class="${df<0?'dn':'up'}">(${df>0?'+':'−'}${fmt(Math.abs(df))})</small>`:''}</dd>`:''}
+ <dt>Điện / nước</dt><dd>${fmt(r.elecRate)}đ/kWh · ${fmt(r.waterFee)}đ</dd><dt>Nước bình</dt><dd>${fmt(r.bottleRate)}đ/bình</dd><dt>Chỉ số điện gần nhất</dt><dd>${lr?`${fmt(lr.newE)} <small class="muted">(${pl(lr.period)})</small>`:'—'}</dd>${r.note?`<dt>Ghi chú</dt><dd style="font-weight:400">${esc(r.note)}</dd>`:''}</dl>
+ <div class="tb"><button class="btn sm w" data-act="room-open" data-id="${esc(r.id)}">Chỉnh sửa</button>${t?`<button class="btn sm" data-act="ten-open" data-id="${esc(t.id)}">Hồ sơ khách</button>`:`<button class="btn sm w" data-act="ten-new" data-room="${esc(r.id)}">Nhận khách</button>`}</div></article>`}).join('')}</div>`
+ :'<p class="sub">Chưa có phòng nào.</p>'}
+function openRoom(id){const ex=id&&S.rooms[id];const r=ex?{...ex}:{id:'',floor:'',stdPrice:0,elecRate:S.cfg.elecRate,waterFee:S.cfg.waterFee,bottleRate:S.cfg.bottleRate,status:'ok',note:''};S.edit={kind:'room',id:ex?id:null};
+ const mi=(i,v,l)=>`<label class="fl">${l}<input id="${i}" class="m" inputmode="numeric" value="${fmt(v)}"></label>`;
+ openD(ex?`Phòng ${r.id}`:'Thêm phòng',`<form id="rf" class="fg" novalidate><label class="fl">Mã phòng<input id="r_id" value="${esc(r.id)}" ${ex?'readonly':'placeholder="Ví dụ: 302"'}></label>
+ <label class="fl">Tầng<input id="r_fl" type="number" min="0" value="${esc(r.floor===''||r.floor==null?(ex?floorOf(r):''):r.floor)}" placeholder="Tự lấy theo số đầu mã phòng"></label>
+ ${mi('r_std',r.stdPrice,'Giá chuẩn / tháng')}${mi('r_er',r.elecRate,'Đơn giá điện (đ/kWh)')}${mi('r_wf',r.waterFee,'Tiền nước / tháng')}${mi('r_br',r.bottleRate,'Đơn giá nước bình')}
+ <label class="fl">Tình trạng phòng<select id="r_st"><option value="ok"${r.status!=='sua'?' selected':''}>Sẵn sàng</option><option value="sua"${r.status==='sua'?' selected':''}>Đang sửa chữa</option></select></label>
+ <label class="fl full">Ghi chú<textarea id="r_note">${esc(r.note||'')}</textarea></label><p class="hint full">Giá hợp đồng của từng khách nằm trong hồ sơ khách thuê.</p>
+ <p class="hint err full" id="h_r2"></p><div class="acts full w"><button class="btn pri" id="r_save">Lưu phòng</button>${ex?'<button type="button" class="btn dan" data-act="room-del">Xóa phòng</button>':''}</div></form>`,true)}
+async function saveRoom(){const g=id=>$('#'+id),h=$('#h_r2'),id=S.edit.id||g('r_id').value.trim();h.textContent='';
+ if(!/^[0-9A-Za-z.-]{1,12}$/.test(id)){h.textContent='Mã phòng chỉ gồm chữ, số, dấu chấm hoặc gạch (tối đa 12 ký tự).';return}if(!S.edit.id&&S.rooms[id]){h.textContent='Mã phòng đã tồn tại.';return}
+ const fl=g('r_fl').value.trim();const d={floor:fl===''?'':Math.max(0,Math.round(Number(fl)||0)),stdPrice:num(g('r_std').value),elecRate:num(g('r_er').value),waterFee:num(g('r_wf').value),bottleRate:num(g('r_br').value),status:g('r_st').value,note:g('r_note').value.trim(),...stamp()};
+ const btn=g('r_save');busy(btn,true);try{await put('rooms/'+id,d);toast('Đã lưu phòng '+id);closeD()}catch(e){h.textContent=errMsg(e);busy(btn,false)}}
+
+/* ---------- Báo cáo ---------- */
+const CL={rent:'var(--olive)',elec:'var(--mustard)',water:'#5b8a99',bottle:'#9bb36f',other:'#a58d7f'},CN={rent:'Tiền phòng',elec:'Tiền điện',water:'Tiền nước',bottle:'Nước bình',other:'Khác'};
+function shBC(){return`<div class="vh"><div><h1 id="bcH">Báo cáo</h1><p class="sub" id="bcSub"></p></div><div class="tb">${seg('rp',[['6','6 kỳ'],['12','12 kỳ'],['all','Tất cả']])}<button class="btn dlb" data-act="csv">Tải CSV hóa đơn</button></div></div><div id="vb"></div>`}
+function vBC(){const ps=[...new Set(bills().map(b=>b.period))].sort(),use=S.f.rp==='all'?ps:ps.slice(-Number(S.f.rp)),R=use.map(p=>({p,...agg(billsOf(p))}));
+ if(!R.length){$('#bcH').textContent='Báo cáo';$('#bcSub').textContent='';$('#vb').innerHTML='<p class="sub">Chưa có hóa đơn nào để tổng hợp.</p>';return}
+ const L=R[R.length-1],P=R[R.length-2],T=R.reduce((o,r)=>{for(const k in r)if(typeof r[k]==='number')o[k]=(o[k]||0)+r[k];return o},{});
+ const ch=P&&P.total?(L.total-P.total)/P.total*100:null;
+ $('#bcH').textContent=`Doanh thu kỳ ${pl(L.p)}: ${tr(L.total)}${ch!==null?`, ${ch>=0?'tăng':'giảm'} ${Math.abs(ch).toLocaleString('vi-VN',{maximumFractionDigits:1})}% so với kỳ trước`:''}`;
+ $('#bcSub').textContent=`Tiền phòng chiếm ${L.total?Math.round(L.rent/L.total*100):0}%, tiền điện ${L.total?(L.elec/L.total*100).toLocaleString('vi-VN',{maximumFractionDigits:1}):0}% · tổng ${R.length} kỳ: ${vnd(T.total)}, đã thu ${vnd(T.paid)}.`;
+ const mx=Math.max(...R.map(r=>r.total),1);
+ const kw=rooms().map(r=>{const k=p=>billsOf(p).filter(b=>b.room===r.id).reduce((s,b)=>s+calc(b).kwh,0);return{r,a:k(S.period),b:k(addM(S.period,-1))}});const km=Math.max(...kw.map(x=>Math.max(x.a,x.b)),1);
+ const act=tenants().filter(t=>t.status==='dang'),gone=tenants().filter(t=>t.status!=='dang');
+ $('#vb').innerHTML=`<section class="card"><h2>Cơ cấu doanh thu theo kỳ</h2><div class="bars" style="margin-top:14px">${[...R].reverse().map(r=>`<div class="bar"><span>${pl(r.p)}</span><div class="stk" title="${vnd(r.total)}" style="width:${Math.max(2,r.total/mx*100)}%">${Object.keys(CL).map(k=>r[k]>0?`<i style="width:${r[k]/r.total*100}%;background:${CL[k]}"></i>`:'').join('')}</div><b class="r num" style="text-align:right">${vnd(r.total)}</b></div>`).join('')}</div>
+ <p class="lg">${Object.keys(CL).map(k=>`<span><i style="background:${CL[k]}"></i>${CN[k]}</span>`).join('')}</p></section>
+ <section class="sec"><h2>Bảng tổng hợp theo tháng</h2><div class="tblw scroll"><table class="tbl"><thead><tr><th>Kỳ</th><th class="r">Số bill</th><th class="r">Phải thu</th><th class="r">Đã thu</th><th class="r">Còn nợ</th><th class="r">Tiền phòng</th><th class="r">Tiền điện</th><th class="r">Tiền nước</th><th class="r">Nước bình</th><th class="r">Khác</th><th class="r">kWh</th><th class="r">Số bình</th></tr></thead>
+ <tbody>${[...R].reverse().map(r=>`<tr><td><b>${pl(r.p)}</b></td><td class="r">${r.n}</td><td class="r"><b>${fmt(r.total)}</b></td><td class="r">${fmt(r.paid)}</td><td class="r ${r.debt?'dn':''}">${dash(r.debt)}</td><td class="r">${fmt(r.rent)}</td><td class="r">${fmt(r.elec)}</td><td class="r">${fmt(r.water)}</td><td class="r">${fmt(r.bottle)}</td><td class="r">${dash(r.other)}</td><td class="r">${fmt(r.kwh)}</td><td class="r">${fmt(r.bottles)}</td></tr>`).join('')}</tbody>
+ <tfoot><tr><td>Cộng</td><td class="r">${T.n}</td><td class="r">${fmt(T.total)}</td><td class="r">${fmt(T.paid)}</td><td class="r">${dash(T.debt)}</td><td class="r">${fmt(T.rent)}</td><td class="r">${fmt(T.elec)}</td><td class="r">${fmt(T.water)}</td><td class="r">${fmt(T.bottle)}</td><td class="r">${dash(T.other)}</td><td class="r">${fmt(T.kwh)}</td><td class="r">${fmt(T.bottles)}</td></tr></tfoot></table></div></section>
+ <section class="sec grid2" style="align-items:start"><div class="card"><h2>Điện tiêu thụ theo phòng</h2><p class="sub">Kỳ ${pl(S.period)} so với ${pl(addM(S.period,-1))} (kWh)</p><div class="bars" style="margin-top:14px">${kw.map(x=>`<div class="bar"><span>P.${esc(x.r.id)}</span><div><div class="stk" style="height:12px;width:${Math.max(1,x.a/km*100)}%"><i style="width:100%;background:var(--mustard)"></i></div><div class="stk" style="height:8px;margin-top:3px;width:${Math.max(1,x.b/km*100)}%"><i style="width:100%;background:var(--line)"></i></div></div><span class="num" style="text-align:right">${fmt(x.a)} <small class="muted">/ ${fmt(x.b)}</small></span></div>`).join('')}</div></div>
+ <div class="card"><h2>Sổ tiền cọc</h2><p class="sub">Đang giữ ${vnd(act.reduce((s,t)=>s+(t.deposit||0),0))} của ${act.length} khách</p><table class="tbl" style="margin-top:10px"><tbody>${act.map(t=>`<tr><td>P.${esc(t.room)} · ${esc(t.name)}<small>Vào ${dl(t.start)}</small></td><td class="r">${vnd(t.deposit)}</td></tr>`).join('')}
+ ${gone.map(t=>`<tr><td class="muted">P.${esc(t.room)} · ${esc(t.name)}<small>Rời ${dl(t.leave)} · cọc ${vnd(t.deposit)}${t.note?' · '+esc(t.note):''}</small></td><td class="r muted">Đã trả ${t.depReturn!=null?vnd(t.depReturn):'—'}</td></tr>`).join('')}</tbody></table></div></section>`}
+function csv(){const H=['Kỳ','Phòng','Mã KH','Khách thuê','Ngày lập','Hạn TT','Số cũ','Số mới','kWh','Tiền phòng','Tiền điện','Tiền nước','Số bình','Tiền nước bình','Chi phí khác','Diễn giải','Tổng cộng','Đã thu','Còn lại','Trạng thái'];
+ const q=v=>{const s=String(v??'');return/[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+ const L=bills().sort((a,b)=>a.period.localeCompare(b.period)||a.room.localeCompare(b.room)).map(b=>{const c=calc(b);return[pl(b.period),b.room,b.tenantId,b.tenantName,dl(b.issued),dl(dueOf(b)),b.oldE??'',b.newE??'',c.kwh,b.rent||0,c.elec,b.water||0,b.bottles||0,c.bottle,b.other||0,b.otherNote||'',c.total,Math.min(c.paid,c.total),c.left,ST[st(b)]]});
+ return'﻿'+[H,...L].map(r=>r.map(q).join(',')).join('\n')}
+function save(name,data){const ty=name.endsWith('.png')?'image/png':name.endsWith('.json')?'application/json':'text/csv;charset=utf-8';const blob=data instanceof Blob?data:new Blob([data],{type:ty});
+ const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);toast('Đang tải '+name)}
+function showImg(blob,name){const u=URL.createObjectURL(blob);$('#mT').innerHTML=`<p><b>Ảnh bill</b></p><p class="sub">Trên điện thoại: nhấn giữ ảnh để lưu hoặc chia sẻ qua Zalo. Trên máy tính: bấm Tải ảnh, hoặc chuột phải → Sao chép hình ảnh.</p><img src="${u}" alt="Ảnh bill" style="width:100%;border-radius:10px;margin-top:10px;border:1px solid var(--line)">`;
+ let can=false;try{can=!!(navigator.canShare&&navigator.canShare({files:[new File([blob],name,{type:'image/png'})]}))}catch(e){}
+ $('#mA').innerHTML='<button class="btn" data-m="0">Đóng</button>'+(can?'<button class="btn acc" data-m="sh">Chia sẻ (Zalo…)</button>':'')+'<button class="btn pri" data-m="dl">Tải ảnh</button>';const mo=$('#mo');mo.hidden=false;mo.onclick=e=>{const b=e.target.closest('[data-m]');if(!b&&e.target!==mo)return;if(b&&b.dataset.m==='dl'){save(name,blob);return}if(b&&b.dataset.m==='sh'){navigator.share({files:[new File([blob],name,{type:'image/png'})],title:name}).catch(()=>{});return}mo.hidden=true;mo.onclick=null;setTimeout(()=>URL.revokeObjectURL(u),1000)}}
+
+/* ---------- Cài đặt ---------- */
+function vCD(){const c=S.cfg;$('#vb').innerHTML=`<div class="vh"><div><h1>Cài đặt</h1><p class="sub">Áp dụng cho hóa đơn mới và phòng mới; hóa đơn đã lập giữ nguyên đơn giá đã lưu.</p></div><div class="tb w"><button class="btn pri" data-act="cfg-edit">Chỉnh sửa</button></div></div>
+ <div class="grid2"><section class="card"><h2>Thông số vận hành</h2><dl class="kv" style="margin-top:12px;font-size:15px"><dt>Tên tòa nhà</dt><dd>${esc(c.name)}</dd><dt>Hạn thanh toán</dt><dd>Ngày ${esc(c.dueDay)} ${Number(c.dueOffset)?'tháng kế tiếp kỳ':'trong tháng của kỳ'}</dd>
+ <dt>Điện mặc định</dt><dd>${fmt(c.elecRate)}đ/kWh</dd><dt>Nước mặc định</dt><dd>${fmt(c.waterFee)}đ/phòng/tháng</dd><dt>Nước bình mặc định</dt><dd>${fmt(c.bottleRate)}đ/bình</dd><dt>Cảnh báo hết hợp đồng</dt><dd>Trước ${esc(c.warnDays)} ngày</dd></dl></section>
+ <section class="card"><h2>Nội dung in trên phiếu</h2><p class="sub" style="margin-top:10px">Thông tin chuyển khoản</p><p style="white-space:pre-line;margin:4px 0 12px">${c.bank?esc(c.bank):'<span class="muted">Chưa khai báo</span>'}</p><p class="sub">Dòng ghi chú cuối phiếu</p><p style="white-space:pre-line;margin:4px 0 0">${esc(c.billNote||'—')}</p></section></div>
+ <section class="card sec"><h2>Dữ liệu & quyền truy cập</h2><p style="margin:8px 0 0">Dữ liệu lưu trong Google Sheet của chủ dự án (5 trang tính: CaiDat, Phong, KhachThue, HoaDon, ThuTien). Trang này chỉ hiển thị khi nhập đúng mã truy cập; trang tự cập nhật mỗi phút, bấm dòng trạng thái góc trên để tải lại ngay.${S.user?` Đang dùng với tên: <b>${esc(S.user)}</b>.`:''}</p>
+ <div class="acts">${/^https:\/\/docs\.google\.com\//.test(S.sheetUrl)?`<a class="btn" href="${esc(S.sheetUrl)}" target="_blank" rel="noopener">Mở Google Sheet dữ liệu</a>`:''}<button class="btn dlb" data-act="backup">Tải bản sao lưu (JSON)</button><button class="btn dlb" data-act="csv">Tải CSV hóa đơn</button><button class="btn dan" data-act="logout">Đăng xuất khỏi thiết bị này</button></div></section>`}
+function openCfg(){const c=S.cfg,mi=(i,v,l)=>`<label class="fl">${l}<input id="${i}" class="m" inputmode="numeric" value="${fmt(v)}"></label>`;S.edit={kind:'cfg'};
+ openD('Cài đặt vận hành',`<form id="cf" class="fg" novalidate><label class="fl full">Tên tòa nhà<input id="c_name" value="${esc(c.name)}"></label>
+ <label class="fl">Ngày hạn thanh toán<input id="c_dd" type="number" min="1" max="28" value="${esc(c.dueDay)}"></label><label class="fl">Hạn rơi vào<select id="c_do"><option value="1"${Number(c.dueOffset)?' selected':''}>Tháng kế tiếp kỳ</option><option value="0"${Number(c.dueOffset)?'':' selected'}>Trong tháng của kỳ</option></select></label>
+ ${mi('c_er',c.elecRate,'Đơn giá điện mặc định')}${mi('c_wf',c.waterFee,'Tiền nước mặc định')}${mi('c_br',c.bottleRate,'Nước bình mặc định')}<label class="fl">Cảnh báo hết HĐ trước (ngày)<input id="c_wd" type="number" min="1" value="${esc(c.warnDays)}"></label>
+ <label class="fl full">Thông tin chuyển khoản (in trên phiếu)<textarea id="c_bank" placeholder="Ngân hàng · số tài khoản · chủ tài khoản">${esc(c.bank||'')}</textarea></label>
+ <label class="fl full">Dòng ghi chú cuối phiếu<textarea id="c_note">${esc(c.billNote||'')}</textarea></label><p class="hint err full" id="h_c"></p><div class="acts full"><button class="btn pri" id="c_save">Lưu cài đặt</button></div></form>`,true)}
+async function saveCfg(){const g=id=>$('#'+id);const d={name:g('c_name').value.trim()||DEF.name,dueDay:Math.min(28,Math.max(1,Math.round(Number(g('c_dd').value)||10))),dueOffset:Number(g('c_do').value),elecRate:num(g('c_er').value),waterFee:num(g('c_wf').value),bottleRate:num(g('c_br').value),warnDays:Math.max(1,Math.round(Number(g('c_wd').value)||60)),bank:g('c_bank').value.trim(),billNote:g('c_note').value.trim(),...stamp()};
+ const btn=g('c_save');busy(btn,true);try{await put('config/main',d);toast('Đã lưu cài đặt');closeD()}catch(e){g('h_c').textContent=errMsg(e);busy(btn,false)}}
+
+/* ---------- bill image ---------- */
+async function billPNG(b){try{await Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,1500))])}catch(e){}const c=calc(b),R=rows(b),W=860,P=36,F='"Be Vietnam Pro",system-ui,sans-serif',k=2;
+ const cv=document.createElement('canvas'),g=cv.getContext('2d');const wrap=(t,w,font)=>{g.font=font;const out=[];for(const para of String(t).split('\n')){let line='';for(const wd of para.split(' ')){const tt=line?line+' '+wd:wd;if(g.measureText(tt).width>w&&line){out.push(line);line=wd}else line=tt}out.push(line)}return out};
+ const foot=[`Hạn thanh toán: ${dl(dueOf(b))}`,...(S.cfg.bank?wrap(S.cfg.bank,W-2*P,`400 15px ${F}`):[]),...(b.note?wrap('Ghi chú: '+b.note,W-2*P,`400 15px ${F}`):[]),...(S.cfg.billNote?wrap(S.cfg.billNote,W-2*P,`400 15px ${F}`):[]),`Ngày lập phiếu: ${dl(b.issued)}`];
+ const H=96+56+40+R.length*44+56+24+foot.length*24+4;cv.width=W*k;cv.height=H*k;g.scale(k,k);g.fillStyle='#fff';g.fillRect(0,0,W,H);
+ g.fillStyle='#4b5a2e';g.fillRect(0,0,W,96);g.fillStyle='#fff';g.font=`700 26px ${F}`;g.fillText('THÔNG BÁO TIỀN PHÒNG',P,50);g.font=`500 15px ${F}`;g.fillText((S.cfg.name||DEF.name).toUpperCase(),P,76);
+ g.textAlign='right';g.font=`600 19px ${F}`;g.fillText('Kỳ '+pl(b.period),W-P,50);g.textAlign='left';
+ let y=96+36;g.fillStyle='#3f4c26';g.font=`600 17px ${F}`;g.fillText(`Phòng ${b.room} · ${b.tenantName}`,P,y);
+ y+=30;g.fillStyle='#666c5c';g.font=`600 13px ${F}`;g.fillText('Stt',P,y);g.fillText('Khoản',P+50,y);g.fillText('Chi tiết',P+210,y);g.textAlign='right';g.fillText('Thành tiền',W-P,y);g.textAlign='left';y+=10;
+ for(let i=0;i<R.length;i++){g.strokeStyle='#e4e6da';g.beginPath();g.moveTo(P,y);g.lineTo(W-P,y);g.stroke();y+=29;g.fillStyle='#1d2315';g.font=`400 16px ${F}`;g.fillText(String(i+1),P,y);g.fillText(R[i][0],P+50,y);
+  g.fillStyle='#666c5c';g.font=`400 14px ${F}`;let d=R[i][1]||'';while(d&&g.measureText(d).width>W-2*P-210-150)d=d.slice(0,-2);g.fillText(d,P+210,y);g.fillStyle='#1d2315';g.font=`500 16px ${F}`;g.textAlign='right';g.fillText(fmt(R[i][2]),W-P,y);g.textAlign='left';y+=15}
+ y+=6;g.fillStyle='#eef1e4';g.fillRect(P-12,y,W-2*P+24,46);g.fillStyle='#1d2315';g.font=`700 18px ${F}`;g.fillText('Tổng cộng',P,y+30);g.textAlign='right';g.fillText(vnd(c.total),W-P,y+30);g.textAlign='left';
+ y+=46+30;g.font=`400 15px ${F}`;g.fillStyle='#4a503f';for(const [i,l] of foot.entries()){g.font=(i===0?'600':'400')+` 15px ${F}`;g.fillText(l,P,y);y+=24}
+ return new Promise(r=>cv.toBlob(r,'image/png'))}
+
+/* ---------- events ---------- */
+document.addEventListener('click',async e=>{const nav=e.target.closest('#tabs a');if(nav){e.preventDefault();return go(nav.getAttribute('href').slice(1))}
+ const ext=e.target.closest('a[target=_blank]');if(ext)return;const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act,d=el.dataset;
+ if(el.tagName==='TR'&&e.target.closest('button,a,input'))return;
+ if(a==='close')return closeD();
+ if(a==='f'){S.f[d.k]=d.v;$$(`.seg [data-k="${d.k}"]`).forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===d.v));return body()}
+ if(a==='go'){if(d.k)S.f[d.k]=d.v;return go(d.view)}
+ if(a==='logout')return logout();
+ if(a==='reload'){setSync('','Đang tải…');return load()}
+ if(a==='room-click'){const r=S.rooms[d.room],s=roomState(r,S.period);if(s.k==='none')return openBill(null,{room:d.room});if(s.bills.length)return openBill(s.bills[0].id);if(s.t)return openTen(s.t.id);return s.k==='fix'?openRoom(d.room):openTen(null,{room:d.room})}
+ if(a==='bill-new')return openBill(null,{room:d.room});if(a==='bill-open')return openBill(d.id);if(a==='bill-pay')return openBill(d.id,{pay:1});if(a==='batch')return openBatch();
+ if(a==='ten-new')return openTen(null,{room:d.room});if(a==='ten-open')return openTen(d.id);if(a==='room-new')return openRoom(null);if(a==='room-open')return openRoom(d.id);if(a==='cfg-edit')return openCfg();
+ if(a==='bill-copy'&&S.edit)return copy(zalo(S.edit.b),'Đã copy tin nhắn — dán vào Zalo để gửi khách');
+ if(a==='bill-png'&&S.edit){const b=S.edit.b,blob=await billPNG(b);return showImg(blob,`Bill_P${b.room}_${b.period}.png`)}
+ if(a==='csv')return save(`Hoa-don_${(S.cfg.name||'N2D2D').replace(/\W+/g,'-')}_${today()}.csv`,csv());
+ if(a==='backup')return save(`Sao-luu_${today()}.json`,JSON.stringify({exportedAt:new Date().toISOString(),config:S.cfg,rooms:S.rooms,tenants:S.tenants,bills:S.bills},null,1));
+ if(a==='batch-save')return saveBatch();
+ if(a==='bill-del'&&S.edit){const b=S.edit.b;if(!(await ask(`<p><b>Xóa hóa đơn P.${esc(b.room)} kỳ ${pl(b.period)}?</b></p><p class="sub">Hóa đơn của ${esc(b.tenantName)} (${vnd(calc(b).total)}) và lịch sử thu tiền sẽ bị xóa vĩnh viễn.</p>`,'Xóa hóa đơn')))return;
+  try{await del('bills/'+S.edit.id);toast('Đã xóa hóa đơn');closeD()}catch(x){toast(errMsg(x))}return}
+ if(a==='pay-del'&&S.edit){const ps=[...(S.edit.b.payments||[])],x=ps[d.i];if(!x||!(await ask(`<p><b>Xóa khoản thu ${vnd(x.amount)} ngày ${dl(x.date)}?</b></p><p class="sub">Dùng khi ghi nhầm. Hóa đơn sẽ quay về trạng thái chưa thu đủ.</p>`,'Xóa khoản thu')))return;
+  ps.splice(d.i,1);try{apply(await api('setPayments',S.edit.id,ps));S.edit.b={...S.edit.b,payments:ps};toast('Đã xóa khoản thu');billLive()}catch(y){toast(errMsg(y))}return}
+ if(a==='ten-out'){$('#t_st').value='roi';$('#t_co_fs').classList.add('hot');if(!$('#t_leave').value)$('#t_leave').value=today();if($('#t_ret').value.trim()==='')$('#t_ret').value=fmt(num($('#t_dep').value)-num($('#t_ded').value));retHint();$('#t_co_fs').scrollIntoView({block:'center'});$('#t_leave').focus();return}
+ if(a==='ten-del'&&S.edit){const t=S.edit.t,n=bills().filter(b=>b.tenantId===t.id).length;if(n){toast(`Không xóa được: ${t.name} còn ${n} hóa đơn. Hãy chuyển sang "Đã rời".`);return}
+  if(!(await ask(`<p><b>Xóa hồ sơ ${esc(t.id)} · ${esc(t.name)}?</b></p><p class="sub">Chỉ dùng cho hồ sơ tạo nhầm. Không thể hoàn tác.</p>`,'Xóa hồ sơ')))return;try{await del('tenants/'+t.id);toast('Đã xóa hồ sơ');closeD()}catch(x){toast(errMsg(x))}return}
+ if(a==='room-del'&&S.edit){const id=S.edit.id;if(tenants().some(t=>t.room===id)||bills().some(b=>b.room===id)){toast('Phòng đã có khách hoặc hóa đơn — không xóa được. Đặt "Đang sửa chữa" nếu ngừng cho thuê.');return}
+  if(!(await ask(`<p><b>Xóa phòng ${esc(id)}?</b></p>`,'Xóa phòng')))return;try{await del('rooms/'+id);toast('Đã xóa phòng');closeD()}catch(x){toast(errMsg(x))}}});
+document.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;if(id==='bf')saveBill();if(id==='pf')savePay();if(id==='tf')saveTen();if(id==='rf')saveRoom();if(id==='cf')saveCfg()});
+document.addEventListener('input',e=>{const t=e.target;if(t.dataset.q!==undefined){S.f[t.dataset.q]=t.value;return body()}
+ if(t.closest('#bf'))return billInput(e);if(t.classList.contains('m'))moneyFmt(t);if(t.closest('#tf')&&['t_dep','t_ded','t_ret'].includes(t.id))retHint();
+ const tr=t.closest('.bt tbody tr');if(tr&&S.batch)batchRow(tr)});
+document.addEventListener('change',e=>{const t=e.target;if(t.id==='per'){S.period=t.value;return body()}if(t.closest('#bf')&&t.tagName==='SELECT')return billInput(e);
+ if(t.id==='t_st')$('#t_co_fs').classList.toggle('hot',t.value!=='dang');
+ if(t.id==='t_room'&&S.edit&&!S.edit.id){const r=S.rooms[t.value];if(r){$('#t_price').value=fmt(r.stdPrice);$('#t_dep').value=fmt((r.stdPrice||0)*2);retHint()}}});
+$('#ov').addEventListener('click',e=>{if(e.target.id==='ov')closeD()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#mo').hidden){const b=$('#mA [data-m="0"]')||$('#mA [data-m]');if(b)b.click();return}if(!$('#ov').hidden)closeD()});
+
+/* ---------- boot ---------- */
+const V={'tong-quan':{shell:()=>'<div id="vb"></div>',body:vTQ},'hoa-don':{shell:shHD,body:vHD},'khach-thue':{shell:shKT,body:vKT},'phong':{shell:shPH,body:vPH},'bao-cao':{shell:shBC,body:vBC},'cai-dat':{shell:()=>'<div id="vb"></div>',body:vCD}};
+S.period=curP();hdr();route();
+S.dl={};
+addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(VIEWS.includes(h)){closeD();S.view=h;route()}});
+document.addEventListener('submit',e=>{if(e.target.id==='lgf'){e.preventDefault();doLogin()}},true);
+{const h=location.hash.slice(1);if(VIEWS.includes(h)&&h!==S.view){S.view=h;route()}}
+if(S.api&&S.pin)load();else showLogin('');
+setInterval(()=>{if(document.visibilityState==='visible'&&!S.busy&&S.pin&&$('#login').hidden)load()},60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!S.busy&&S.pin&&$('#login').hidden)load()});
+}
+</script>
+</body>
+</html>
