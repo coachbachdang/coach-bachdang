@@ -171,9 +171,10 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <input type="file" id="rs_file" hidden>
 <div id="login" class="lg-ov" hidden><form id="lgf" class="lg-box" autocomplete="on" novalidate>
- <div><h1>Căn hộ N2 D2D</h1><p class="sub">Quản lý nội bộ · nhập mã truy cập của đội để tiếp tục.</p></div>
+ <div><h1>Căn hộ N2 D2D</h1><p class="sub" id="lg_sub">Quản lý nội bộ · nhập mã truy cập của đội để tiếp tục.</p></div>
  <label class="fl" id="lg_api_w">Link máy chủ dữ liệu (kết thúc bằng /exec)<input id="lg_api" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec"></label>
- <label class="fl">Mã truy cập<input id="lg_pin" type="password" autocomplete="current-password" required></label>
+ <label class="fl"><span id="lg_pin_l">Mã truy cập</span><input id="lg_pin" type="password" autocomplete="current-password" required></label>
+ <label class="fl" id="lg_pin2_w" hidden>Nhập lại mã truy cập<input id="lg_pin2" type="password" autocomplete="new-password"></label>
  <label class="fl">Tên của bạn (ghi vào lịch sử thu tiền)<input id="lg_user" autocomplete="name" placeholder="Ví dụ: Đằng"></label>
  <label class="ck"><input type="checkbox" id="lg_rem" checked> Ghi nhớ trên thiết bị này</label>
  <p class="hint err" id="lg_err" style="margin:0"></p>
@@ -245,21 +246,31 @@ function ro(){document.body.classList.add('ro');note('Bạn đang ở chế đ�
 const CFG=(window.N2_CONFIG||{});
 const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}};
 S.api=(CFG.apiUrl||'').trim()||LS('n2.api')||'';S.pin=LS('n2.pin')||'';S.user=LS('n2.user')||'';
+async function raw(fn,args,pin){let r;try{r=await fetch(S.api,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({pin,user:S.user,fn,args}),redirect:'follow'})}
+ catch(e){throw{code:'net',message:'Không kết nối được máy chủ dữ liệu. Kiểm tra mạng rồi thử lại.'}}
+ let j;try{j=await r.json()}catch(e){throw{code:'net',message:'Máy chủ dữ liệu chưa sẵn sàng. Vui lòng thử lại sau ít phút.'}}
+ if(!j||!j.ok)throw{code:(j&&j.code)||'server',message:(j&&j.error)||'Lỗi máy chủ.'};return j.data}
 async function api(fn,...args){if(!S.api||!S.pin){showLogin('');throw{code:'auth',message:'Chưa đăng nhập.'}}S.busy++;
- try{let r;try{r=await fetch(S.api,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({pin:S.pin,user:S.user,fn,args}),redirect:'follow'})}
-  catch(e){throw{code:'net',message:'Không kết nối được máy chủ dữ liệu. Kiểm tra mạng hoặc link /exec.'}}
-  let j;try{j=await r.json()}catch(e){throw{code:'net',message:'Máy chủ không trả dữ liệu hợp lệ. Kiểm tra link /exec và quyền truy cập "Bất kỳ ai" khi triển khai.'}}
-  if(!j||!j.ok){const c=j&&j.code;if(c==='auth'||c==='locked'||c==='nopin'){S.pin='';LS('n2.pin',null);showLogin(j.error)}throw{code:c||'server',message:(j&&j.error)||'Lỗi máy chủ.'}}
-  return j.data}finally{S.busy--}}
-function showLogin(msg){const o=$('#login');$('#lg_api_w').hidden=!!(CFG.apiUrl||'').trim();$('#lg_api').value=S.api||'';$('#lg_user').value=S.user||'';$('#lg_err').textContent=msg||'';
+ try{return await raw(fn,args,S.pin)}catch(e){if(['auth','locked','nopin','nosetup'].includes(e.code)){S.pin='';LS('n2.pin',null);showLogin(e.message)}throw e}finally{S.busy--}}
+function setMode(setup){S.setup=setup;$('#lg_pin2_w').hidden=!setup;$('#lg_pin_l').textContent=setup?'Tạo mã truy cập (tối thiểu 6 ký tự)':'Mã truy cập';
+ $('#lg_pin').autocomplete=setup?'new-password':'current-password';$('#lg_btn').textContent=setup?'Tạo mã & vào hệ thống':'Vào hệ thống';
+ $('#lg_sub').textContent=setup?'Lần đầu sử dụng · tạo mã truy cập cho đội. Ai có mã này mới xem được dữ liệu.':'Quản lý nội bộ · nhập mã truy cập của đội để tiếp tục.'}
+async function checkSetup(){if(!S.api)return;try{const st=await raw('status',[],'');setMode(!st.setup)}catch(e){if(e.code==='nodb')$('#lg_err').textContent=e.message}}
+function showLogin(msg){const o=$('#login');checkSetup();$('#lg_api_w').hidden=!!(CFG.apiUrl||'').trim();$('#lg_api').value=S.api||'';$('#lg_user').value=S.user||'';$('#lg_err').textContent=msg||'';
  if(o.hidden){o.hidden=false;setTimeout(()=>$('#lg_pin').focus(),50)}setSync('off','Chưa đăng nhập')}
 async function doLogin(){const btn=$('#lg_btn'),er=$('#lg_err');er.textContent='';const url=((CFG.apiUrl||'').trim()||$('#lg_api').value.trim());
  if(!(CFG.apiUrl||'').trim()&&!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(url)){er.textContent='Link máy chủ phải là link ứng dụng web Apps Script (https://script.google.com/…/exec).';return}
  const pin=$('#lg_pin').value;if(!pin){er.textContent='Nhập mã truy cập.';return}
+ if(S.setup){if(pin.length<6){er.textContent='Mã truy cập cần tối thiểu 6 ký tự.';return}if(pin!==$('#lg_pin2').value){er.textContent='Hai lần nhập mã chưa khớp.';return}}
  S.api=url;S.pin=pin;S.user=$('#lg_user').value.trim();busy(btn,true);btn.textContent='Đang kiểm tra…';
- try{const st=await api('getAll');const rem=$('#lg_rem').checked;LS('n2.api',url);LS('n2.user',S.user);LS('n2.pin',rem?pin:null);
+ try{S.busy++;let st;try{st=S.setup?await raw('setupPin',[],pin):await raw('getAll',[],pin)}finally{S.busy--}if(S.setup){setMode(false);toast('Đã tạo mã truy cập')}const rem=$('#lg_rem').checked;LS('n2.api',url);LS('n2.user',S.user);LS('n2.pin',rem?pin:null);
   $('#login').hidden=true;$('#lg_pin').value='';apply(st);toast('Đã đăng nhập'+(S.user?' · '+S.user:''))}
- catch(e){if(!$('#lg_err').textContent)er.textContent=e.message||'Không đăng nhập được.'}finally{busy(btn,false);btn.textContent='Vào hệ thống'}}
+ catch(e){if(e.code==='exists')setMode(false);er.textContent=e.message||'Không đăng nhập được.'}finally{busy(btn,false);setMode(!!S.setup)}}
+function openPin(){S.edit={kind:'pin'};openD('Đổi mã truy cập',`<form id="pnf" class="fg" novalidate><label class="fl full">Mã mới (tối thiểu 6 ký tự)<input id="pn1" type="password" autocomplete="new-password"></label>
+ <label class="fl full">Nhập lại mã mới<input id="pn2" type="password" autocomplete="new-password"></label><p class="hint full">Sau khi đổi, mọi thiết bị khác phải đăng nhập lại bằng mã mới.</p><p class="hint err full" id="h_pn"></p>
+ <div class="acts full"><button class="btn pri" id="pn_save">Đổi mã</button></div></form>`,true)}
+async function savePin(){const a=$('#pn1').value,b=$('#pn2').value,h=$('#h_pn');h.textContent='';if(a.length<6){h.textContent='Mã cần tối thiểu 6 ký tự.';return}if(a!==b){h.textContent='Hai lần nhập chưa khớp.';return}
+ const btn=$('#pn_save');busy(btn,true);try{await api('changePin',a);S.pin=a;if(LS('n2.pin'))LS('n2.pin',a);toast('Đã đổi mã truy cập');closeD()}catch(e){h.textContent=e.message;busy(btn,false)}}
 async function restoreFile(f){let d;try{d=JSON.parse(await f.text())}catch(e){toast('File không đúng định dạng sao lưu (.json).');return}
  if(!d||typeof d.rooms!=='object'||typeof d.tenants!=='object'||typeof d.bills!=='object'||!d.rooms||!d.tenants||!d.bills){toast('File này không phải bản sao lưu của app quản lý căn hộ.');return}
  const n=[d.rooms,d.tenants,d.bills].map(x=>Object.keys(x).length);
@@ -521,7 +532,7 @@ function vCD(){const c=S.cfg;$('#vb').innerHTML=`<div class="vh"><div><h1>Cài �
  <dt>Điện mặc định</dt><dd>${fmt(c.elecRate)}đ/kWh</dd><dt>Nước mặc định</dt><dd>${fmt(c.waterFee)}đ/phòng/tháng</dd><dt>Nước bình mặc định</dt><dd>${fmt(c.bottleRate)}đ/bình</dd><dt>Cảnh báo hết hợp đồng</dt><dd>Trước ${esc(c.warnDays)} ngày</dd></dl></section>
  <section class="card"><h2>Nội dung in trên phiếu</h2><p class="sub" style="margin-top:10px">Thông tin chuyển khoản</p><p style="white-space:pre-line;margin:4px 0 12px">${c.bank?esc(c.bank):'<span class="muted">Chưa khai báo</span>'}</p><p class="sub">Dòng ghi chú cuối phiếu</p><p style="white-space:pre-line;margin:4px 0 0">${esc(c.billNote||'—')}</p></section></div>
  <section class="card sec"><h2>Dữ liệu & quyền truy cập</h2><p style="margin:8px 0 0">Dữ liệu lưu trong kho dữ liệu riêng của website (Upstash Redis trên Vercel), chỉ đọc/ghi được khi nhập đúng mã truy cập. Trang tự cập nhật mỗi phút, bấm dòng trạng thái góc trên để tải lại ngay. Nạp file sao lưu sẽ thay toàn bộ dữ liệu hiện tại; máy chủ giữ lại một bản chụp dữ liệu cũ.${S.user?` Đang dùng với tên: <b>${esc(S.user)}</b>.`:''}</p>
- <div class="acts">${/^https:\/\/docs\.google\.com\//.test(S.sheetUrl)?`<a class="btn" href="${esc(S.sheetUrl)}" target="_blank" rel="noopener">Mở Google Sheet dữ liệu</a>`:''}<button class="btn dlb" data-act="backup">Tải bản sao lưu (JSON)</button><button class="btn w" data-act="restore">Nạp dữ liệu từ file sao lưu</button><button class="btn dlb" data-act="csv">Tải CSV hóa đơn</button><button class="btn dan" data-act="logout">Đăng xuất khỏi thiết bị này</button></div></section>`}
+ <div class="acts">${/^https:\/\/docs\.google\.com\//.test(S.sheetUrl)?`<a class="btn" href="${esc(S.sheetUrl)}" target="_blank" rel="noopener">Mở Google Sheet dữ liệu</a>`:''}<button class="btn dlb" data-act="backup">Tải bản sao lưu (JSON)</button><button class="btn w" data-act="restore">Nạp dữ liệu từ file sao lưu</button><button class="btn dlb" data-act="csv">Tải CSV hóa đơn</button><button class="btn w" data-act="pin-change">Đổi mã truy cập</button><button class="btn dan" data-act="logout">Đăng xuất khỏi thiết bị này</button></div></section>`}
 function openCfg(){const c=S.cfg,mi=(i,v,l)=>`<label class="fl">${l}<input id="${i}" class="m" inputmode="numeric" value="${fmt(v)}"></label>`;S.edit={kind:'cfg'};
  openD('Cài đặt vận hành',`<form id="cf" class="fg" novalidate><label class="fl full">Tên tòa nhà<input id="c_name" value="${esc(c.name)}"></label>
  <label class="fl">Ngày hạn thanh toán<input id="c_dd" type="number" min="1" max="28" value="${esc(c.dueDay)}"></label><label class="fl">Hạn rơi vào<select id="c_do"><option value="1"${Number(c.dueOffset)?' selected':''}>Tháng kế tiếp kỳ</option><option value="0"${Number(c.dueOffset)?'':' selected'}>Trong tháng của kỳ</option></select></label>
@@ -554,6 +565,7 @@ document.addEventListener('click',async e=>{const nav=e.target.closest('#tabs a'
  if(a==='f'){S.f[d.k]=d.v;$$(`.seg [data-k="${d.k}"]`).forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===d.v));return body()}
  if(a==='go'){if(d.k)S.f[d.k]=d.v;return go(d.view)}
  if(a==='logout')return logout();
+ if(a==='pin-change')return openPin();
  if(a==='restore'){const f=$('#rs_file');f.value='';f.click();return}
  if(a==='reload'){setSync('','Đang tải…');return load()}
  if(a==='room-click'){const r=S.rooms[d.room],s=roomState(r,S.period);if(s.k==='none')return openBill(null,{room:d.room});if(s.bills.length)return openBill(s.bills[0].id);if(s.t)return openTen(s.t.id);return s.k==='fix'?openRoom(d.room):openTen(null,{room:d.room})}
@@ -573,7 +585,7 @@ document.addEventListener('click',async e=>{const nav=e.target.closest('#tabs a'
   if(!(await ask(`<p><b>Xóa hồ sơ ${esc(t.id)} · ${esc(t.name)}?</b></p><p class="sub">Chỉ dùng cho hồ sơ tạo nhầm. Không thể hoàn tác.</p>`,'Xóa hồ sơ')))return;try{await del('tenants/'+t.id);toast('Đã xóa hồ sơ');closeD()}catch(x){toast(errMsg(x))}return}
  if(a==='room-del'&&S.edit){const id=S.edit.id;if(tenants().some(t=>t.room===id)||bills().some(b=>b.room===id)){toast('Phòng đã có khách hoặc hóa đơn — không xóa được. Đặt "Đang sửa chữa" nếu ngừng cho thuê.');return}
   if(!(await ask(`<p><b>Xóa phòng ${esc(id)}?</b></p>`,'Xóa phòng')))return;try{await del('rooms/'+id);toast('Đã xóa phòng');closeD()}catch(x){toast(errMsg(x))}}});
-document.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;if(id==='bf')saveBill();if(id==='pf')savePay();if(id==='tf')saveTen();if(id==='rf')saveRoom();if(id==='cf')saveCfg()});
+document.addEventListener('submit',e=>{e.preventDefault();const id=e.target.id;if(id==='bf')saveBill();if(id==='pf')savePay();if(id==='tf')saveTen();if(id==='rf')saveRoom();if(id==='cf')saveCfg();if(id==='pnf')savePin()});
 document.addEventListener('input',e=>{const t=e.target;if(t.dataset.q!==undefined){S.f[t.dataset.q]=t.value;return body()}
  if(t.closest('#bf'))return billInput(e);if(t.classList.contains('m'))moneyFmt(t);if(t.closest('#tf')&&['t_dep','t_ded','t_ret'].includes(t.id))retHint();
  const tr=t.closest('.bt tbody tr');if(tr&&S.batch)batchRow(tr)});

@@ -1,6 +1,7 @@
 // API dữ liệu cho app Quản lý Căn hộ N2 D2D — hoangbachdang.com/qlch
-// Lưu trên Upstash Redis (Vercel → Storage). Mọi thao tác phải kèm mã truy cập QLCH_PIN
-// (Vercel → Settings → Environment Variables). Sai 10 lần trong 10 phút → khóa tạm.
+// Lưu trên Upstash Redis (Vercel → Storage). Mọi thao tác phải kèm mã truy cập.
+// Mã truy cập: chủ nhà tự tạo trong app ở lần mở đầu (lưu dạng băm scrypt trong Redis);
+// nếu đặt biến môi trường QLCH_PIN thì biến này được ưu tiên. Sai 10 lần trong 10 phút → khóa tạm.
 // Thân yêu cầu: {"pin":"…","user":"…","fn":"getAll","args":[]}
 const crypto = require('crypto');
 
@@ -47,15 +48,37 @@ function same(a, b) {
   const h = (s) => crypto.createHash('sha256').update(String(s)).digest();
   return crypto.timingSafeEqual(h(a), h(b));
 }
+function hashPin(pin) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  return salt + ':' + crypto.scryptSync(String(pin), salt, 32).toString('hex');
+}
+function verifyHash(pin, stored) {
+  const [salt, hex] = String(stored).split(':');
+  if (!salt || !hex) return false;
+  const a = crypto.scryptSync(String(pin || ''), salt, 32), b = Buffer.from(hex, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+async function pinState() {
+  if (process.env.QLCH_PIN) return { mode: 'env' };
+  const stored = await cmd('GET', P + 'pin');
+  return { mode: stored ? 'db' : 'none', stored };
+}
 async function checkPin(pin) {
-  const want = process.env.QLCH_PIN;
-  if (!want) throw err('Website chưa đặt mã truy cập. Vào Vercel → dự án coach-bachdang → Settings → Environment Variables, thêm QLCH_PIN rồi triển khai lại.', 'nopin');
+  const st = await pinState();
+  if (st.mode === 'none') throw err('Chưa tạo mã truy cập. Tải lại trang để tạo mã.', 'nosetup');
   const fails = num(await cmd('GET', P + 'fail'));
   if (fails >= 10) throw err('Nhập sai mã quá nhiều lần. Vui lòng thử lại sau 10 phút.', 'locked');
-  if (!same(pin || '', want)) {
+  const ok = st.mode === 'env' ? same(pin || '', process.env.QLCH_PIN) : verifyHash(pin, st.stored);
+  if (!ok) {
     await pipe([['INCR', P + 'fail'], ['EXPIRE', P + 'fail', '600']]);
     throw err('Sai mã truy cập.', 'auth');
   }
+}
+function checkNewPin(pin) {
+  pin = String(pin || '');
+  if (pin.length < 6) throw err('Mã truy cập cần tối thiểu 6 ký tự.');
+  if (pin.length > 100) throw err('Mã truy cập quá dài.');
+  return pin;
 }
 
 /* ---------- Chuẩn hóa dữ liệu ---------- */
@@ -162,7 +185,13 @@ async function importAll(ctx, data) {
   return getAll(ctx);
 }
 
-const API = { getAll, saveDoc, saveBills, setPayments, deleteDoc, importAll };
+async function changePin(ctx, newPin) {
+  if ((await pinState()).mode === 'env') throw err('Mã đang được đặt bằng biến QLCH_PIN trên Vercel — đổi ở đó.');
+  await cmd('SET', P + 'pin', hashPin(checkNewPin(newPin)));
+  return { ok: true };
+}
+
+const API = { getAll, saveDoc, saveBills, setPayments, deleteDoc, importAll, changePin };
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -174,6 +203,18 @@ module.exports = async (req, res) => {
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
   body = body || {};
   try {
+    if (body.fn === 'status') {
+      const st = await pinState();
+      return res.status(200).json({ ok: true, data: { setup: st.mode !== 'none' } });
+    }
+    if (body.fn === 'setupPin') {
+      const pin = checkNewPin(body.pin);
+      if ((await pinState()).mode !== 'none') throw err('Mã truy cập đã được tạo trước đó. Hãy đăng nhập bằng mã đó.', 'exists');
+      const r = await cmd('SET', P + 'pin', hashPin(pin), 'NX');
+      if (r !== 'OK') throw err('Mã truy cập đã được tạo trước đó. Hãy đăng nhập bằng mã đó.', 'exists');
+      const ctx = { user: String(body.user || '').trim().slice(0, 60) };
+      return res.status(200).json({ ok: true, data: await getAll(ctx) });
+    }
     await checkPin(body.pin);
     const ctx = { user: String(body.user || '').trim().slice(0, 60) };
     const fn = API[body.fn];
