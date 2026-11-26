@@ -29,7 +29,7 @@ LAYOUT: dải đầu olive tràn viền + điều hướng; nội dung 1240px; m
 --bad:light-dark(#b3261e,#ff8a7f);--badb:light-dark(#fbe2df,#3c1a17);
 --none:light-dark(#6f7466,#959b89);--noneb:light-dark(#eeeee8,#22251d)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
-*{box-sizing:border-box;min-width:0}
+*{box-sizing:border-box;min-width:0}[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Be Vietnam Pro",system-ui,sans-serif;overflow-x:clip;font-variant-numeric:tabular-nums}
 .wrap{max-width:1240px;margin:0 auto;padding-inline:max(4vw,16px)}
 pre,.scroll{overflow-x:auto}html{scroll-padding-top:120px}
@@ -169,6 +169,7 @@ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-bl
 <div id="ov" class="ov" hidden><aside class="drawer" id="drw" role="dialog" aria-modal="true" aria-labelledby="dT"><div class="dh"><h2 id="dT"></h2><button class="x" data-act="close" aria-label="Đóng">✕</button></div><div id="dB" class="dbd"></div></aside></div>
 <div id="mo" class="mo" hidden><div class="mbox" role="alertdialog" aria-modal="true"><div id="mT"></div><div class="acts" id="mA"></div></div></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
+<input type="file" id="rs_file" hidden>
 <div id="login" class="lg-ov" hidden><form id="lgf" class="lg-box" autocomplete="on" novalidate>
  <div><h1>Căn hộ N2 D2D</h1><p class="sub">Quản lý nội bộ · nhập mã truy cập của đội để tiếp tục.</p></div>
  <label class="fl" id="lg_api_w">Link máy chủ dữ liệu (kết thúc bằng /exec)<input id="lg_api" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec"></label>
@@ -253,12 +254,17 @@ async function api(fn,...args){if(!S.api||!S.pin){showLogin('');throw{code:'auth
 function showLogin(msg){const o=$('#login');$('#lg_api_w').hidden=!!(CFG.apiUrl||'').trim();$('#lg_api').value=S.api||'';$('#lg_user').value=S.user||'';$('#lg_err').textContent=msg||'';
  if(o.hidden){o.hidden=false;setTimeout(()=>$('#lg_pin').focus(),50)}setSync('off','Chưa đăng nhập')}
 async function doLogin(){const btn=$('#lg_btn'),er=$('#lg_err');er.textContent='';const url=((CFG.apiUrl||'').trim()||$('#lg_api').value.trim());
- if(!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(url)){er.textContent='Link máy chủ phải là link ứng dụng web Apps Script (https://script.google.com/…/exec).';return}
+ if(!(CFG.apiUrl||'').trim()&&!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(url)){er.textContent='Link máy chủ phải là link ứng dụng web Apps Script (https://script.google.com/…/exec).';return}
  const pin=$('#lg_pin').value;if(!pin){er.textContent='Nhập mã truy cập.';return}
  S.api=url;S.pin=pin;S.user=$('#lg_user').value.trim();busy(btn,true);btn.textContent='Đang kiểm tra…';
  try{const st=await api('getAll');const rem=$('#lg_rem').checked;LS('n2.api',url);LS('n2.user',S.user);LS('n2.pin',rem?pin:null);
   $('#login').hidden=true;$('#lg_pin').value='';apply(st);toast('Đã đăng nhập'+(S.user?' · '+S.user:''))}
  catch(e){if(!$('#lg_err').textContent)er.textContent=e.message||'Không đăng nhập được.'}finally{busy(btn,false);btn.textContent='Vào hệ thống'}}
+async function restoreFile(f){let d;try{d=JSON.parse(await f.text())}catch(e){toast('File không đúng định dạng sao lưu (.json).');return}
+ if(!d||typeof d.rooms!=='object'||typeof d.tenants!=='object'||typeof d.bills!=='object'||!d.rooms||!d.tenants||!d.bills){toast('File này không phải bản sao lưu của app quản lý căn hộ.');return}
+ const n=[d.rooms,d.tenants,d.bills].map(x=>Object.keys(x).length);
+ if(!(await ask(`<p><b>Nạp dữ liệu từ bản sao lưu${d.exportedAt?' ngày '+esc(dl(String(d.exportedAt).slice(0,10))):''}?</b></p><p class="sub">${n[0]} phòng · ${n[1]} khách thuê · ${n[2]} hóa đơn. Toàn bộ dữ liệu đang có trên máy chủ sẽ được thay thế; máy chủ giữ lại một bản chụp dữ liệu cũ.</p>`,'Nạp dữ liệu',false)))return;
+ try{apply(await api('importAll',{config:d.config||{},rooms:d.rooms,tenants:d.tenants,bills:d.bills}));toast(`Đã nạp ${n[0]} phòng, ${n[1]} khách, ${n[2]} hóa đơn`)}catch(e){toast(errMsg(e))}}
 function logout(){S.pin='';LS('n2.pin',null);S.rooms={};S.tenants={};S.bills={};S.got={};closeD();showLogin('Đã đăng xuất.');schedule()}
 function apply(st){if(!st)return;S.rooms=st.rooms||{};S.tenants=st.tenants||{};S.bills=st.bills||{};S.cfg={...DEF,...(st.config||{})};S.me=st.me||'';S.sheetUrl=st.sheetUrl||'';S.noDb=false;
  S.got={rooms:1,tenants:1,bills:1,config:1};setSync('on','Cập nhật '+new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}));schedule()}
@@ -283,7 +289,7 @@ const seg=(k,opts)=>`<div class="seg" role="group">${opts.map(([v,l])=>`<button 
 
 /* ---------- Tổng quan ---------- */
 function vTQ(){const vb=$('#vb'),p=S.period,rs=rooms();
- if(!rs.length){vb.innerHTML=`<section class="emp"><h1>Chưa có phòng nào</h1><p class="sub">${S.noDb?'Chưa kết nối được kho dữ liệu.':'Bắt đầu bằng việc khai báo danh mục phòng của tòa nhà.'}</p><button class="btn pri w" data-act="room-new">Thêm phòng</button></section>`;return}
+ if(!rs.length){vb.innerHTML=`<section class="emp"><h1>Chưa có phòng nào</h1><p class="sub">${S.noDb?'Chưa kết nối được kho dữ liệu.':'Nạp file sao lưu (ví dụ file dữ liệu N2 D2D đã chuyển đổi) hoặc khai báo danh mục phòng từ đầu.'}</p><div class="tb"><button class="btn pri w" data-act="restore">Nạp dữ liệu từ file sao lưu</button><button class="btn w" data-act="room-new">Thêm phòng</button></div></section>`;return}
  const sts=rs.map(r=>({r,...roomState(r,p)})),pb=billsOf(p),a=agg(pb),pa=agg(billsOf(addM(p,-1)));
  const occ=sts.filter(s=>s.t).length,none=sts.filter(s=>s.k==='none'),open=pb.filter(b=>st(b)!=='ok'),late=open.filter(b=>st(b)==='bad');
  const act=tenants().filter(t=>t.status==='dang'),dep=act.reduce((s,t)=>s+(t.deposit||0),0);
@@ -514,8 +520,8 @@ function vCD(){const c=S.cfg;$('#vb').innerHTML=`<div class="vh"><div><h1>Cài �
  <div class="grid2"><section class="card"><h2>Thông số vận hành</h2><dl class="kv" style="margin-top:12px;font-size:15px"><dt>Tên tòa nhà</dt><dd>${esc(c.name)}</dd><dt>Hạn thanh toán</dt><dd>Ngày ${esc(c.dueDay)} ${Number(c.dueOffset)?'tháng kế tiếp kỳ':'trong tháng của kỳ'}</dd>
  <dt>Điện mặc định</dt><dd>${fmt(c.elecRate)}đ/kWh</dd><dt>Nước mặc định</dt><dd>${fmt(c.waterFee)}đ/phòng/tháng</dd><dt>Nước bình mặc định</dt><dd>${fmt(c.bottleRate)}đ/bình</dd><dt>Cảnh báo hết hợp đồng</dt><dd>Trước ${esc(c.warnDays)} ngày</dd></dl></section>
  <section class="card"><h2>Nội dung in trên phiếu</h2><p class="sub" style="margin-top:10px">Thông tin chuyển khoản</p><p style="white-space:pre-line;margin:4px 0 12px">${c.bank?esc(c.bank):'<span class="muted">Chưa khai báo</span>'}</p><p class="sub">Dòng ghi chú cuối phiếu</p><p style="white-space:pre-line;margin:4px 0 0">${esc(c.billNote||'—')}</p></section></div>
- <section class="card sec"><h2>Dữ liệu & quyền truy cập</h2><p style="margin:8px 0 0">Dữ liệu lưu trong Google Sheet của chủ dự án (5 trang tính: CaiDat, Phong, KhachThue, HoaDon, ThuTien). Trang này chỉ hiển thị khi nhập đúng mã truy cập; trang tự cập nhật mỗi phút, bấm dòng trạng thái góc trên để tải lại ngay.${S.user?` Đang dùng với tên: <b>${esc(S.user)}</b>.`:''}</p>
- <div class="acts">${/^https:\/\/docs\.google\.com\//.test(S.sheetUrl)?`<a class="btn" href="${esc(S.sheetUrl)}" target="_blank" rel="noopener">Mở Google Sheet dữ liệu</a>`:''}<button class="btn dlb" data-act="backup">Tải bản sao lưu (JSON)</button><button class="btn dlb" data-act="csv">Tải CSV hóa đơn</button><button class="btn dan" data-act="logout">Đăng xuất khỏi thiết bị này</button></div></section>`}
+ <section class="card sec"><h2>Dữ liệu & quyền truy cập</h2><p style="margin:8px 0 0">Dữ liệu lưu trong kho dữ liệu riêng của website (Upstash Redis trên Vercel), chỉ đọc/ghi được khi nhập đúng mã truy cập. Trang tự cập nhật mỗi phút, bấm dòng trạng thái góc trên để tải lại ngay. Nạp file sao lưu sẽ thay toàn bộ dữ liệu hiện tại; máy chủ giữ lại một bản chụp dữ liệu cũ.${S.user?` Đang dùng với tên: <b>${esc(S.user)}</b>.`:''}</p>
+ <div class="acts">${/^https:\/\/docs\.google\.com\//.test(S.sheetUrl)?`<a class="btn" href="${esc(S.sheetUrl)}" target="_blank" rel="noopener">Mở Google Sheet dữ liệu</a>`:''}<button class="btn dlb" data-act="backup">Tải bản sao lưu (JSON)</button><button class="btn w" data-act="restore">Nạp dữ liệu từ file sao lưu</button><button class="btn dlb" data-act="csv">Tải CSV hóa đơn</button><button class="btn dan" data-act="logout">Đăng xuất khỏi thiết bị này</button></div></section>`}
 function openCfg(){const c=S.cfg,mi=(i,v,l)=>`<label class="fl">${l}<input id="${i}" class="m" inputmode="numeric" value="${fmt(v)}"></label>`;S.edit={kind:'cfg'};
  openD('Cài đặt vận hành',`<form id="cf" class="fg" novalidate><label class="fl full">Tên tòa nhà<input id="c_name" value="${esc(c.name)}"></label>
  <label class="fl">Ngày hạn thanh toán<input id="c_dd" type="number" min="1" max="28" value="${esc(c.dueDay)}"></label><label class="fl">Hạn rơi vào<select id="c_do"><option value="1"${Number(c.dueOffset)?' selected':''}>Tháng kế tiếp kỳ</option><option value="0"${Number(c.dueOffset)?'':' selected'}>Trong tháng của kỳ</option></select></label>
@@ -548,6 +554,7 @@ document.addEventListener('click',async e=>{const nav=e.target.closest('#tabs a'
  if(a==='f'){S.f[d.k]=d.v;$$(`.seg [data-k="${d.k}"]`).forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===d.v));return body()}
  if(a==='go'){if(d.k)S.f[d.k]=d.v;return go(d.view)}
  if(a==='logout')return logout();
+ if(a==='restore'){const f=$('#rs_file');f.value='';f.click();return}
  if(a==='reload'){setSync('','Đang tải…');return load()}
  if(a==='room-click'){const r=S.rooms[d.room],s=roomState(r,S.period);if(s.k==='none')return openBill(null,{room:d.room});if(s.bills.length)return openBill(s.bills[0].id);if(s.t)return openTen(s.t.id);return s.k==='fix'?openRoom(d.room):openTen(null,{room:d.room})}
  if(a==='bill-new')return openBill(null,{room:d.room});if(a==='bill-open')return openBill(d.id);if(a==='bill-pay')return openBill(d.id,{pay:1});if(a==='batch')return openBatch();
@@ -582,6 +589,7 @@ S.period=curP();hdr();route();
 S.dl={};
 addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(VIEWS.includes(h)){closeD();S.view=h;route()}});
 document.addEventListener('submit',e=>{if(e.target.id==='lgf'){e.preventDefault();doLogin()}},true);
+$('#rs_file').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(f)restoreFile(f)});
 {const h=location.hash.slice(1);if(VIEWS.includes(h)&&h!==S.view){S.view=h;route()}}
 if(S.api&&S.pin)load();else showLogin('');
 setInterval(()=>{if(document.visibilityState==='visible'&&!S.busy&&S.pin&&$('#login').hidden)load()},60000);
