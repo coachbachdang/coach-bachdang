@@ -196,7 +196,11 @@ const API = { getAll, saveDoc, saveBills, setPayments, deleteDoc, importAll, cha
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Robots-Tag', 'noindex, nofollow');
-  if (req.method === 'GET') return res.status(200).json({ ok: true, app: 'qlch' });
+  if (req.method === 'GET') {
+    let db = false, setup = false;
+    try { const st = await pinState(); db = true; setup = st.mode !== 'none'; } catch (e) { /* kho chưa kết nối */ }
+    return res.status(200).json({ ok: true, app: 'qlch', db, setup });
+  }
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Method not allowed' });
   let body = req.body;
   if (Buffer.isBuffer(body)) body = body.toString('utf8');
